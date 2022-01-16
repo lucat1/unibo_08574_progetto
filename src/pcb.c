@@ -12,10 +12,11 @@
 // TODO: Change these define position 
 // (Maybe also change the names of pcbFree_table and pcbFree_h)
 #define MAX_PROC 20
-static pcb_t *pcbFree_table[MAX_PROC];
+static pcb_t pcbFree_table[MAX_PROC];
 static struct list_head *pcbFree_h;
 
-// TODO: Test this function
+
+// This function should be called only once during the initialization phase
 void initPcbs()
 {
     // Initialize the list
@@ -23,13 +24,11 @@ void initPcbs()
 
     // Add pcbFree_table elements to the list
     for(int i = 0; i < MAX_PROC; i++){
-        if(pcbFree_table[i] != NULL){
-            list_add(pcbFree_table[i], pcbFree_h);
-        }
+        // TODO: check what happens when the element of the array is undefined
+        list_add(&(pcbFree_table[i].p_list), pcbFree_h);
     }
 }
 
-// TODO: Test this function
 void freePcb(pcb_t *p)
 {
     // TODO: Check if the element p is already contained in the list
@@ -37,10 +36,12 @@ void freePcb(pcb_t *p)
     list_add(p, pcbFree_h);
 }
 
-// TODO: Test this function
 /** 
  * null_state - returns a state whose value is null
  * 
+ * Returns the null state
+ * 
+ * TODO:    Test this function
  */
 state_t null_state()
 {
@@ -59,7 +60,6 @@ state_t null_state()
     return null_value;
 }
 
-// TODO: Test this function
 pcb_t* allocPcb()
 {
     if(list_empty(pcbFree_h)){
@@ -68,8 +68,8 @@ pcb_t* allocPcb()
         pcb_t *first = pcbFree_h->next;
         list_del(pcbFree_h->next);
         INIT_LIST_HEAD(&(first->p_list));
-        INIT_LIST_HEAD($(first->p_child));
-        INIT_LIST_HEAD($(first->p_sib));
+        INIT_LIST_HEAD(&(first->p_child));
+        INIT_LIST_HEAD(&(first->p_sib));
         first->p_parent = NULL;
         first->p_s = null_state();
         first->p_time = 0;
@@ -78,47 +78,52 @@ pcb_t* allocPcb()
     }
 }
 
-// TODO: Test this function
-void mkEmptyProcQ(struct list_head *head){
-    
+void mkEmptyProcQ(struct list_head *head)
+{
+    INIT_LIST_HEAD(head);
 }
 
-int emptyProcQ(struct list_head *head){
-
+int emptyProcQ(struct list_head *head)
+{
+    return list_empty(head);
 }
 
-void insertProcQ(struct list_head *head, pcb_t *p){
-
+void insertProcQ(struct list_head *head, pcb_t *p)
+{
+    list_add_tail(&(p->p_list), head);
 }
 
-pcb_t headProcQ(struct list_head *head){
-
+pcb_t* headProcQ(struct list_head *head)
+{
+    if(list_empty(head)){
+        return NULL;
+    }else{
+        return container_of(head->next, pcb_t, p_list);
+    }
 }
 
-/**
- * removeProcQ - remove
- *
- *
- *
- *
- *
- *
- */
+
 pcb_t* removeProcQ(struct list_head* head){
     
+    // check if list is empty
+    if(list_empty(head)) return NULL;
+
+    // get the first element of the list
     struct list_head *to_remove = list_next(head);
 
-    list_del(head);
+    // delete element from list
+    list_del(to_remove);
 
-    return to_remove; 
-    
+    // return the pcb pointed by the deleted element
+    return container_of(to_remove, pcb_t , p_list); 
 }
+
 
 pcb_t* outProcQ(struct list_head* head, pcb_t *p){
     struct list_head* iter = (head)->next;
     
     // looking for p element 
-    for (; iter != (p) && iter != (head); iter = iter->next);
+    for (; container_of(iter, pcb_t , p_list) != (p) && iter != (head); iter = iter->next);
     
     // completed a circle without finding p element
     if (iter == head) {
@@ -128,8 +133,9 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
     // remove p element from list
     list_del(iter);
     
-    return iter;
+    return container_of(iter, pcb_t , p_list);
 }
+
 
 int emptyChild(pcb_t *p){
     if (p->p_child.next == NULL) {
@@ -139,9 +145,11 @@ int emptyChild(pcb_t *p){
     return FALSE;
 }
 
+
 void insertChild(pcb_t *prnt, pcb_t *p){
-    list_add_tail(p, &(prnt->p_child));
+    list_add(p, &(prnt->p_child));
 }
+
 
 pcb_t* removeChild(pcb_t *p){
     if(emptyChild(p)) return NULL;
@@ -151,19 +159,16 @@ pcb_t* removeChild(pcb_t *p){
 }
 
 pcb_t *outChild(pcb_t* p){
-    if (p->p_parent == NULL) return NULL;
+    if (p->p_parent == NULL) return NULL; 
 
-    struct list_head child_of_parent = (p->p_parent)->p_child; 
-    
-    struct list_head* iter = child_of_parent.next;
+    // get the first element of p_child inside p_parent of p
+    struct list_head* iter = ((p->p_parent)->p_child).next;
 
-    // assume that p exists in child_of_parent
-    for (; iter != (p); iter = iter->next);
+    // assume that p exists in p_child of p->p_parent
+    for (; container_of(iter, pcb_t , p_child) != (p); iter = iter->next);
     
     list_del(iter);
     
-    return iter;
-    
-
+    return container_of(iter, pcb_t , p_child);
 }
 
