@@ -21,12 +21,12 @@ endif()
 
 if(CROSS_COMPILE)
 # flags needed to compile to an umps3 binary flags
-    set(CFLAGS_LANG -ffreestanding -ansi)
+    set(CFLAGS_LANG -pedantic -Wall -ffreestanding -ansi -std=c99)
     set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32)
     set(CFLAGS_ALL ${CFLAGS_LANG} ${CFLAGS_MIPS} -pedantic -Wall -O0)
     set(LDFLAGS_ALL -G 0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
 else()
-    set(CFLAGS_ALL -pedantic -Wall)
+    set(CFLAGS_ALL ${CFLAGS_LANG})
 endif()
 
 # PLEASE NOTE: subprojects are ignored as needed, that is, based on the target
