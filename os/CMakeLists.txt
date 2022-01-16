@@ -6,7 +6,9 @@ add_library(${PROJECT_NAME}
 )
 add_library(sub::os ALIAS ${PROJECT_NAME})
 
-set(CMAKE_C_COMPILER ${MIPSEL_GCC})
+if(CROSS_COMPILE)
+    set(CMAKE_C_COMPILER ${MIPSEL_CC})
+endif()
 target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS_ALL})
 target_include_directories(${PROJECT_NAME}
     PUBLIC ${PROJECT_SOURCE_DIR}/include

@@ -1,7 +1,7 @@
 project(phase1)
-add_executable(${PROJECT_NAME} p1test.c)
+add_executable(${PROJECT_NAME} src/p1test.c)
 
-set(CMAKE_C_COMPILER ${MIPSEL_GCC})
+set(CMAKE_C_COMPILER ${MIPSEL_CC})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS_ALL})
 target_link_options(${PROJECT_NAME} PRIVATE ${LDFLAGS_ALL})
 target_include_directories(${PROJECT_NAME} PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)

@@ -24,7 +24,8 @@ static u32 tx_status(termreg_t *tp);
 static termreg_t *term0_reg = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, 0);
 
 void main(void) {
-    char str[2]= {'0' + test1(), '\0'};
+  char str[2]= {0, '\0'};
+  str[0] = '0' + test1();
   term_puts(str);
 
   /* Go to sleep and power off the machine if anything wakes us up */
