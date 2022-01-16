@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef PANDOS_TYPES_H
+#define PANDOS_TYPES_H
 
 /* Device register type for terminals */
 typedef struct {
@@ -9,4 +9,4 @@ typedef struct {
 	unsigned int transm_command;
 } termreg_t;
 
-#endif /* !defined(TYPES_H) */
+#endif /* PANDOS_TYPES_H */

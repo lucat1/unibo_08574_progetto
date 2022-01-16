@@ -2,4 +2,4 @@
 #define PANDOS_ASL_H
 
 int test2();
-#endif // PANDOS_ASL_H
+#endif /* PANDOS_ASL_H */

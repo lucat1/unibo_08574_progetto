@@ -3,4 +3,4 @@
 
 int test1();
 
-#endif // PANDOS_PCB_H
+#endif /* PANDOS_PCB_H */
