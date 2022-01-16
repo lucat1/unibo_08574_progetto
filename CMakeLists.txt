@@ -29,14 +29,22 @@ else()
     set(CFLAGS_ALL -pedantic -Wall)
 endif()
 
+# PLEASE NOTE: subprojects are ignored as needed, that is, based on the target
+# architecture. That said, we want our development tools (namely the clangd LSP)
+# to know about all files contained in all subprojects. So when cmake is asked
+# to export metadata needed for them we add all subprojects eitherway. Clearly
+# this configuration won't be suitable for production usage, so please don't use
+# any Makefile generated via -DCMAKE_EXPORT_COMPILE_COMMANDS=1 to compile
+# kernels or test libraries.
+
 # The library code for all project phases, as a subproject
 add_subdirectory(os)
 # Unit testing for the shared `os` subproject
-if(NOT CROSS_COMPILE)
+if(NOT CROSS_COMPILE OR CMAKE_EXPORT_COMPILE_COMMANDS)
     add_subdirectory(test)
 endif()
 
-if(CROSS_COMPILE)
+if(CROSS_COMPILE OR CMAKE_EXPORT_COMPILE_COMMANDS)
     add_subdirectory(phase1)
     # add_subdirectory(phase2)
     # add_subdirectory(phase3)
