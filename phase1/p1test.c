@@ -1,5 +1,5 @@
 /* Pull our own stripped down version of umps utility types */
-#include "types.h"
+#include "os/types.h"
 
 #include "umps/arch.h"
 #include "umps/libumps.h"
