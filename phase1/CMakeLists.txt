@@ -1,22 +1,7 @@
 project(phase1)
 add_executable(${PROJECT_NAME} p1test.c)
 
-set(CMAKE_C_COMPILER mipsel-linux-gnu-gcc)
-
-# Locate umps3 header/misc files
-if(NOT UMPS3_DIR_PREFIX)
-    set(UMPS3_DIR_PREFIX /usr)
-    if(EXISTS /usr/local/bin/umps3)
-        set(UMPS3_DIR_PREFIX /usr/local)
-    endif()
-endif()
-
-# flags needed to compile to an umps3 binary flags
-set(CFLAGS_LANG -ffreestanding -ansi)
-set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32)
-set(CFLAGS_ALL ${CFLAGS_LANG} ${CFLAGS_MIPS} -Wall -O0)
-set(LDFLAGS_ALL -G 0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
-
+set(CMAKE_C_COMPILER ${MIPSEL_GCC})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS_ALL})
 target_link_options(${PROJECT_NAME} PRIVATE ${LDFLAGS_ALL})
 target_include_directories(${PROJECT_NAME} PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)

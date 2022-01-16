@@ -1,5 +1,6 @@
 /* Pull our own stripped down version of umps utility types */
 #include "os/types.h"
+#include "os/pcb.h"
 
 #include "umps/arch.h"
 #include "umps/libumps.h"
@@ -23,7 +24,8 @@ static u32 tx_status(termreg_t *tp);
 static termreg_t *term0_reg = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, 0);
 
 void main(void) {
-  term_puts("hello, world\n");
+    char str[2]= {'0' + test1(), '\0'};
+  term_puts(str);
 
   /* Go to sleep and power off the machine if anything wakes us up */
   WAIT();
