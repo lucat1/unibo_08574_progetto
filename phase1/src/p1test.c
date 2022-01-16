@@ -1,6 +1,6 @@
 /* Pull our own stripped down version of umps utility types */
-#include "os/types.h"
 #include "os/pcb.h"
+#include "os/types.h"
 
 #include "umps/arch.h"
 #include "umps/libumps.h"
@@ -23,44 +23,48 @@ static u32 tx_status(termreg_t *tp);
 
 static termreg_t *term0_reg = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, 0);
 
-void main(void) {
-  char str[2]= {0, '\0'};
-  str[0] = '0' + test1();
-  term_puts(str);
+void main(void)
+{
+    char str[2] = {0, '\0'};
+    str[0] = '0' + test1();
+    term_puts(str);
 
-  /* Go to sleep and power off the machine if anything wakes us up */
-  WAIT();
-  *((u32 *)MCTL_POWER) = 0x0FF;
-  while (1)
-    ;
+    /* Go to sleep and power off the machine if anything wakes us up */
+    WAIT();
+    *((u32 *)MCTL_POWER) = 0x0FF;
+    while (1)
+        ;
 }
 
-static void term_puts(const char *str) {
-  while (*str)
-    if (term_putchar(*str++))
-      return;
+static void term_puts(const char *str)
+{
+    while (*str)
+        if (term_putchar(*str++))
+            return;
 }
 
-static int term_putchar(char c) {
-  u32 stat;
+static int term_putchar(char c)
+{
+    u32 stat;
 
-  stat = tx_status(term0_reg);
-  if (stat != ST_READY && stat != ST_TRANSMITTED)
-    return -1;
+    stat = tx_status(term0_reg);
+    if (stat != ST_READY && stat != ST_TRANSMITTED)
+        return -1;
 
-  term0_reg->transm_command = ((c << CHAR_OFFSET) | CMD_TRANSMIT);
+    term0_reg->transm_command = ((c << CHAR_OFFSET) | CMD_TRANSMIT);
 
-  while ((stat = tx_status(term0_reg)) == ST_BUSY)
-    ;
+    while ((stat = tx_status(term0_reg)) == ST_BUSY)
+        ;
 
-  term0_reg->transm_command = CMD_ACK;
+    term0_reg->transm_command = CMD_ACK;
 
-  if (stat != ST_TRANSMITTED)
-    return -1;
-  else
-    return 0;
+    if (stat != ST_TRANSMITTED)
+        return -1;
+    else
+        return 0;
 }
 
-static u32 tx_status(termreg_t *tp) {
-  return ((tp->transm_status) & TERM_STATUS_MASK);
+static u32 tx_status(termreg_t *tp)
+{
+    return ((tp->transm_status) & TERM_STATUS_MASK);
 }
