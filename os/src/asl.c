@@ -1,3 +1,9 @@
 #include "os/asl.h"
+#include "os/types.h"
 
-int test2() { return 2; }
+semd_t *semd_table[MAX_PROC];
+
+int init_asl() 
+{
+    return 0;
+}
