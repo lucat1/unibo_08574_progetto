@@ -7,6 +7,7 @@
 
 typedef signed int cpu_t;
 typedef unsigned int memaddr;
+typedef unsigned int size_t;
 
 /* process table entry type */
 typedef struct pcb_t {
@@ -24,7 +25,7 @@ typedef struct pcb_t {
 
     /* Pointer to the semaphore the process is currently blocked on */
     int *p_semAdd;
-} pcb_t, *pcb_PTR;
+} pcb_t;
 
 /* semaphore descriptor (SEMD) data structure */
 typedef struct semd_t {
@@ -35,6 +36,6 @@ typedef struct semd_t {
 
     /* Semaphore list */
     struct list_head s_link;
-} semd_t, *semd_PTR;
+} semd_t;
 
 #endif /* PANDOS_TYPES_H */
