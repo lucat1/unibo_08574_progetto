@@ -1,1 +1,4 @@
 *.umps
+.cache
+build
+compile_commands.json

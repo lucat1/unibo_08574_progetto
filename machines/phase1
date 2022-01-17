@@ -1,6 +1,6 @@
 {
     "boot": {
-        "core-file": "../kernel.core.umps",
+        "core-file": "../build/phase1/phase1.core.umps",
         "load-core-file": true
     },
     "bootstrap-rom": "/usr/share/umps3/coreboot.rom.umps",
@@ -16,7 +16,7 @@
     "num-ram-frames": 64,
     "symbol-table": {
         "asid": 64,
-        "file": "../kernel.stab.umps"
+        "file": "../build/phase1/phase1.stab.umps"
     },
     "tlb-floor-address": "0xffffffff",
     "tlb-size": 16
