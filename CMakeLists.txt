@@ -1,7 +1,6 @@
 cmake_minimum_required (VERSION 3.5)
+project(Pandos+ VERSION 0.1 LANGUAGES C ASM)
 enable_testing()
-
-project(Pandos+)
 
 find_program(MIPSEL_CC mipsel-linux-gnu-gcc)
 
