@@ -21,9 +21,9 @@ endif()
 if(CROSS_COMPILE)
 # flags needed to compile to an umps3 binary flags
     set(CFLAGS_LANG -Werror -Wall -ffreestanding -O0 -std=gnu99)
-    set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G0 -fpic -mfp32) # Changed flags: -mno-abicalls -fno-pic
+    set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G0 -mfp32 -fno-pic -mno-abicalls) # Changed flags: -mno-abicalls -fno-pic
     set(CFLAGS_ALL ${CFLAGS_LANG} ${CFLAGS_MIPS})
-    set(LDFLAGS_ALL -G0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
+    set(LDFLAGS_ALL -no-pie -fno-pic -G0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
 else()
     set(CFLAGS_ALL ${CFLAGS_LANG})
 endif()
