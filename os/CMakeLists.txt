@@ -1,16 +1,28 @@
 project (os)
+list(APPEND ASMS crtso libumps)
+list(APPEND TRGTS ${PROJECT_NAME})
 
 add_library(${PROJECT_NAME}
     src/asl.c
     src/pcb.c
 )
-add_library(sub::os ALIAS ${PROJECT_NAME})
+add_library(sub::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if(CROSS_COMPILE)
     set(CMAKE_C_COMPILER ${MIPSEL_CC})
+    set(CMAKE_ASM_COMPILER ${MIPSEL_CC})
+
+    foreach(ASM ${ASMS})
+        add_library(${ASM} /usr/share/umps3/${ASM}.S)
+        add_library(sub::${ASM} ALIAS ${ASM})
+        list(APPEND TRGTS ${ASM})
+    endforeach()
 endif()
-target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS_ALL})
-target_include_directories(${PROJECT_NAME}
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
-    PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3
-)
+
+foreach(TRGT ${TRGTS})
+    target_compile_options(${TRGT} PRIVATE ${CFLAGS_ALL})
+    target_include_directories(${TRGT}
+        PUBLIC ${PROJECT_SOURCE_DIR}/include
+        PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3
+    )
+endforeach()

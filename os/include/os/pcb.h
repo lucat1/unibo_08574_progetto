@@ -22,6 +22,10 @@ void initPcbs();
  */
 void freePcb(pcb_t *p);
 
+// TODO: comment me
+// this had to be added to test it outside.
+state_t null_state();
+
 /**
  * allocPcb -   Gets the first free pcb from the list of pcbs
  * 

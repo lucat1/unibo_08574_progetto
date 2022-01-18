@@ -7,7 +7,10 @@
 
 typedef signed int cpu_t;
 typedef unsigned int memaddr;
+/* Avoid re-defining size_t on a modern architecture */
+#ifndef __x86_64__
 typedef unsigned int size_t;
+#endif
 
 /* process table entry type */
 typedef struct pcb_t {
