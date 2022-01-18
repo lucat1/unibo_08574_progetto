@@ -1,9 +1,9 @@
-#ifndef PCB_H
-#define PCB_H
+#ifndef PANDOS_PCB_H
+#define PANDOS_PCB_H
 
-#include "listx.h"
-#include "pandos_const.h"
-#include "pandos_types.h"
+#include "list.h"
+#include "const.h"
+#include "types.h"
 
 /**
  * initPcbs -       Initialize the list of free pcbs (pcbFree_h) from the table of pcbs (pcbFree_table)
@@ -127,4 +127,4 @@ pcb_t* removeChild(pcb_t *p);
  */
 pcb_t *outChild(pcb_t* p);
 
-#endif
+#endif /* PANDOS_PCB_H */

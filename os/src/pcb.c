@@ -1,10 +1,5 @@
-#include "pcb.h"
-
-// TODO: Remove the following include statements 
-// (I need those for vscode)
-#include "pandos_const.h"
-#include "pandos_types.h"
-
+#include "os/pcb.h"
+#include "os/types.h"
 
 #define FALSE 0
 #define TRUE 1
@@ -14,7 +9,6 @@
 #define MAX_PROC 20
 static pcb_t pcbFree_table[MAX_PROC];
 static struct list_head *pcbFree_h;
-
 
 // This function should be called only once during the initialization phase
 void initPcbs()
