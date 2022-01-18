@@ -25,9 +25,7 @@ static termreg_t *term0_reg = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, 0);
 
 void main(void)
 {
-    char str[2] = {0, '\0'};
-    str[0] = '0' + test1();
-    term_puts(str);
+    term_puts("Hello World!");
 
     /* Go to sleep and power off the machine if anything wakes us up */
     WAIT();

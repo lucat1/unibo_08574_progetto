@@ -1,12 +1,11 @@
 #include "os/pcb.h"
 #include "os/types.h"
+#include "os/list.h"
 
 #define FALSE 0
 #define TRUE 1
 
-// TODO: Change these define position 
-// (Maybe also change the names of pcbFree_table and pcbFree_h)
-#define MAX_PROC 20
+// TODO: Change the names of pcbFree_table and pcbFree_h
 static pcb_t pcbFree_table[MAX_PROC];
 static struct list_head *pcbFree_h;
 
@@ -19,7 +18,7 @@ void initPcbs()
     // Add pcbFree_table elements to the list
     for(int i = 0; i < MAX_PROC; i++){
         // TODO: check what happens when the element of the array is undefined
-        list_add(&(pcbFree_table[i].p_list), pcbFree_h);
+        list_add(&pcbFree_table[i].p_list, pcbFree_h);
     }
 }
 
@@ -27,7 +26,7 @@ void freePcb(pcb_t *p)
 {
     // TODO: Check if the element p is already contained in the list
     // (I don't know if it supposed to be already checked or not, so I'll just leave it like this)
-    list_add(p, pcbFree_h);
+    list_add(&p->p_list, pcbFree_h);
 }
 
 /** 
@@ -59,7 +58,7 @@ pcb_t* allocPcb()
     if(list_empty(pcbFree_h)){
         return NULL;
     }else{
-        pcb_t *first = pcbFree_h->next;
+        pcb_t *first = container_of(pcbFree_h->next, pcb_t, p_list);
         list_del(pcbFree_h->next);
         INIT_LIST_HEAD(&(first->p_list));
         INIT_LIST_HEAD(&(first->p_child));
@@ -141,14 +140,15 @@ int emptyChild(pcb_t *p){
 
 
 void insertChild(pcb_t *prnt, pcb_t *p){
-    list_add(p, &(prnt->p_child));
+    list_add(&p->p_sib, &(prnt->p_child));
 }
 
 
 pcb_t* removeChild(pcb_t *p){
     if(emptyChild(p)) return NULL;
-    pcb_t *ret = list_next(&(p->p_child));
-    list_del(ret);
+    pcb_t *ret = container_of(list_next(&(p->p_child)), pcb_t, p_sib);
+    list_del(&ret->p_sib);
+    // TODO: remove from parent's list of children
     return ret;
 }
 
@@ -165,4 +165,3 @@ pcb_t *outChild(pcb_t* p){
     
     return container_of(iter, pcb_t , p_child);
 }
-
