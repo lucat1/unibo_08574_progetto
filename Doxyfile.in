@@ -11,3 +11,4 @@ INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/README.md \
                          @CMAKE_CURRENT_SOURCE_DIR@/test/
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = README.md
+GENERATE_HTML          = NO
