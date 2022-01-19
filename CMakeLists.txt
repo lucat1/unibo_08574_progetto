@@ -58,6 +58,6 @@ if(DOXYGEN_FOUND)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating documentation"
         VERBATIM)
-else(DOXYGEN_FOUND)
+else()
   message(WARNING "Doxygen missing: documentation will not be generated")
-endif(DOXYGEN_FOUND)
+endif()
