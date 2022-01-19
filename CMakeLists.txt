@@ -6,9 +6,7 @@ find_program(MIPSEL_CC mipsel-linux-gnu-gcc)
 
 # Cross-compile for the target environment by default
 # Can be disabled to compile with the system's `cc` and run unit tests locally
-if(NOT DEFINED CROSS_COMPILE)
-    set(CROSS_COMPILE TRUE)
-endif()
+option(CROSS_COMPILE "Cross compile for the MIPS architecture" ON)
 
 # Locate umps3 header/misc files
 if(NOT DEFINED UMPS3_DIR_PREFIX)
@@ -47,4 +45,19 @@ if(CROSS_COMPILE OR CMAKE_EXPORT_COMPILE_COMMANDS)
     add_subdirectory(phase1)
     # add_subdirectory(phase2)
     # add_subdirectory(phase3)
+endif()
+
+option(BUILD_DOC "Documentation" ON)
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating documentation"
+        VERBATIM)
+else()
+  message(WARNING "Doxygen missing: documentation will not be generated")
 endif()
