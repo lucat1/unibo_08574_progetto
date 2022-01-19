@@ -8,15 +8,15 @@
 #ifndef PANDOS_TYPES_H
 #define PANDOS_TYPES_H
 
-/* Device register type for terminals */
+/** Device register type for terminals */
 typedef struct {
-    /* Receiver status */
+    /** Receiver status */
     unsigned int recv_status;
-    /* Receiver command */
+    /** Receiver command */
     unsigned int recv_command;
-    /* Transmitter status */
+    /** Transmitter status */
     unsigned int transm_status;
-    /* Transmitter command */
+    /** Transmitter command */
     unsigned int transm_command;
 } termreg_t;
 
