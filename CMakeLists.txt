@@ -6,9 +6,7 @@ find_program(MIPSEL_CC mipsel-linux-gnu-gcc)
 
 # Cross-compile for the target environment by default
 # Can be disabled to compile with the system's `cc` and run unit tests locally
-if(NOT DEFINED CROSS_COMPILE)
-    set(CROSS_COMPILE TRUE)
-endif()
+option(CROSS_COMPILE "Cross compile for the MIPS architecture" ON)
 
 # Locate umps3 header/misc files
 if(NOT DEFINED UMPS3_DIR_PREFIX)

@@ -9,7 +9,7 @@
 #ifndef PANDOS_ASL_H
 #define PANDOS_ASL_H
 
-/// Placeholder. \todo Remove me.
+/* / Placeholder. \todo Remove me. */
 int test2();
 
 #endif /* PANDOS_ASL_H */

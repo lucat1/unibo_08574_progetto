@@ -9,7 +9,7 @@
 #ifndef PANDOS_PCB_H
 #define PANDOS_PCB_H
 
-/// Placeholder. \todo Remove me.
+/* / Placeholder. \todo Remove me. */
 int test1();
 
 #endif /* PANDOS_PCB_H */
