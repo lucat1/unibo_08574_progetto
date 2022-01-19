@@ -1,3 +1,14 @@
+/**
+ * \file pcb.c
+ * \brief Implementation \ref pcb.h
+ *
+ * \author Alessandro Frau 
+ * \author Rovelli Gianmaria
+ * \date 17-01-2022
+ *  
+ */
+
+
 #include "os/pcb.h"
 #include "os/types.h"
 #include "os/list.h"
@@ -29,13 +40,6 @@ void freePcb(pcb_t *p)
     list_add(&p->p_list, pcbFree_h);
 }
 
-/** 
- * null_state - returns a state whose value is null
- * 
- * Returns the null state
- * 
- * TODO:    Test this function
- */
 state_t null_state()
 {
     // TODO: Search on the documentation if 
