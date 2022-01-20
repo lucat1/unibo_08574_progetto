@@ -1,15 +1,12 @@
 cmake_minimum_required (VERSION 3.5)
+project(Pandos+ VERSION 0.1 LANGUAGES C ASM)
 enable_testing()
-
-project(Pandos+)
 
 find_program(MIPSEL_CC mipsel-linux-gnu-gcc)
 
 # Cross-compile for the target environment by default
 # Can be disabled to compile with the system's `cc` and run unit tests locally
-if(NOT DEFINED CROSS_COMPILE)
-    set(CROSS_COMPILE TRUE)
-endif()
+option(CROSS_COMPILE "Cross compile for the MIPS architecture" ON)
 
 # Locate umps3 header/misc files
 if(NOT DEFINED UMPS3_DIR_PREFIX)
@@ -20,7 +17,7 @@ if(NOT DEFINED UMPS3_DIR_PREFIX)
 endif()
 
 if(CROSS_COMPILE)
-# flags needed to compile to an umps3 binary flags
+    # flags needed to compile to an uMPS3 binary
     set(CFLAGS_LANG -pedantic -Wall -ffreestanding -ansi -std=c99)
     set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32)
     set(CFLAGS_ALL ${CFLAGS_LANG} ${CFLAGS_MIPS} -pedantic -Wall -O0)
@@ -48,4 +45,19 @@ if(CROSS_COMPILE OR CMAKE_EXPORT_COMPILE_COMMANDS)
     add_subdirectory(phase1)
     # add_subdirectory(phase2)
     # add_subdirectory(phase3)
+endif()
+
+option(BUILD_DOC "Documentation" ON)
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating documentation"
+        VERBATIM)
+else()
+  message(WARNING "Doxygen missing: documentation will not be generated")
 endif()

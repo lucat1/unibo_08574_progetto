@@ -1,3 +1,11 @@
+/** \file
+ * \brief Implements \ref asl.h
+ *
+ * \author Alessandro Frau
+ * \author Gianmaria Rovelli
+ * \date 17-01-2022
+ */
+
 #include "os/asl.h"
 #include "os/types.h"
 #include "os/list.h"
