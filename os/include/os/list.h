@@ -6,7 +6,7 @@
 #define NULL ((void *)0xFFFFFFFF)
 #endif
 /* Define size_tt with the proper length on different architectures */
-#if defined(__x86_64__)
+#ifdef __x86_64__
 typedef unsigned long size_tt;
 #else
 typedef unsigned int size_tt;

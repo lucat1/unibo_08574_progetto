@@ -7,23 +7,33 @@
  */
 
 #include "os/asl.h"
-#include "os/types.h"
 #include "os/list.h"
 
-static semd_t semd_table[MAX_PROC];
-static struct list_head *semd_free;
-static struct list_head *semd_h;
+semd_t semd_table[MAX_PROC];
+struct list_head semd_free;
+struct list_head semd_h;
 
-static int init_asl() 
+static void init_asl() 
 {
     size_t i;
 
-    INIT_LIST_HEAD(semd_free);
-    INIT_LIST_HEAD(semd_h);
+    INIT_LIST_HEAD(&semd_free);
+    INIT_LIST_HEAD(&semd_h);
     for(i = 0; i < MAX_PROC; ++i) {
-        semd_table[i].s_key = NULL;
-        INIT_LIST_HEAD(&semd_table[i].s_procq);
-        list_add(&(semd_table[i].s_link), semd_free);
+        list_add_tail(&semd_table[i].s_link, &semd_free);
     }
-    return 0;
+}
+
+static int insert_blocked(int *sem_addr, pcb_t *p) 
+{
+    struct list_head* iter;
+    semd_t *sem = NULL;
+
+    list_for_each(iter, &semd_h) {
+        semd_t *item = container_of(iter, semd_t, s_link);
+        // if(item->s_key == sem_addr)
+        //     sem = item;
+    }
+    // sem.s_key = NULL;
+    // INIT_LIST_HEAD(sem.s_procq);
 }

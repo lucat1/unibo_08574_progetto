@@ -12,8 +12,4 @@
 /// Runs the tests in question.
 int main()
 {
-    it("correctly initializes the list of PCBs") {
-        state_t state = null_state();
-        assert(state.status == UNINSTALLED);
-    }
 }

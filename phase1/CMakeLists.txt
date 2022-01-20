@@ -17,5 +17,5 @@ target_link_libraries(${PROJECT_NAME}
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND umps3-elf2umps -k ${PROJECT_NAME}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Converting ELF ${PROJECT_NAME} into UMPS3 Kernel..."
+    COMMENT "Converting ELF ${PROJECT_NAME} into uMPS3 Kernel..."
 )

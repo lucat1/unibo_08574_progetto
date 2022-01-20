@@ -15,7 +15,9 @@
 typedef signed int cpu_t;
 typedef unsigned int memaddr;
 /* Avoid re-defining size_t on a modern architecture */
-#ifndef __x86_64__
+#ifdef __x86_64__
+#include <stddef.h>
+#else
 typedef unsigned int size_t;
 #endif
 
