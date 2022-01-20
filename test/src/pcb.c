@@ -12,5 +12,8 @@
 /// Runs the tests in question.
 int main()
 {
-    ensure("test1 returns 1") { assert(test1() == 1); }
+    it("correctly initializes the list of PCBs") {
+        state_t state = null_state();
+        assert(state.status == UNINSTALLED);
+    }
 }
