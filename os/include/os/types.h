@@ -16,20 +16,24 @@ typedef signed int cpu_t;
 typedef unsigned int memaddr;
 /* Avoid re-defining size_t on a modern architecture */
 #ifdef __x86_64__
+#include <stdbool.h>
 #include <stddef.h>
 #else
 typedef unsigned int size_t;
+#define bool _Bool
+#define true 1
+#define false 0
 #endif
 
 /* process table entry type */
 typedef struct pcb_t {
     /* process queue  */
-    struct list_head p_list;
+    list_head p_list;
 
     /* process tree fields */
-    struct pcb_t *p_parent;   /* ptr to parent	*/
-    struct list_head p_child; /* children list */
-    struct list_head p_sib;   /* sibling list  */
+    struct pcb_t *p_parent; /* ptr to parent	*/
+    list_head p_child;      /* children list */
+    list_head p_sib;        /* sibling list  */
 
     /* process status information */
     state_t p_s;  /* processor state */
@@ -44,10 +48,10 @@ typedef struct semd_t {
     /* Semaphore key */
     int *s_key;
     /* Queue of PCBs blocked on the semaphore */
-    struct list_head s_procq;
+    list_head s_procq;
 
     /* Semaphore list */
-    struct list_head s_link;
+    list_head s_link;
 } semd_t;
 
 #endif /* PANDOS_TYPES_H */
