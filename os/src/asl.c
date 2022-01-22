@@ -86,19 +86,19 @@ void init_asl()
     }
 }
 
-bool insert_blocked(int *sem_addr, pcb_t *p)
+int insert_blocked(int *sem_addr, pcb_t *p)
 {
     semd_t *sem;
 
     if (!sem_addr || !p || p->p_semAdd)
-        return true;
+        return 1;
 
     /* Return an error when we run out of memory */
     if (!(sem = find_semd(&semd_h, sem_addr)) && !(sem = alloc_semd(sem_addr)))
-        return true;
+        return 2;
     list_add_tail(&p->p_list, &sem->s_procq);
     p->p_semAdd = sem_addr;
-    return false;
+    return 0;
 }
 
 pcb_t *out_blocked(pcb_t *pcb)
