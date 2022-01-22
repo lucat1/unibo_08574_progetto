@@ -22,7 +22,7 @@
  *
  * \todo    Test this function
  */
-void initPcbs();
+void init_pcbs();
 
 /**
  * \brief   Adds p to the list of free pcbs

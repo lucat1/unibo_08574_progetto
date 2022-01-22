@@ -1,6 +1,6 @@
 project (test)
 
-set(TEST_FILES pcb asl)
+set(TEST_FILES pcb asl util)
 
 foreach(TST ${TEST_FILES})
     set(TEST_NAME test_${TST})

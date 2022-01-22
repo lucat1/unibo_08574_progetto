@@ -12,23 +12,20 @@
 #include "os/list.h"
 #include "os/types.h"
 
-#define FALSE 0
-#define TRUE 1
-
 // TODO: Change the names of pcbFree_table and pcbFree_h
-static pcb_t pcbFree_table[MAX_PROC];
-static list_head *pcbFree_h;
+static pcb_t pcb_table[MAX_PROC];
+static list_head pcb_free;
 
 // This function should be called only once during the initialization phase
-void initPcbs()
+void init_pcbs()
 {
     // Initialize the list
-    INIT_LIST_HEAD(pcbFree_h);
+    INIT_LIST_HEAD(&pcb_free);
 
     // Add pcbFree_table elements to the list
     for (int i = 0; i < MAX_PROC; i++) {
         // TODO: check what happens when the element of the array is undefined
-        list_add(&pcbFree_table[i].p_list, pcbFree_h);
+        list_add(&pcb_table[i].p_list, &pcb_free);
     }
 }
 
@@ -37,7 +34,7 @@ void freePcb(pcb_t *p)
     // TODO: Check if the element p is already contained in the list
     // (I don't know if it supposed to be already checked or not, so I'll just
     // leave it like this)
-    list_add(&p->p_list, pcbFree_h);
+    list_add(&p->p_list, &pcb_free);
 }
 
 state_t null_state()
@@ -59,11 +56,11 @@ state_t null_state()
 
 pcb_t *allocPcb()
 {
-    if (list_empty(pcbFree_h)) {
+    if (list_empty(&pcb_free)) {
         return NULL;
     } else {
-        pcb_t *first = container_of(pcbFree_h->next, pcb_t, p_list);
-        list_del(pcbFree_h->next);
+        pcb_t *first = container_of(pcb_free.next, pcb_t, p_list);
+        list_del(pcb_free.next);
         INIT_LIST_HEAD(&(first->p_list));
         INIT_LIST_HEAD(&(first->p_child));
         INIT_LIST_HEAD(&(first->p_sib));
