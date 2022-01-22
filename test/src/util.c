@@ -20,16 +20,12 @@ int main()
     list_head list_heads[len];
     LIST_HEAD(l);
 
-    ensure("an empty list has size 0")
-    {
-        assert(!list_size(&l));
-    }
-    
-    for(i = 0; i < len; ++i)
+    ensure("an empty list has size 0") { assert(!list_size(&l)); }
+
+    for (i = 0; i < len; ++i)
         list_add(&list_heads[i], &l);
     it("returns the corrent length for a list")
     {
         assert(list_size(&l) == len);
     }
 }
-

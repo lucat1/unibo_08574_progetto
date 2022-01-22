@@ -11,7 +11,5 @@
 
 int main()
 {
-    it("correctly initializes the list of PCBs") {
-        assert(1==1);
-    }
+    it("correctly initializes the list of PCBs") { assert(1 == 1); }
 }
