@@ -78,16 +78,17 @@ int main()
         assert(!insert_blocked(&key, example_pcb));
         created = find_semd(get_semd_h(), &key);
     }
+    ensure("insert_blocked actually appends the PCB to the semaphore list") {
+        assert(list_size(&created->s_procq) == 1);
+    }
     ensure("insert_blocked returns an existing semd when available") {
         assert(example_pcb);
         assert(!insert_blocked(&key, example_pcb1));
         assert(list_is_last(&created->s_link, get_semd_h()));
-        printf("%d\n", list_size(&find_semd(get_semd_h(), &key)->s_procq));
     }
     ensure("insert_blocked is fair") {
         assert(remove_blocked(&key) == example_pcb);
         assert(remove_blocked(&key) == example_pcb1);
-        printf("%d\n", list_size(&created->s_procq));
     }
     it("fails when there is no free space for semaphores") {
         list_head *backup_ptr = get_semd_free();
@@ -98,6 +99,44 @@ int main()
         assert(insert_blocked(&key+MAX_PROC, example_pcb));
 
         set_semd_free(backup);
+    }
+    /* out_blocked */
+    ensure("out_blocked fails with a wrong PCB") {
+        assert(!out_blocked(NULL));
+        assert(!out_blocked(example_pcb));           
+        semd_t *semd = alloc_semd(&key);
+        assert(!insert_blocked(&key, example_pcb));
+        list_del(find_semd(get_semd_h(), &key)->s_procq.next);
+        assert(!out_blocked(example_pcb));
+        INIT_LIST_HEAD(&example_pcb->p_list);
+        example_pcb->p_semAdd = NULL;
+        free_semd(semd);
+    }
+    it("removes the appropriate PCB and returns it") {
+        semd_t *semd = alloc_semd(&key);
+        assert(!insert_blocked(&key, example_pcb));
+        assert(!insert_blocked(&key, example_pcb1));
+        assert(out_blocked(example_pcb) == example_pcb);
+        assert(list_size(&semd->s_procq) == 1);
+        assert(list_size(get_semd_h()) == 1);
+        assert(out_blocked(example_pcb1) == example_pcb1);
+        assert(!list_size(get_semd_h()));
+        free_semd(semd);
+    }
+    /* head_blocked */
+    ensure("head_blocked fails with a wrong sem_addr") {
+        assert(!head_blocked(NULL));
+        assert(list_empty(get_semd_h()));
+        assert(!head_blocked(&key));
+    }
+    it("computes the head of a PCB queue without removing it") {
+        semd_t *semd = alloc_semd(&key);
+        assert(!insert_blocked(&key, example_pcb));
+        assert(!insert_blocked(&key, example_pcb1));
+        assert(head_blocked(&key) == example_pcb);
+        assert(list_size(&semd->s_procq) == 2);
+        assert(remove_blocked(&key) == example_pcb);
+        assert(remove_blocked(&key) == example_pcb1);
     }
     /* remove_blocked */
     ensure("remove_blocked fails with a wrong semaphore") {
@@ -115,11 +154,6 @@ int main()
         assert(remove_blocked(&key) == example_pcb1);
 
         assert(list_empty(get_semd_h()));
-    }
-    /* out_blocked */
-    ensure("out_blocked fails with a wrong PCB") {
-        assert(!out_blocked(NULL));
-        
     }
     freePcb(example_pcb);
     freePcb(example_pcb1);

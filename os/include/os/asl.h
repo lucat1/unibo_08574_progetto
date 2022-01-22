@@ -26,7 +26,8 @@ semd_t *find_semd(list_head *list, int *sem_addr);
 
 void init_asl();
 bool insert_blocked(int *sem_addr, pcb_t *p);
-pcb_t *remove_blocked(int *sem_addr);
 pcb_t *out_blocked(pcb_t *pcb);
+pcb_t *head_blocked(int *sem_addr);
+pcb_t *remove_blocked(int *sem_addr);
 
 #endif /* PANDOS_ASL_H */

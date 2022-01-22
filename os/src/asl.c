@@ -10,9 +10,10 @@
 #include "os/util.h"
 #include "umps/types.h"
 
-semd_t semd_table[MAX_PROC];
-list_head semd_free;
-list_head semd_h;
+static semd_t semd_table[MAX_PROC];
+static list_head semd_free;
+static list_head semd_h;
+
 #ifdef PANDOS_TESTING
 semd_t *get_semd_table() { return semd_table; }
 list_head *get_semd_free() { return &semd_free; }
@@ -72,19 +73,6 @@ semd_t *find_semd(list_head *list, int *sem_addr) {
     return NULL;
 }
 
-#ifndef PANDOS_TESTING
-static inline
-#endif
-bool semd_contains(semd_t *semd, pcb_t *pcb)
-{
-    const list_head *iter;
-
-    for(iter = pcb->p_list.next; iter != &pcb->p_list; iter = iter->next)
-        if (iter == &semd->s_procq)
-            return true;
-    return false;
-}
-
 void init_asl()
 {
     size_t i;
@@ -103,7 +91,7 @@ bool insert_blocked(int *sem_addr, pcb_t *p)
     if(!sem_addr || !p || p->p_semAdd)
         return true;
 
-    /* Return error when we run out of memory */
+    /* Return an error when we run out of memory */
     if (!(sem = find_semd(&semd_h, sem_addr)) && !(sem = alloc_semd(sem_addr))) return true;
     list_add_tail(&p->p_list, &sem->s_procq);
     p->p_semAdd = sem_addr;
