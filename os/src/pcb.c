@@ -37,21 +37,19 @@ void freePcb(pcb_t *p)
     list_add(&p->p_list, &pcb_free);
 }
 
-state_t null_state()
+void null_state(state_t *state)
 {
     // TODO: Search on the documentation if
     // there are constants rappresenting these values
-    state_t null_value;
-    null_value.entry_hi = 0;
-    null_value.cause = 0;
-    null_value.status = UNINSTALLED;
-    null_value.pc_epc = 0;
-    null_value.hi = 0;
-    null_value.lo = 0;
+    state->entry_hi = 0;
+    state->cause = 0;
+    state->status = UNINSTALLED;
+    state->pc_epc = 0;
+    state->hi = 0;
+    state->lo = 0;
     for (int i = 0; i < STATE_GPR_LEN; i++) {
-        null_value.gpr[i] = 0;
+        state->gpr[i] = 0;
     }
-    return null_value;
 }
 
 pcb_t *allocPcb()
@@ -65,7 +63,7 @@ pcb_t *allocPcb()
         INIT_LIST_HEAD(&(first->p_child));
         INIT_LIST_HEAD(&(first->p_sib));
         first->p_parent = NULL;
-        first->p_s = null_state();
+        null_state(&first->p_s);
         first->p_time = 0;
         first->p_semAdd = NULL;
         return first;
