@@ -7,6 +7,7 @@ find_program(MIPSEL_CC mipsel-linux-gnu-gcc)
 # Cross-compile for the target environment by default
 # Can be disabled to compile with the system's `cc` and run unit tests locally
 option(CROSS_COMPILE "Cross compile for the MIPS architecture" ON)
+option(DEBUG "Enable GDB debug flags" OFF)
 
 # Locate umps3 header/misc files
 if(NOT DEFINED UMPS3_DIR_PREFIX)
@@ -17,13 +18,17 @@ if(NOT DEFINED UMPS3_DIR_PREFIX)
 endif()
 
 if(CROSS_COMPILE)
-# flags needed to compile to an umps3 binary flags
-    set(CFLAGS_LANG -ffreestanding -ansi)
-    set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G 0 -fpic -mfp32) # Changed flags: -mno-abicalls -fno-pic
-    set(CFLAGS_ALL ${CFLAGS_LANG} ${CFLAGS_MIPS} -pedantic -Wall -O0)
-    set(LDFLAGS_ALL -G 0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
+    # flags needed to compile to an uMPS3 binary
+    set(CFLAGS_LANG -pedantic -Werror -Wall -ffreestanding -ansi -std=gnu99)
+    set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32 -O0)
+    set(CFLAGS_ALL ${CMAKE_C_FLAGS} ${CFLAGS_LANG} ${CFLAGS_MIPS})
+    set(LDFLAGS_ALL ${LDFLAGS_ALL} -no-pie -G 0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
 else()
-    set(CFLAGS_ALL -pedantic -Wall)
+    set(CFLAGS_ALL ${CMAKE_C_FLAGS} ${CFLAGS_LANG})
+endif()
+
+if(DEBUG)
+    set(CFLAGS_ALL ${CFLAGS_ALL} -ggdb)
 endif()
 
 # PLEASE NOTE: subprojects are ignored as needed, that is, based on the target
@@ -34,14 +39,17 @@ endif()
 # any Makefile generated via -DCMAKE_EXPORT_COMPILE_COMMANDS=1 to compile
 # kernels or test libraries.
 
-# The library code for all project phases, as a subproject
-add_subdirectory(os)
 # Unit testing for the shared `os` subproject
-if(NOT CROSS_COMPILE OR CMAKE_EXPORT_COMPILE_COMMANDS)
+if(NOT CROSS_COMPILE)
+    message(STATUS "Testing enabled")
+    add_compile_definitions(PANDOS_TESTING=1)
     add_subdirectory(test)
 endif()
 
-if(CROSS_COMPILE OR CMAKE_EXPORT_COMPILE_COMMANDS)
+# The library code for all project phases, as a subproject
+add_subdirectory(os)
+
+if(CROSS_COMPILE)
     add_subdirectory(phase1)
     # add_subdirectory(phase2)
     # add_subdirectory(phase3)

@@ -9,8 +9,7 @@
 #include "os/pcb.h"
 #include "test/test.h"
 
-/// Runs the tests in question.
 int main()
 {
-    ensure("test1 returns 1") { assert(test1() == 1); }
+    it("correctly initializes the list of PCBs") { assert(1 == 1); }
 }
