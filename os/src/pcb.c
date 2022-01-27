@@ -3,7 +3,7 @@
  * \brief Implementation \ref pcb.h
  *
  * \author Alessandro Frau
- * \author Rovelli Gianmaria
+ * \author Gianmaria Rovelli
  * \date 17-01-2022
  *
  */
