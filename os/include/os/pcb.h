@@ -30,7 +30,7 @@ void init_pcbs();
  *
  * \todo    Test this function
  */
-void freePcb(pcb_t *p);
+void free_pcb(pcb_t *p);
 
 /**
  * \brief   Gets the first free pcb from the list of pcbs
@@ -40,7 +40,18 @@ void freePcb(pcb_t *p);
  *
  * \todo    Test this function
  */
-pcb_t *allocPcb();
+pcb_t *alloc_pcb();
+
+/**
+ *  \brief Checks if the pcb_free list contains a pcb
+ * 
+ *  \param[in] p Pcb that needs to be checked
+ *  
+ *  \return Returns true if the list contains the pcb, false otherwise
+ * 
+ *  \todo Test this function
+ */
+bool pcb_free_contains(pcb_t *p);
 
 /**
  * \brief   creates an empty list of pcb
@@ -50,7 +61,7 @@ pcb_t *allocPcb();
  * \todo    Understand what's supposed to do
  *          because an empty list of pcb is just an empty list(?)
  */
-void mkEmptyProcQ(list_head *head);
+void mk_empty_proc_q(list_head *head);
 
 /**
  * \brief     Checks if the list is empty
@@ -60,7 +71,7 @@ void mkEmptyProcQ(list_head *head);
  *
  * \todo    Test this function
  */
-int emptyProcQ(list_head *head);
+int empty_proc_q(list_head *head);
 
 /**
  * \brief   Insert a pcb element in the tail of a pcb list
@@ -69,7 +80,7 @@ int emptyProcQ(list_head *head);
  *
  * \todo Test this function
  */
-void insertProcQ(list_head *head, pcb_t *p);
+void insert_proc_q(list_head *head, pcb_t *p);
 
 /**
  * \brief   Returns the pointer to the first element of the list
@@ -80,7 +91,7 @@ void insertProcQ(list_head *head, pcb_t *p);
  * \todo    check if the function needs to return a pointer or the actual pcb_t
  * element \todo    Test this function
  */
-pcb_t *headProcQ(list_head *head);
+pcb_t *head_proc_q(list_head *head);
 
 /**
  * \brief   Remove the element from the process list pointed by "head"
@@ -92,7 +103,7 @@ pcb_t *headProcQ(list_head *head);
  *
  * \todo    Test this function
  */
-pcb_t *removeProcQ(list_head *head);
+pcb_t *remove_proc_q(list_head *head);
 
 /**
  * \brief   Remove the process pointed by "p" from the list of process
@@ -106,7 +117,7 @@ pcb_t *removeProcQ(list_head *head);
  *
  * \todo    Test this function
  */
-pcb_t *outProcQ(list_head *head, pcb_t *p);
+pcb_t *out_proc_q(list_head *head, pcb_t *p);
 
 /**
  * \brief   Check if PCB pointed by p has not child
@@ -115,7 +126,7 @@ pcb_t *outProcQ(list_head *head, pcb_t *p);
  * \return  Return TRUE if PCB pointed by "p" has not child, otherwise return
  * FALSE
  */
-int emptyChild(pcb_t *p);
+int empty_child(pcb_t *p);
 
 /**
  * \brief   Add a new PCB as child to "prnt"
@@ -124,7 +135,7 @@ int emptyChild(pcb_t *p);
  *
  * \todo    Test this function
  */
-void insertChild(pcb_t *prnt, pcb_t *p);
+void insert_child(pcb_t *prnt, pcb_t *p);
 
 /**
  * \brief   Remove the first child of PCB pointed by "p"
@@ -135,7 +146,7 @@ void insertChild(pcb_t *prnt, pcb_t *p);
  *
  * \todo    Test this function
  */
-pcb_t *removeChild(pcb_t *p);
+pcb_t *remove_child(pcb_t *p);
 
 /**
  * \brief   Remove the PCB pointed by "p" from the child (p_child) of the parent
@@ -144,6 +155,6 @@ pcb_t *removeChild(pcb_t *p);
  * \return  Return NULL if "p" has not a parent, otherwise return the deleted
  * element ("p")
  */
-pcb_t *outChild(pcb_t *p);
+pcb_t *out_child(pcb_t *p);
 
 #endif /* PANDOS_PCB_H */
