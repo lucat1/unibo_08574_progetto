@@ -14,8 +14,8 @@ int main()
     key = rand();
     init_asl();
     init_pcbs();
-    example_pcb = allocPcb();
-    example_pcb1 = allocPcb();
+    example_pcb = alloc_pcb();
+    example_pcb1 = alloc_pcb();
     /* alloc_semd */
     ensure("alloc_semd fails with a null argument") {
         assert(!alloc_semd(NULL));
@@ -155,6 +155,6 @@ int main()
 
         assert(list_empty(get_semd_h()));
     }
-    freePcb(example_pcb);
-    freePcb(example_pcb1);
+    free_pcb(example_pcb);
+    free_pcb(example_pcb1);
 }
