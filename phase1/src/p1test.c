@@ -12,52 +12,53 @@
  *      Modified by Michael Goldweber on May 15, 2004
  */
 
-#include "os/const.h"
-#include "os/types.h"
-#include "os/pcb.h"
 #include "os/asl.h"
+#include "os/const.h"
+#include "os/pcb.h"
+#include "os/types.h"
 #include <umps/libumps.h>
 
 #define MAXPROC 20
-#define MAXSEM  MAXPROC
+#define MAXSEM MAXPROC
 
-char   okbuf[2048]; /* sequence of progress messages */
-char   errbuf[128]; /* contains reason for failing */
-char   msgbuf[128]; /* nonrecoverable error message before shut down */
-int    sem[MAXSEM];
-int    onesem;
+char okbuf[2048]; /* sequence of progress messages */
+char errbuf[128]; /* contains reason for failing */
+char msgbuf[128]; /* nonrecoverable error message before shut down */
+int sem[MAXSEM];
+int onesem;
 pcb_t *procp[MAXPROC], *p, *q, *firstproc, *lastproc, *midproc;
-char  *mp = okbuf;
-
+char *mp = okbuf;
 
 #define TRANSMITTED 5
-#define ACK         1
-#define PRINTCHR    2
-#define CHAROFFSET  8
-#define STATUSMASK  0xFF
-#define TERM0ADDR   0x10000254
+#define ACK 1
+#define PRINTCHR 2
+#define CHAROFFSET 8
+#define STATUSMASK 0xFF
+#define TERM0ADDR 0x10000254
 
 typedef unsigned int devreg;
 
-/* This function returns the terminal transmitter status value given its address */
-devreg termstat(memaddr *stataddr) {
-    return ((*stataddr) & STATUSMASK);
-}
+/* This function returns the terminal transmitter status value given its address
+ */
+devreg termstat(memaddr *stataddr) { return ((*stataddr) & STATUSMASK); }
 
 /* This function prints a string on specified terminal and returns TRUE if
  * print was successful, FALSE if not   */
-unsigned int termprint(char *str, unsigned int term) {
-    memaddr     *statusp;
-    memaddr     *commandp;
-    devreg       stat;
-    devreg       cmd;
+unsigned int termprint(char *str, unsigned int term)
+{
+    memaddr *statusp;
+    memaddr *commandp;
+    devreg stat;
+    devreg cmd;
     unsigned int error = FALSE;
 
     if (term < DEVPERINT) {
         /* terminal is correct */
         /* compute device register field addresses */
-        statusp  = (devreg *)(TERM0ADDR + (term * DEVREGSIZE) + (TRANSTATUS * DEVREGLEN));
-        commandp = (devreg *)(TERM0ADDR + (term * DEVREGSIZE) + (TRANCOMMAND * DEVREGLEN));
+        statusp = (devreg *)(TERM0ADDR + (term * DEVREGSIZE) +
+                             (TRANSTATUS * DEVREGLEN));
+        commandp = (devreg *)(TERM0ADDR + (term * DEVREGSIZE) +
+                              (TRANCOMMAND * DEVREGLEN));
 
         /* test device status */
         stat = termstat(statusp);
@@ -66,7 +67,7 @@ unsigned int termprint(char *str, unsigned int term) {
 
             /* print cycle */
             while (*str != EOS && !error) {
-                cmd       = (*str << CHAROFFSET) | PRINTCHR;
+                cmd = (*str << CHAROFFSET) | PRINTCHR;
                 *commandp = cmd;
 
                 /* busy waiting */
@@ -91,10 +92,10 @@ unsigned int termprint(char *str, unsigned int term) {
     return (!error);
 }
 
-
 /* This function placess the specified character string in okbuf and
  *	causes the string to be written out to terminal0 */
-void addokbuf(char *strp) {
+void addokbuf(char *strp)
+{
     char *tstrp = strp;
     while ((*mp++ = *strp++) != '\0')
         ;
@@ -102,12 +103,12 @@ void addokbuf(char *strp) {
     termprint(tstrp, 0);
 }
 
-
 /* This function placess the specified character string in errbuf and
  *	causes the string to be written out to terminal0.  After this is done
  *	the system shuts down with a panic message */
-void adderrbuf(char *strp) {
-    char *ep    = errbuf;
+void adderrbuf(char *strp)
+{
+    char *ep = errbuf;
     char *tstrp = strp;
 
     while ((*ep++ = *strp++) != '\0')
@@ -118,9 +119,8 @@ void adderrbuf(char *strp) {
     PANIC();
 }
 
-
-
-int main(void) {
+int main(void)
+{
     int i;
 
     init_pcbs();
@@ -245,7 +245,6 @@ int main(void) {
 
     for (i = 0; i < 10; i++)
         freePcb(procp[i]);
-
 
     /* check ASL */
     init_asl();

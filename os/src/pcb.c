@@ -3,7 +3,7 @@
  * \brief Implementation \ref pcb.h
  *
  * \author Alessandro Frau
- * \author Rovelli Gianmaria
+ * \author Gianmaria Rovelli
  * \date 17-01-2022
  *
  */
@@ -12,7 +12,6 @@
 #include "os/list.h"
 #include "os/types.h"
 #include "os/util.h"
-#include <stdlib.h>
 
 // TODO: Change the names of pcbFree_table and pcbFree_h
 static pcb_t pcb_table[MAX_PROC];
@@ -183,6 +182,8 @@ pcb_t *out_child(pcb_t *p)
     for (; container_of(iter, pcb_t, p_list) != (p);
          iter = iter->next)
         ;
+    
+    pcb_t *t = container_of(iter, pcb_t, p_list);
 
     pcb_t *ret = container_of(iter, pcb_t, p_list);
 
