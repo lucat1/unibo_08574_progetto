@@ -171,7 +171,7 @@ int main()
 
         assert(list_empty(get_semd_h()));
     }
-    freePcb(example_pcb);
-    freePcb(example_pcb1);
+    free_pcb(example_pcb);
+    free_pcb(example_pcb1);
     return 0;
 }

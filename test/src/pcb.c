@@ -69,9 +69,9 @@ int main()
 
     it("correctly added PCB to p_list") {
         insert_proc_q(&(pcb1->p_list), pcb2);
-        assert(list_contains(&(pcb1->p_list), pcb2));
+        assert(list_contains(&pcb1->p_list, &pcb2->p_list));
         insert_proc_q(&(pcb1->p_list), pcb5);
-        assert(list_contains(&(pcb1->p_list), pcb5));
+        assert(list_contains(&(pcb1->p_list), &pcb5->p_list));
         assert(list_size(&(pcb1->p_list)) == 2);
         // check that p_list is not empty
         assert(!empty_proc_q(&(pcb1->p_list)));
