@@ -50,7 +50,8 @@ static inline bool list_contains(const list_head *element,
     return list_search(element, head, exact_cmp) != NULL;
 }
 
-static inline bool list_compare(const list_head *first, const list_head *second){
+static inline bool list_compare(const list_head *first, const list_head *second)
+{
     return list_next(first) == list_next(second);
 }
 

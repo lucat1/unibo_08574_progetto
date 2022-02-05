@@ -44,11 +44,11 @@ pcb_t *alloc_pcb();
 
 /**
  *  \brief Checks if the pcb_free list contains a pcb
- * 
+ *
  *  \param[in] p Pcb that needs to be checked
- *  
+ *
  *  \return Returns true if the list contains the pcb, false otherwise
- * 
+ *
  *  \todo Test this function
  */
 bool pcb_free_contains(pcb_t *p);

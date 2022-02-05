@@ -31,7 +31,7 @@ void init_pcbs()
 }
 
 bool pcb_free_contains(pcb_t *p)
-{   
+{
     return list_contains(&(p->p_list), &pcb_free);
 }
 
@@ -43,7 +43,8 @@ void free_pcb(pcb_t *p)
     list_add(&p->p_list, &pcb_free);
 }
 
-pcb_t *null_pcb(pcb_t *t){
+pcb_t *null_pcb(pcb_t *t)
+{
     // TODO: Search on the documentation if
     // there are constants rappresenting these values
     INIT_LIST_HEAD(&(t->p_list));
@@ -72,7 +73,6 @@ pcb_t *alloc_pcb()
         pcb_t *first = container_of(pcb_free.next, pcb_t, p_list);
         list_del(pcb_free.next);
         return null_pcb(first);
-        
     }
 }
 
@@ -129,19 +129,16 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
     return container_of(iter, pcb_t, p_list);
 }
 
-int empty_child(pcb_t *p)
-{
-    return list_empty(&(p->p_child));
-}
+int empty_child(pcb_t *p) { return list_empty(&(p->p_child)); }
 
 void insert_child(pcb_t *prnt, pcb_t *p)
 {
     p->p_parent = prnt;
     pcb_t *first_child = container_of(&((prnt->p_child)), pcb_t, p_child);
-    
+
     list_add_tail(&(p->p_list), &(prnt->p_child));
     // add p to the list of siblings
-    if(first_child != NULL){
+    if (first_child != NULL) {
         list_add_tail(&(p->p_sib), &(first_child->p_sib));
     }
 }
@@ -153,11 +150,11 @@ pcb_t *remove_child(pcb_t *p)
 
     list_head *first_child_head = list_next(&(p->p_child));
 
-    // if was set container_of with p_child, 
+    // if was set container_of with p_child,
     // this would have returned "p"
     pcb_t *ret = container_of(first_child_head, pcb_t, p_list);
-    
-    // list_next because for first one is useless 
+
+    // list_next because for first one is useless
     list_del((list_next(&(p->p_child))));
     // remove p from siblings list
     // TODO find out why it works !
@@ -166,12 +163,12 @@ pcb_t *remove_child(pcb_t *p)
     ret->p_parent = NULL;
     // clear ret siblings list
     INIT_LIST_HEAD(&(ret->p_sib));
- 
+
     return ret;
 }
 
 pcb_t *out_child(pcb_t *p)
-{   
+{
 
     if (p->p_parent == NULL)
         return NULL;
@@ -179,13 +176,12 @@ pcb_t *out_child(pcb_t *p)
     list_head *iter = list_next(&((p->p_parent)->p_child));
 
     // looking for p element in p_child
-    for (; container_of(iter, pcb_t, p_list) != (p);
-         iter = iter->next)
+    for (; container_of(iter, pcb_t, p_list) != (p); iter = iter->next)
         ;
 
     pcb_t *ret = container_of(iter, pcb_t, p_list);
 
-    // list_next because for first one is useless 
+    // list_next because for first one is useless
     list_del(iter);
     // remove p from siblings list
     // TODO find out why it works !

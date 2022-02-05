@@ -18,7 +18,7 @@ typedef struct data_t {
 
 int cmp_fail(const list_head *first, const list_head *second)
 {
-    return container_of(second, data_t, l)->field != VALUE+1;
+    return container_of(second, data_t, l)->field != VALUE + 1;
 }
 
 int cmp(const list_head *first, const list_head *second)
@@ -45,10 +45,12 @@ int main()
         assert(list_size(&l) == len);
     }
 
-    ensure("list_search returns NULL when no matches are found") {
+    ensure("list_search returns NULL when no matches are found")
+    {
         assert(!list_search(NULL, &l, cmp_fail));
     }
-    ensure("list_search returns the correct head when it matches") {
+    ensure("list_search returns the correct head when it matches")
+    {
         assert(list_search(NULL, &l, cmp));
     }
     return 0;
