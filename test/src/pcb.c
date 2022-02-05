@@ -12,12 +12,8 @@
 
 int main()
 {
-
     pcb_t *pcb1, *pcb2, *pcb5;
-    pcb_t *pcb_child1, *pcb_child2;
-    init_pcbs();
-
-    it("correctly allocated MAX_PROC PCBs")
+    pcb_t *pcb_child1, *pcb_child2; init_pcbs(); it("correctly allocated MAX_PROC PCBs")
     {
         for(int i = 0; i < MAX_PROC; i++) {
             pcb2 = pcb1;
@@ -182,4 +178,5 @@ int main()
         assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)))
         assert(!list_contains(&(pcb_child2->p_list), &(pcb_child1->p_sib)))
     }
+    return 0;
 }

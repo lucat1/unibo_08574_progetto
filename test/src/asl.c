@@ -63,10 +63,6 @@ int main()
     /* init_asl */
     it("intializes the table of semaphores correctly")
     {
-        int i;
-        semd_t *semd_table;
-
-        semd_table = get_semd_table();
         assert(list_size(get_semd_free()) == MAX_PROC);
         assert(list_empty(get_semd_h()));
     }
@@ -175,6 +171,7 @@ int main()
 
         assert(list_empty(get_semd_h()));
     }
-    free_pcb(example_pcb);
-    free_pcb(example_pcb1);
+    freePcb(example_pcb);
+    freePcb(example_pcb1);
+    return 0;
 }

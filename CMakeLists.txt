@@ -2,14 +2,17 @@ cmake_minimum_required (VERSION 3.5)
 project(Pandos+ VERSION 0.1 LANGUAGES C ASM)
 enable_testing()
 
-find_program(MIPSEL_CC mipsel-linux-gnu-gcc)
 
 # Cross-compile for the target environment by default
 # Can be disabled to compile with the system's `cc` and run unit tests locally
 option(CROSS_COMPILE "Cross compile for the MIPS architecture" ON)
 option(DEBUG "Enable GDB debug flags" OFF)
+set(XT_PRG_PREFIX "mipsel-linux-gnu-" CACHE STRING "GCC cross compiler prefix")
 
-# Locate umps3 header/misc files
+find_program(MIPSEL_CC ${XT_PRG_PREFIX}gcc REQUIRED)
+find_program(MIPSEL_LD ${XT_PRG_PREFIX}ld REQUIRED)
+
+# Locate the UMPS3 header/obj files
 if(NOT DEFINED UMPS3_DIR_PREFIX)
     set(UMPS3_DIR_PREFIX /usr)
     if(EXISTS /usr/local/bin/umps3)
@@ -17,12 +20,12 @@ if(NOT DEFINED UMPS3_DIR_PREFIX)
     endif()
 endif()
 
+set(CFLAGS_LANG -pedantic -Werror -Wall -ffreestanding -ansi -std=gnu99)
 if(CROSS_COMPILE)
-    # flags needed to compile to an uMPS3 binary
-    set(CFLAGS_LANG -pedantic -Werror -Wall -ffreestanding -ansi -std=gnu99)
-    set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32 -O0)
+    # Compile the kernel binary to a bare metal executable with these flags
+    set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -EL -G0 -O0 -mno-abicalls -fno-pic -mfp32)
     set(CFLAGS_ALL ${CMAKE_C_FLAGS} ${CFLAGS_LANG} ${CFLAGS_MIPS})
-    set(LDFLAGS_ALL ${LDFLAGS_ALL} -no-pie -G 0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript)
+    set(LDFLAGS_ALL ${LDFLAGS_ALL} -G0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpscore.ldscript -melf32ltsmip)
 else()
     set(CFLAGS_ALL ${CMAKE_C_FLAGS} ${CFLAGS_LANG})
 endif()
@@ -41,7 +44,7 @@ endif()
 
 # Unit testing for the shared `os` subproject
 if(NOT CROSS_COMPILE)
-    message(STATUS "Testing enabled")
+    message(STATUS "Cross compilation disabled: testing enabled")
     add_compile_definitions(PANDOS_TESTING=1)
     add_subdirectory(test)
 endif()
@@ -67,5 +70,5 @@ if(DOXYGEN_FOUND)
         COMMENT "Generating documentation"
         VERBATIM)
 else()
-  message(WARNING "Doxygen missing: documentation will not be generated")
+    message(STATUS "Doxygen missing: documentation will not be generated")
 endif()

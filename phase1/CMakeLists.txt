@@ -4,6 +4,8 @@ add_executable(${PROJECT_NAME}
 )
 
 set(CMAKE_C_COMPILER ${MIPSEL_CC})
+# Force the MIPS linker to avoid the GCC fronted that screws things up
+set(CMAKE_C_LINK_EXECUTABLE "${MIPSEL_LD} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS_ALL})
 target_link_options(${PROJECT_NAME} PRIVATE ${LDFLAGS_ALL})
 target_include_directories(${PROJECT_NAME} PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)
