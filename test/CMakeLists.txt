@@ -7,6 +7,7 @@ foreach(TST ${TEST_FILES})
     add_executable(${TEST_NAME} src/${TST}.c)
     add_test(${TST} ${TEST_NAME})
 
+    target_compile_options(${TEST_NAME} PRIVATE ${CFLAGS_ALL})
     target_include_directories(${TEST_NAME}
         PUBLIC ${PROJECT_SOURCE_DIR}/include
         PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)

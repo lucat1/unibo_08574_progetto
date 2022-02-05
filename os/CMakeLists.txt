@@ -10,6 +10,8 @@ add_library(sub::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if(CROSS_COMPILE)
     set(CMAKE_C_COMPILER ${MIPSEL_CC})
+    # Force the MIPS linker to avoid the GCC fronted that screws things up
+    set(CMAKE_C_LINK_EXECUTABLE "${MIPSEL_LD} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
     set(CMAKE_ASM_COMPILER ${MIPSEL_CC})
 
     foreach(ASM ${ASMS})

@@ -51,4 +51,5 @@ int main()
     ensure("list_search returns the correct head when it matches") {
         assert(list_search(NULL, &l, cmp));
     }
+    return 0;
 }
