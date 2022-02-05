@@ -65,9 +65,9 @@ int main()
     {
         mk_empty_proc_q(&(pcb1->p_list));
         // check that p_list is initialized
-        assert(&(pcb1->p_list) != NULL)
-            // check that p_list is empty
-            assert(empty_proc_q(&(pcb1->p_list)));
+        assert(&(pcb1->p_list) != NULL);
+        // check that p_list is empty
+        assert(empty_proc_q(&(pcb1->p_list)));
         // check that p_list is empty
         assert(head_proc_q(&(pcb1->p_list)) == NULL);
         assert(list_empty(&(pcb1->p_list)));
@@ -150,13 +150,13 @@ int main()
     {
         assert(remove_child(pcb1) == pcb_child1);
         assert(list_empty(&(pcb_child1->p_sib)));
-        assert(!list_contains(&(pcb_child1->p_list), &(pcb1->p_child)))
-            assert(pcb_child1->p_parent == NULL);
+        assert(!list_contains(&(pcb_child1->p_list), &(pcb1->p_child)));
+        assert(pcb_child1->p_parent == NULL);
 
         assert(remove_child(pcb1) == pcb_child2);
         assert(list_empty(&(pcb_child2->p_sib)));
-        assert(!list_contains(&(pcb_child2->p_list), &(pcb1->p_child)))
-            assert(pcb_child2->p_parent == NULL);
+        assert(!list_contains(&(pcb_child2->p_list), &(pcb1->p_child)));
+        assert(pcb_child2->p_parent == NULL);
 
         assert(list_empty(&(pcb1->p_child)));
 
@@ -180,12 +180,12 @@ int main()
 
         assert(out_child(pcb_child2) == pcb_child2);
         assert(pcb_child2->p_parent == NULL);
-        assert(!list_contains(&(pcb_child2->p_list), &(pcb1->p_child)))
-            assert(list_empty(&(pcb1->p_child)));
+        assert(!list_contains(&(pcb_child2->p_list), &(pcb1->p_child)));
+        assert(list_empty(&(pcb1->p_child)));
 
         // pcb_child2 and pcb_child1 are not sibligns
-        assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)))
-            assert(!list_contains(&(pcb_child2->p_list), &(pcb_child1->p_sib)))
+        assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)));
+        assert(!list_contains(&(pcb_child2->p_list), &(pcb_child1->p_sib)));
     }
     return 0;
 }
