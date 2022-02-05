@@ -182,8 +182,6 @@ pcb_t *out_child(pcb_t *p)
     for (; container_of(iter, pcb_t, p_list) != (p);
          iter = iter->next)
         ;
-    
-    pcb_t *t = container_of(iter, pcb_t, p_list);
 
     pcb_t *ret = container_of(iter, pcb_t, p_list);
 
