@@ -80,7 +80,7 @@ int main()
     example_pcb->p_semAdd = NULL;
     ensure("insert_blocked creates a new semd when required")
     {
-        assert(example_pcb);
+        assert(example_pcb != NULL);
         assert(!insert_blocked(&key, example_pcb));
         created = find_semd(get_semd_h(), &key);
     }
@@ -90,7 +90,7 @@ int main()
     }
     ensure("insert_blocked returns an existing semd when available")
     {
-        assert(example_pcb);
+        assert(example_pcb != NULL);
         assert(!insert_blocked(&key, example_pcb1));
         assert(list_is_last(&created->s_link, get_semd_h()));
     }
@@ -113,12 +113,12 @@ int main()
     /* out_blocked */
     ensure("out_blocked fails with a wrong PCB")
     {
-        assert(!out_blocked(NULL));
-        assert(!out_blocked(example_pcb));
+        assert(out_blocked(NULL) == NULL);
+        assert(out_blocked(example_pcb) == NULL);
         semd_t *semd = alloc_semd(&key);
         assert(!insert_blocked(&key, example_pcb));
         list_del(find_semd(get_semd_h(), &key)->s_procq.next);
-        assert(!out_blocked(example_pcb));
+        assert(out_blocked(example_pcb) == NULL);
         INIT_LIST_HEAD(&example_pcb->p_list);
         example_pcb->p_semAdd = NULL;
         free_semd(semd);
@@ -138,9 +138,9 @@ int main()
     /* head_blocked */
     ensure("head_blocked fails with a wrong sem_addr")
     {
-        assert(!head_blocked(NULL));
+        assert(head_blocked(NULL) == NULL);
         assert(list_empty(get_semd_h()));
-        assert(!head_blocked(&key));
+        assert(head_blocked(&key) == NULL);
     }
     it("computes the head of a PCB queue without removing it")
     {
@@ -155,8 +155,8 @@ int main()
     /* remove_blocked */
     ensure("remove_blocked fails with a wrong semaphore")
     {
-        assert(!remove_blocked(NULL));
-        assert(!remove_blocked(&key));
+        assert(remove_blocked(NULL) == NULL);
+        assert(remove_blocked(&key) == NULL);
     }
     ensure("remove_blocked returns the right pcb")
     {

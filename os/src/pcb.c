@@ -17,6 +17,11 @@
 static pcb_t pcb_table[MAX_PROC];
 static list_head pcb_free;
 
+#ifdef PANDOS_TESTING
+pcb_t *get_pcb_table() { return pcb_table; }
+list_head *get_pcb_free() { return &pcb_free; }
+#endif
+
 // This function should be called only once during the initialization phase
 void init_pcbs()
 {

@@ -8,6 +8,7 @@
 
 #include "os/util.h"
 #include "test/test.h"
+#include <string.h>
 
 #define VALUE 1337
 
@@ -52,6 +53,22 @@ int main()
     ensure("list_search returns the correct head when it matches")
     {
         assert(list_search(NULL, &l, cmp));
+    }
+    ensure("itoa doesn't output when there isn't enough space") {
+        char str[1];
+        assert(!itoa(10, str, 1));
+    }
+    ensure("itoa produes the right output") {
+        char str[3];
+        assert(itoa(10, str, 3));
+        assert(!strcmp(str, "10"));
+        assert(itoa(-1, str, 3));
+        assert(!strcmp(str, "-1"));
+    }
+    ensure("itoa trims the space to the right") {
+        char str[100];
+        assert(itoa(101, str, 100));
+        assert(!strcmp(str, "101"));
     }
     return 0;
 }

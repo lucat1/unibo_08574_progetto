@@ -29,7 +29,7 @@ static inline
 {
     semd_t *sem;
 
-    if (!sem_addr || list_empty(&semd_free))
+    if (sem_addr == NULL || list_empty(&semd_free))
         return NULL;
 
     sem = container_of(semd_free.next, semd_t, s_link);
@@ -48,7 +48,7 @@ static inline
     bool
     free_semd(semd_t *sem)
 {
-    if (!sem || !list_empty(&sem->s_procq))
+    if (sem == NULL || !list_empty(&sem->s_procq))
         return true;
 
     list_del(&sem->s_link);
@@ -65,7 +65,7 @@ static inline
     list_head *iter;
     semd_t *sem;
 
-    if (!list || !sem_addr)
+    if (list == NULL || sem_addr == NULL)
         return NULL;
     for (iter = list->next; iter != list; iter = iter->next) {
         if ((sem = container_of(iter, semd_t, s_link))->s_key == sem_addr)
@@ -90,12 +90,16 @@ int insert_blocked(int *sem_addr, pcb_t *p)
 {
     semd_t *sem;
 
-    if (!sem_addr || !p || p->p_semAdd)
+    if (sem_addr == NULL)
         return 1;
+    if(p == NULL)
+        return 2;
+    if(p->p_semAdd != NULL)
+        return 3;
 
     /* Return an error when we run out of memory */
-    if (!(sem = find_semd(&semd_h, sem_addr)) && !(sem = alloc_semd(sem_addr)))
-        return 2;
+    if ((sem = find_semd(&semd_h, sem_addr)) == NULL && (sem = alloc_semd(sem_addr)) == NULL)
+        return 4;
     list_add_tail(&p->p_list, &sem->s_procq);
     p->p_semAdd = sem_addr;
     return 0;
@@ -104,7 +108,7 @@ int insert_blocked(int *sem_addr, pcb_t *p)
 pcb_t *out_blocked(pcb_t *pcb)
 {
     semd_t *sem;
-    if (!pcb || !(sem = find_semd(&semd_h, pcb->p_semAdd)) ||
+    if (pcb == NULL || (sem = find_semd(&semd_h, pcb->p_semAdd)) == NULL ||
         !list_contains(&pcb->p_list, &sem->s_procq))
         return NULL;
 
@@ -118,7 +122,7 @@ pcb_t *out_blocked(pcb_t *pcb)
 pcb_t *head_blocked(int *sem_addr)
 {
     semd_t *sem;
-    if (!sem_addr || !(sem = find_semd(&semd_h, sem_addr)))
+    if (sem_addr == NULL || (sem = find_semd(&semd_h, sem_addr)) == NULL)
         return NULL;
     /* Assumes that a semd in semd_h contains at least one pcb */
     return container_of(sem->s_procq.next, pcb_t, p_list);
