@@ -56,18 +56,18 @@ int main()
     }
     ensure("itoa doesn't output when there isn't enough space") {
         char str[1];
-        assert(!itoa(10, str, 1));
+        assert(!itoa(str, 1, 10));
     }
     ensure("itoa produes the right output") {
         char str[3];
-        assert(itoa(10, str, 3));
+        assert(itoa(str, 3, 10));
         assert(!strcmp(str, "10"));
-        assert(itoa(-1, str, 3));
+        assert(itoa(str, 3, -1));
         assert(!strcmp(str, "-1"));
     }
     ensure("itoa trims the space to the right") {
         char str[100];
-        assert(itoa(101, str, 100));
+        assert(itoa(str, 100, 101));
         assert(!strcmp(str, "101"));
     }
     return 0;
