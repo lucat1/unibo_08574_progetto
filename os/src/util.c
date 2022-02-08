@@ -1,7 +1,7 @@
 #include "os/util.h"
 
 #ifdef __x86_64__
-#include <stdio.h>
+#include <stdarg.h>
 #define arg va_arg
 #else
 #define arg(varg, type) (type) *((type *)varg++)
@@ -30,47 +30,81 @@ int itoa(char *str, size_t len, int i) {
   return c;
 }
 
-int strncpy(char *dest, const char *str, const int len) {
+size_t __printf(void *target, size_t (* writer)(void *, const char *), const char *fmt, 
+#ifdef __x86_64__
+    va_list varg
+#else
+    int *varg
+#endif
+){
+    size_t wr, last_wrote;
+
+	  for (wr = 0; *fmt != '\0'; ++fmt, wr += last_wrote) {
+        if (*fmt == '%') {
+            ++fmt;
+            if( *fmt == 's' ) 
+                last_wrote = writer(target, arg(varg, char *));
+            else if( *fmt == 'd' ) {
+                // TODO: itoa digit by digit to remove the fixed string limit
+                char str[10];
+                itoa(str, 10, arg(varg, int));
+                last_wrote = writer(target, str);
+            } else if(*fmt == '%') {
+              char str[2] = "%";
+              last_wrote = writer(target, str);
+            } else {
+              char str[3] = {*(fmt-1), *fmt, '\0'};
+              last_wrote = writer(target, str);
+            }
+        } else {
+            char str[2] = {*fmt, '\0'};
+            last_wrote = writer(target, str);
+        }
+        if(!last_wrote)
+          break;
+    }
+    // if we stpped printing because of a writer error, make sure to print the ending null character
+    if(*fmt != '\0') {
+      char end = '\0';
+      wr += writer(target, &end);
+    }
+    return wr;
+}
+
+typedef struct str_writer {
+  char *str;
+  size_t size, wrote;
+} str_writer_t;
+
+size_t str_writer(void *dest, const char *data) {
+  str_writer_t *d;
   int i;
 
+  d = (str_writer_t *) dest;
   i = 0;
-  while(i < len && str[i] != '\0' && (*(dest+i) = str[i]))
-    ++i;
+  // Make sure we always write the NULL terminator
+  if(*data == '\0')
+    *(d->str + (d->wrote >= d->size-1 ? d->wrote : ++d->wrote)) = '\0';
+  else
+    while(d->wrote+i < d->size-1 && (*(d->str+d->wrote+i) = data[i]))
+      ++i;
 
+  d->wrote += i;
   return i;
 }
 
 int snprintf(char *dest, size_t len, const char *fmt, ...) {
+    str_writer_t w = {dest, len, 0};
     #ifdef __x86_64__
     va_list varg;
     va_start(varg, fmt);
     #else
-    int *varg = (int *)(&fmt + 1);
+    int *varg;
+    varg = (int *)(&fmt + 1);
     #endif
-    char *format, *pos;
-    --len; // leave one char for the trailing '\0'
-
-	  for (format = (char*)fmt, pos = dest; *format != '\0' && pos < dest+len; ++format) {
-        if (*format == '%') {
-            ++format;
-            if (*format == '\0') break; // error: unterminated replace directive
-            if (*format == '%') goto out;
-            if( *format == 's' ) 
-                pos += strncpy(pos, arg(varg, const char *), len-(pos-dest));
-            else if( *format == 'd' )
-                pos += itoa(pos, len-(pos-dest), arg(varg, int));
-            else {
-              *(pos++) = '%';
-              goto out;
-            }
-        } else {
-  out:
-            *(pos++) = *format;
-        }
-    }
-    *(dest == pos ? pos : ++pos) = '\0';
+    size_t res = __printf((void *) &w, str_writer, fmt, varg);
     #ifdef __x86_64__
     va_end(varg);
     #endif
-    return pos-dest;
+    return res;
 }
