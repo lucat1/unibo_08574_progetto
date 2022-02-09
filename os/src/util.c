@@ -51,7 +51,8 @@ int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
         wr = writer(target, digit);
     }
 
-    // always write the string termination char (but don't count it as str length)
+    // always write the string termination char (but don't count it as str
+    // length)
     writer(target, end);
     return wrote;
 }
@@ -74,13 +75,13 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
                     break;
                 case 'p': {
                     memaddr ptr = varg_arg(varg, memaddr);
-                    if (ptr == (memaddr) NULL) {
+                    if (ptr == (memaddr)NULL) {
                         char *str = "(null)";
                         last_wrote = writer(target, str);
                     } else {
                         char *str = "0x";
                         last_wrote = writer(target, str);
-                        last_wrote += __itoa(target, writer, (int) ptr, 16);
+                        last_wrote += __itoa(target, writer, (int)ptr, 16);
                     }
                     break;
                 }
@@ -125,7 +126,7 @@ size_t str_writer(void *dest, const char *data)
     i = 0;
     // Make sure we always write the NULL char (in the approriate location)
     if (*data == '\0')
-        *(d->str + (d->wrote >= d->size - 1 ? d->wrote : d->wrote+1)) = '\0';
+        *(d->str + (d->wrote >= d->size - 1 ? d->wrote : d->wrote + 1)) = '\0';
     else
         while (d->wrote + i < d->size - 1 &&
                (*(d->str + d->wrote + i) = data[i]) != '\0')

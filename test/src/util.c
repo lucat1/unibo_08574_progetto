@@ -8,8 +8,8 @@
 
 #include "os/util.h"
 #include "test/test.h"
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #define VALUE 1337
 
@@ -55,26 +55,30 @@ int main()
     {
         assert(list_search(NULL, &l, cmp));
     }
-    ensure("str_writer respects the given length of a string") {
-      char str[100];
-      str_writer_t w = {str, 100, 0};
-      assert(str_writer((void *) &w, "t") == 1);
-      assert(str_writer((void *) &w, "es") == 2);
-      assert(str_writer((void *) &w, "t ") == 2);
-      assert(str_writer((void *) &w, " test ") == 6);
-      assert(str_writer((void *) &w, "test   ") == 7);
-      char *end = "";
-      assert(!str_writer((void *) &w, end));
+    ensure("str_writer respects the given length of a string")
+    {
+        char str[100];
+        str_writer_t w = {str, 100, 0};
+        assert(str_writer((void *)&w, "t") == 1);
+        assert(str_writer((void *)&w, "es") == 2);
+        assert(str_writer((void *)&w, "t ") == 2);
+        assert(str_writer((void *)&w, " test ") == 6);
+        assert(str_writer((void *)&w, "test   ") == 7);
+        char *end = "";
+        assert(!str_writer((void *)&w, end));
     }
-    ensure("itoa doesn't output when there isn't enough space") {
+    ensure("itoa doesn't output when there isn't enough space")
+    {
         char str[1];
         assert(!nitoa(10, 10, str, 1));
     }
-    ensure("itoa returns the right amount of chars written") {
+    ensure("itoa returns the right amount of chars written")
+    {
         char str[3];
         assert(nitoa(13, 10, str, 3) == 2);
     }
-    ensure("itoa produes the right output") {
+    ensure("itoa produes the right output")
+    {
         char str[5];
         assert(nitoa(9, 10, str, 2));
         assert(!strcmp(str, "9"));
@@ -89,29 +93,33 @@ int main()
         assert(nitoa(28438, 16, str, 5));
         assert(!strcmp(str, "6f16"));
     }
-    ensure("itoa trims the space to the right") {
+    ensure("itoa trims the space to the right")
+    {
         char str[100];
         assert(nitoa(101, 10, str, 100));
         assert(!strcmp(str, "101"));
     }
-    ensure("__printf (snprintf) expands strings") {
-      char str[10];
-      pandos_snprintf(str, 10,"he%s","llo");
-      assert(!strcmp(str, "hello"));
+    ensure("__printf (snprintf) expands strings")
+    {
+        char str[10];
+        pandos_snprintf(str, 10, "he%s", "llo");
+        assert(!strcmp(str, "hello"));
     }
-    ensure("__printf (snprintf) expands numbers") {
-      char str[10];
-      pandos_snprintf(str, 10,"%d%d", 13, 37);
-      assert(!strcmp(str, "1337"));
+    ensure("__printf (snprintf) expands numbers")
+    {
+        char str[10];
+        pandos_snprintf(str, 10, "%d%d", 13, 37);
+        assert(!strcmp(str, "1337"));
     }
-    ensure("snprintf trims at the given length") {
-      char str[5];
-      pandos_snprintf(str, 5, "Hello World");
-      assert(!strcmp(str, "Hell"));
-      pandos_snprintf(str, 5, "He%s World", "llo");
-      assert(!strcmp(str, "Hell"));
-      pandos_snprintf(str, 2, "%d%d", 13, 37);
-      assert(!strcmp(str, "1"));
+    ensure("snprintf trims at the given length")
+    {
+        char str[5];
+        pandos_snprintf(str, 5, "Hello World");
+        assert(!strcmp(str, "Hell"));
+        pandos_snprintf(str, 5, "He%s World", "llo");
+        assert(!strcmp(str, "Hell"));
+        pandos_snprintf(str, 2, "%d%d", 13, 37);
+        assert(!strcmp(str, "1"));
     }
     return 0;
 }
