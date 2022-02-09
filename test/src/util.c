@@ -99,6 +99,12 @@ int main()
         assert(nitoa(101, 10, str, 100));
         assert(!strcmp(str, "101"));
     }
+    ensure("__printf (snprintf) expands chars")
+    {
+        char str[10];
+        pandos_snprintf(str, 10, "he%c%c%c", 'l', 'l', 'o');
+        assert(!strcmp(str, "hello"));
+    }
     ensure("__printf (snprintf) expands strings")
     {
         char str[10];

@@ -69,6 +69,11 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
                 case 's':
                     last_wrote = writer(target, varg_arg(varg, char *));
                     break;
+                case 'c': {
+                    char str[2] = {varg_arg(varg, int), '\0'};
+                    last_wrote = writer(target, str);
+                    break;
+                }
                 case 'd':
                     last_wrote =
                         __itoa(target, writer, varg_arg(varg, int), 10);
