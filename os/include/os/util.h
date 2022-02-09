@@ -70,6 +70,15 @@ static inline void list_print(const list_head *head)
 }
 #endif
 
+#ifdef PANDOS_TESTING
+typedef struct str_writer {
+    char *str;
+    size_t size, wrote;
+} str_writer_t;
+
+size_t str_writer(void *dest, const char *data);
+#endif
+
 int nitoa(int i, int base, char *dest, size_t len);
 int pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
 int pandos_sprintf(int fd, const char *fmt, ...);

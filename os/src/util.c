@@ -13,7 +13,7 @@
 #define varg_end(varg) /* noop */
 #endif
 
-static char *end = "\0";
+static char *end = "";
 
 // Computes the power of a given intger base to the given *unsigned* intereger
 // exponent in log(n) time
@@ -46,12 +46,13 @@ int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
     int wr = 1;
     for (exp = pow(base, digits - 1); digits && wr;
          --digits, i %= exp, exp /= base, wrote += wr) {
-        char digit[2] = {'0' + (i / exp), '\0'};
+        int r = (i / exp); // remainder
+        char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
         wr = writer(target, digit);
     }
 
-    if (digits)
-        writer(target, end);
+    // always write the string termination char (but don't count it as str length)
+    writer(target, end);
     return wrote;
 }
 
@@ -63,16 +64,36 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
     for (wr = 0; *fmt != '\0'; ++fmt, wr += last_wrote) {
         if (*fmt == '%') {
             ++fmt;
-            if (*fmt == 's')
-                last_wrote = writer(target, varg_arg(varg, char *));
-            else if (*fmt == 'd')
-                last_wrote = __itoa(target, writer, varg_arg(varg, int), 10);
-            else if (*fmt == '%') {
-                char str[2] = "%";
-                last_wrote = writer(target, str);
-            } else {
-                char str[3] = {*(fmt - 1), *fmt, '\0'};
-                last_wrote = writer(target, str);
+            switch (*fmt) {
+                case 's':
+                    last_wrote = writer(target, varg_arg(varg, char *));
+                    break;
+                case 'd':
+                    last_wrote =
+                        __itoa(target, writer, varg_arg(varg, int), 10);
+                    break;
+                case 'p': {
+                    memaddr ptr = varg_arg(varg, memaddr);
+                    if (ptr == (memaddr) NULL) {
+                        char *str = "(null)";
+                        last_wrote = writer(target, str);
+                    } else {
+                        char *str = "0x";
+                        last_wrote = writer(target, str);
+                        last_wrote += __itoa(target, writer, (int) ptr, 16);
+                    }
+                    break;
+                }
+                case '%': {
+                    char *str = "%";
+                    last_wrote = writer(target, str);
+                    break;
+                }
+                default: {
+                    char str[3] = {*(fmt - 1), *fmt, '\0'};
+                    last_wrote = writer(target, str);
+                    break;
+                }
             }
         } else {
             char str[2] = {*fmt, '\0'};
@@ -88,10 +109,12 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
     return wr;
 }
 
+#ifndef PANDOS_TESTING
 typedef struct str_writer {
     char *str;
     size_t size, wrote;
 } str_writer_t;
+#endif
 
 size_t str_writer(void *dest, const char *data)
 {
@@ -102,10 +125,10 @@ size_t str_writer(void *dest, const char *data)
     i = 0;
     // Make sure we always write the NULL char (in the approriate location)
     if (*data == '\0')
-        *(d->str + (d->wrote >= d->size - 1 ? d->wrote : ++d->wrote)) = '\0';
+        *(d->str + (d->wrote >= d->size - 1 ? d->wrote : d->wrote+1)) = '\0';
     else
         while (d->wrote + i < d->size - 1 &&
-               (*(d->str + d->wrote + i) = data[i]))
+               (*(d->str + d->wrote + i) = data[i]) != '\0')
             ++i;
 
     d->wrote += i;
