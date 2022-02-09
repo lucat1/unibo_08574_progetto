@@ -70,7 +70,9 @@ static inline void list_print(const list_head *head)
 }
 #endif
 
-int itoa(char *dest, size_t len, int);
-int snprintf(char *dest, size_t len, const char *fmt, ...);
+int nitoa(int i, int base, char *dest, size_t len);
+int pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
+int pandos_sprintf(int fd, const char *fmt, ...);
+int pandos_printf(const char *fmt, ...);
 
 #endif /* PANDOS_UTIL_H */
