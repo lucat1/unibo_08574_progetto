@@ -117,6 +117,8 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
     return wr;
 }
 
+// We don't expose private types in the header when we're not testing so they
+// have to be defined here
 #ifndef PANDOS_TESTING
 typedef struct str_writer {
     char *str;
@@ -143,13 +145,13 @@ size_t str_writer(void *dest, const char *data)
     return i;
 }
 
-int nitoa(int i, int base, char *dest, size_t len)
+size_t nitoa(int i, int base, char *dest, size_t len)
 {
     str_writer_t w = {dest, len, 0};
     return __itoa((void *)&w, str_writer, i, base);
 }
 
-int pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
+size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
 {
     str_writer_t w = {dest, len, 0};
     varg_type varg;
@@ -198,7 +200,7 @@ size_t serial_writer(void *dest, const char *data)
     return it - data;
 }
 
-int pandos_fprintf(int fd, const char *fmt, ...)
+size_t pandos_fprintf(int fd, const char *fmt, ...)
 {
     termreg_t *term = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, fd);
     varg_type varg;
