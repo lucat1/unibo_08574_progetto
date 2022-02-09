@@ -1,4 +1,6 @@
 #include "os/util.h"
+#include <umps/arch.h>
+#include <umps/libumps.h>
 
 #ifdef __x86_64__
 #include <stdarg.h>
@@ -157,16 +159,52 @@ int pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
     return res;
 }
 
-typedef int serial_writer_t;
+#ifndef __x86_64__
+#define ST_READY 1
+#define ST_BUSY 3
+#define ST_TRANSMITTED 5
+#define CMD_ACK 1
+#define CMD_TRANSMIT 2
+#define CHAR_OFFSET 8
+#define TERM_STATUS_MASK 0xFF
+#define term_status(tp) ((tp->transm_status) & TERM_STATUS_MASK)
+typedef unsigned int devreg;
 
-size_t serial_writer(void *dest, const char *data) { return 0; }
-
-int pandos_sprintf(int fd, const char *fmt, ...)
+int term_putchar(termreg_t *term, char c)
 {
-    serial_writer_t w = fd;
+    devreg stat;
+
+    stat = term_status(term);
+    if (stat != ST_READY && stat != ST_TRANSMITTED)
+        return 1;
+
+    term->transm_command = ((c << CHAR_OFFSET) | CMD_TRANSMIT);
+    while ((stat = term_status(term)) == ST_BUSY)
+        ;
+
+    term->transm_command = CMD_ACK;
+    return (stat == ST_TRANSMITTED) ? 0 : 2;
+}
+
+size_t serial_writer(void *dest, const char *data)
+{
+    char *it;
+    termreg_t *term;
+
+    for (term = (termreg_t *)dest, it = (char *)data; *it != '\0'; ++it)
+        if (term_putchar(term, *it))
+            break;
+
+    return it - data;
+}
+
+int pandos_fprintf(int fd, const char *fmt, ...)
+{
+    termreg_t *term = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, fd);
     varg_type varg;
     varg_init(varg, fmt);
-    size_t res = __printf((void *)&w, serial_writer, fmt, varg);
+    size_t res = __printf(term, serial_writer, fmt, varg);
     varg_end(varg);
     return res;
 }
+#endif

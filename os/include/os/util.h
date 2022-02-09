@@ -81,7 +81,10 @@ size_t str_writer(void *dest, const char *data);
 
 int nitoa(int i, int base, char *dest, size_t len);
 int pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
-int pandos_sprintf(int fd, const char *fmt, ...);
-int pandos_printf(const char *fmt, ...);
+
+#ifndef __x86_64__
+int pandos_fprintf(int fd, const char *fmt, ...);
+#define pandos_printf(...) pandos_fprintf(0, __VA_ARGS__)
+#endif
 
 #endif /* PANDOS_UTIL_H */
