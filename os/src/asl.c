@@ -92,13 +92,14 @@ int insert_blocked(int *sem_addr, pcb_t *p)
 
     if (sem_addr == NULL)
         return 1;
-    if(p == NULL)
+    if (p == NULL)
         return 2;
-    if(p->p_semAdd != NULL)
+    if (p->p_semAdd != NULL)
         return 3;
 
     /* Return an error when we run out of memory */
-    if ((sem = find_semd(&semd_h, sem_addr)) == NULL && (sem = alloc_semd(sem_addr)) == NULL)
+    if ((sem = find_semd(&semd_h, sem_addr)) == NULL &&
+        (sem = alloc_semd(sem_addr)) == NULL)
         return 4;
     list_add_tail(&p->p_list, &sem->s_procq);
     p->p_semAdd = sem_addr;

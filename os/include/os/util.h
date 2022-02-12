@@ -70,26 +70,21 @@ static inline void list_print(const list_head *head)
 }
 #endif
 
-static inline char *itoa(int i, char *str, int len) {
-  int c = i, l = 1;
-  // take a digit to display the sign
-  if(i < 0) {
-    str[0] = '-';
-    ++l;
-  }
-  while((c /= 10) != 0)
-    ++l;
-  if(l > len-1)
-    return NULL;
+#ifdef PANDOS_TESTING
+typedef struct str_writer {
+    char *str;
+    size_t size, wrote;
+} str_writer_t;
 
-  str[l] = '\0';
-  if(i < 0)
-    i = -i;
-  while(l-- && i != 0) {
-    str[l] = '0' + i % 10;
-    i /= 10;
-  }
-  return str;
-}
+size_t str_writer(void *dest, const char *data);
+#endif
+
+int nitoa(int i, int base, char *dest, size_t len);
+size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
+
+#ifndef __x86_64__
+size_t pandos_fprintf(int fd, const char *fmt, ...);
+#define pandos_printf(...) pandos_fprintf(0, __VA_ARGS__)
+#endif
 
 #endif /* PANDOS_UTIL_H */
