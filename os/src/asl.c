@@ -17,8 +17,8 @@ static list_head semd_h;
 #ifdef PANDOS_TESTING
 semd_t *get_semd_table() { return semd_table; }
 list_head *get_semd_free() { return &semd_free; }
-void set_semd_free(const list_head new) { semd_free = new; }
 list_head *get_semd_h() { return &semd_h; }
+void set_semd_free(const list_head new) { semd_free = new; }
 #endif
 
 #ifndef PANDOS_TESTING
@@ -56,6 +56,12 @@ static inline
     return false;
 }
 
+static inline int exact_cmp(const list_head *first, const list_head *second)
+{
+    return container_of(first, semd_t, s_link)->s_key ==
+           container_of(second, semd_t, s_link)->s_key;
+}
+
 #ifndef PANDOS_TESTING
 static inline
 #endif
@@ -63,16 +69,12 @@ static inline
     find_semd(list_head *list, int *sem_addr)
 {
     list_head *iter;
-    semd_t *sem;
+    semd_t *sem, *dummy;
 
     if (list == NULL || sem_addr == NULL)
         return NULL;
-    for (iter = list->next; iter != list; iter = iter->next) {
-        if ((sem = container_of(iter, semd_t, s_link))->s_key == sem_addr)
-            return sem;
-    }
-
-    return NULL;
+    *dummy = {sem_addr};
+    return list_search(dummy, list, key_cmp);
 }
 
 void init_asl()
