@@ -42,7 +42,7 @@ int main()
 
     for (i = 0; i < len; ++i)
         list_add(&data[i].l, &l);
-    it("returns the corrent length for a list")
+    it("returns the current length for a list")
     {
         assert(list_size(&l) == len);
     }
@@ -77,7 +77,7 @@ int main()
         char str[3];
         assert(nitoa(13, 10, str, 3) == 2);
     }
-    ensure("itoa produes the right output")
+    ensure("itoa produces the right output")
     {
         char str[5];
         assert(nitoa(9, 10, str, 2));

@@ -92,7 +92,7 @@ size_t __printf(void *target,
         if (!last_wrote)
             break;
     }
-    // if we stpped printing because of a writer error, make sure to print the
+    // if we stopped printing because of a writer error, make sure to print the
     // ending null character
     if (*fmt != '\0')
         wr += writer(target, end, 1);
@@ -108,7 +108,7 @@ size_t str_writer(void *dest, const char *data, size_t len)
     d = (str_target_t *)dest;
     i = 0;
     check_len = len != 0;
-    /* Make sure we always write the NULL char (in the approriate location) */
+    /* Make sure we always write the NULL char (in the appropriate location) */
     if (*data == '\0')
         *(d->str + (d->wrote >= d->size - 1 ? d->wrote : d->wrote + 1)) = '\0';
     else

@@ -21,8 +21,8 @@ list_head *get_pcb_free();
 #endif
 
 /**
- * \brief   Initialize the list of free pcbs (pcbFree_h) from the table of pcbs
- * (pcbFree_table) This function should be called only once during the
+ * \brief   Initialize the list of free pcbs (pcb_free) from the table of pcbs
+ * (pcb_table) This function should be called only once during the
  * initialization phase
  *
  * \todo    Test this function

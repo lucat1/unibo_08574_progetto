@@ -134,10 +134,10 @@ int main()
         // check that parent is correctly set
         assert(pcb_child1->p_parent == pcb1);
         assert(pcb_child2->p_parent == pcb1);
-        // check that childs list is not empty
+        // check that children list is not empty
         assert(!empty_child(pcb1));
 
-        // check updated childs list
+        // check updated children list
         assert(list_contains(&(pcb_child1->p_list), &(pcb1->p_child)));
         assert(list_contains(&(pcb_child2->p_list), &(pcb1->p_child)));
 
@@ -160,7 +160,7 @@ int main()
 
         assert(list_empty(&(pcb1->p_child)));
 
-        // pcb_child2 and pcb_child1 are not sibligns
+        // pcb_child2 and pcb_child1 are not siblings
         assert(!list_contains(&(pcb_child2->p_sib), &(pcb_child1->p_sib)));
         assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)));
     }
@@ -183,7 +183,7 @@ int main()
         assert(!list_contains(&(pcb_child2->p_list), &(pcb1->p_child)));
         assert(list_empty(&(pcb1->p_child)));
 
-        // pcb_child2 and pcb_child1 are not sibligns
+        // pcb_child2 and pcb_child1 are not siblings
         assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)));
         assert(!list_contains(&(pcb_child2->p_list), &(pcb_child1->p_sib)));
     }

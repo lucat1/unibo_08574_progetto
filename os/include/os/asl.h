@@ -41,7 +41,7 @@ pcb_t *out_blocked(pcb_t *pcb);
 /**
  * \brief Returns the first pcb blocked on the given semaphore.
  * \param[in] sem_addr A pointer to the semaphore address
- * \return The first pcb blocked on the semaphore, or NULL if an error occoured.
+ * \return The first pcb blocked on the semaphore, or NULL if an error occurred.
  */
 pcb_t *head_blocked(int *sem_addr);
 /**

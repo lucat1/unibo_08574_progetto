@@ -40,7 +40,7 @@ void set_semd_free(const list_head new);
 #endif
 
 /**
- * \brief Allocates a new sempaphore descriptor returning its address.
+ * \brief Allocates a new semaphore descriptor returning its address.
  * Internally this function tries to take a semd from the semd_free list, and
  * returns an error if the list is empty. Then the semaphore gets added to the
  * list of busy semaphores and finally returned.
@@ -59,7 +59,7 @@ static inline
  * blocked on it. After this preliminary check the semaphore is moved from the
  * free to the busy list.
  * \param[in] sem_addr The semaphore key to look for.
- * \return Returns true if an error occured, false otherwise.
+ * \return Returns true if an error occurred, false otherwise.
  */
 #ifndef PANDOS_TESTING
 static inline
@@ -72,7 +72,7 @@ static inline
  * An error is returned if either the list is NULL or the address is NULL.
  * Otherwise the result of a list_search is returned, which may be NULL if no
  * matching item is found.
- * \param[in] list The list of seamphores search.
+ * \param[in] list The list of semaphores search.
  * \param[in] sem_addr The semaphore key to look for.
  * \return Returns the address of the queried semaphore if found, NULL
  * otherwise.

@@ -62,7 +62,7 @@ int main()
         assert(list_size(get_semd_free()) == MAX_PROC);
     }
     /* init_asl */
-    it("intializes the table of semaphores correctly")
+    it("initializes the table of semaphores correctly")
     {
         assert(list_size(get_semd_free()) == MAX_PROC);
         assert(list_empty(get_semd_h()));
