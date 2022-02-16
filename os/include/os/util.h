@@ -79,7 +79,7 @@ typedef struct str_writer {
 size_t str_writer(void *dest, const char *data);
 #endif
 
-int nitoa(int i, int base, char *dest, size_t len);
+size_t nitoa(int i, int base, char *dest, size_t len);
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
 
 #ifndef __x86_64__

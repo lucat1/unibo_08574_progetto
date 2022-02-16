@@ -56,9 +56,9 @@ static inline
     return false;
 }
 
-static inline int exact_cmp(const list_head *first, const list_head *second)
+static inline int key_cmp(const list_head *first, const list_head *second)
 {
-    return container_of(first, semd_t, s_link)->s_key ==
+    return container_of(first, semd_t, s_link)->s_key -
            container_of(second, semd_t, s_link)->s_key;
 }
 
@@ -68,13 +68,14 @@ static inline
     semd_t *
     find_semd(list_head *list, int *sem_addr)
 {
-    list_head *iter;
-    semd_t *sem, *dummy;
+    const list_head *item;
+    semd_t dummy = {sem_addr};
 
-    if (list == NULL || sem_addr == NULL)
+    if (list == NULL || sem_addr == NULL ||
+        (item = list_search(&dummy.s_link, list, key_cmp)) == NULL)
         return NULL;
-    *dummy = {sem_addr};
-    return list_search(dummy, list, key_cmp);
+
+    return container_of(item, semd_t, s_link);
 }
 
 void init_asl()

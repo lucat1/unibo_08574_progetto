@@ -32,7 +32,8 @@ list_head *get_semd_free();
 list_head *get_semd_h();
 /**
  * \brief Sets the content of the local variable `semd_free` to the given
- * parameter. \param new The new list head to be assigned to the variable.
+ * parameter.
+ * \param new The new list head to be assigned to the variable.
  */
 void set_semd_free(const list_head new);
 
@@ -50,9 +51,9 @@ void set_semd_free(const list_head new);
 semd_t *alloc_semd(int *sem_addr);
 /**
  * \brief Deallocates an in-use semaphore.
- * The procedure fails if the semaphore is NULL or it has no process blocked on
- * it (which means it shouldn't be regarded as `in-use`). After this preliminary
- * check the semaphore is moved from the free to the busy list.
+ * The procedure fails if the semaphore is NULL or it has remaining processes
+ * blocked on it. After this preliminary check the semaphore is moved from the
+ * free to the busy list.
  * \param sem_addr The semaphore key to look for.
  * \return Returns true if an error occured, false otherwise.
  */
@@ -61,9 +62,11 @@ bool free_semd(semd_t *semd);
  * \brief Finds a semaphore descriptor in a given list by its key.
  * An error is returned if either the list is NULL or the address is NULL.
  * Otherwise the result of a list_search is returned, which may be NULL if no
- * matching item is found. \param  The list of seamphores search. \param  The
- * semaphore key to look for. \return Returns the address of the queried
- * semaphore if found, NULL otherwise.
+ * matching item is found.
+ * \param list The list of seamphores search.
+ * \param sem_addr The semaphore key to look for.
+ * \return Returns the address of the queried semaphore if found, NULL
+ * otherwise.
  */
 semd_t *find_semd(list_head *list, int *sem_addr);
 #endif

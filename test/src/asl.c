@@ -30,23 +30,6 @@ int main()
         assert(list_empty(&sem->s_procq));
         free_semd(sem);
     }
-    /* free_semd */
-    ensure("free_smd fails with an illegal argument")
-    {
-        assert(free_semd(NULL));
-        semd_t *sem = alloc_semd(&key);
-        insert_blocked(&key, example_pcb);
-        assert(free_semd(sem));
-        remove_blocked(&key);
-        assert(!free_semd(sem));
-    }
-    it("correctly deallocates an old semd")
-    {
-        semd_t *sem = alloc_semd(&key);
-        assert(!free_semd(sem));
-        assert(!list_size(get_semd_h()));
-        assert(list_size(get_semd_free()) == MAX_PROC);
-    }
     /* find_semd */
     ensure("find_semd fails with an illegal argument")
     {
@@ -59,6 +42,23 @@ int main()
         semd_t *semd = alloc_semd(&key);
         assert(find_semd(get_semd_h(), &key) == semd);
         free_semd(semd);
+    }
+    /* free_semd */
+    ensure("free_smd fails with an illegal argument")
+    {
+        assert(free_semd(NULL));
+        semd_t *sem = alloc_semd(&key);
+        assert(!insert_blocked(&key, example_pcb));
+        assert(free_semd(sem));
+        remove_blocked(&key);
+        assert(!free_semd(sem));
+    }
+    it("correctly deallocates an old semd")
+    {
+        semd_t *sem = alloc_semd(&key);
+        assert(!free_semd(sem));
+        assert(!list_size(get_semd_h()));
+        assert(list_size(get_semd_free()) == MAX_PROC);
     }
     /* init_asl */
     it("intializes the table of semaphores correctly")
