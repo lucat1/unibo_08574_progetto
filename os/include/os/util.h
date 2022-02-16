@@ -98,18 +98,9 @@ static inline void list_print(const list_head *head)
     } else
         printf("NULL list\n");
 }
-
-/**
- * \brief 
- */
-typedef struct str_writer {
-    char *str;
-    size_t size, wrote;
-} str_writer_t;
-
-size_t str_writer(void *dest, const char *data);
 #endif
 
+int pow(int base, unsigned int exp);
 size_t nitoa(int i, int base, char *dest, size_t len);
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
 

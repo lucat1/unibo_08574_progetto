@@ -1,15 +1,7 @@
 #include "os/util.h"
+#include "os/util_impl.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
-
-#ifndef __x86_64__
-#define va_arg(varg, type) (type) * ((type *)varg++)
-#define va_list int *
-#define va_start(varg, fmt) varg = (int *)(&fmt + 1)
-#define va_end(varg) /* noop */
-#else
-#include <stdarg.h>
-#endif
 
 static char *end = "";
 
@@ -110,21 +102,12 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
     return wr;
 }
 
-// We don't expose private types in the header when we're not testing so they
-// have to be defined here
-#ifndef PANDOS_TESTING
-typedef struct str_writer {
-    char *str;
-    size_t size, wrote;
-} str_writer_t;
-#endif
-
 size_t str_writer(void *dest, const char *data)
 {
-    str_writer_t *d;
+    struct str_target *d;
     int i;
 
-    d = (str_writer_t *)dest;
+    d = (str_target_t *)dest;
     i = 0;
     // Make sure we always write the NULL char (in the approriate location)
     if (*data == '\0')
@@ -140,13 +123,13 @@ size_t str_writer(void *dest, const char *data)
 
 size_t nitoa(int i, int base, char *dest, size_t len)
 {
-    str_writer_t w = {dest, len, 0};
+    str_target_t w = {dest, len, 0};
     return __itoa((void *)&w, str_writer, i, base);
 }
 
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
 {
-    str_writer_t w = {dest, len, 0};
+    str_target_t w = {dest, len, 0};
     va_list varg;
     va_start(varg, fmt);
     size_t res = __printf((void *)&w, str_writer, fmt, varg);
@@ -155,16 +138,6 @@ size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
 }
 
 #ifndef __x86_64__
-#define ST_READY 1
-#define ST_BUSY 3
-#define ST_TRANSMITTED 5
-#define CMD_ACK 1
-#define CMD_TRANSMIT 2
-#define CHAR_OFFSET 8
-#define TERM_STATUS_MASK 0xFF
-#define term_status(tp) ((tp->transm_status) & TERM_STATUS_MASK)
-typedef unsigned int devreg;
-
 int term_putchar(termreg_t *term, char c)
 {
     devreg stat;

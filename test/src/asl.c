@@ -1,4 +1,5 @@
 #include "os/asl.h"
+#include "os/asl_impl.h"
 #include "os/util.h"
 #include "test/test.h"
 #include <stdlib.h>
