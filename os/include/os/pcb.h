@@ -16,7 +16,16 @@
 #include "types.h"
 
 #ifdef PANDOS_TESTING
+/**
+ * \brief Returns a pointer to the pcb table.
+ * \return A pointer to the local static variable `pcb_table`.
+ */
 pcb_t *get_pcb_table();
+
+/**
+ * \brief Returns the list head for the list of free pcbs.
+ * \return A pointer to the local static variable `pcb_free`.
+ */
 list_head *get_pcb_free();
 #endif
 
@@ -25,15 +34,13 @@ list_head *get_pcb_free();
  * (pcb_table) This function should be called only once during the
  * initialization phase
  *
- * \todo    Test this function
  */
 void init_pcbs();
 
 /**
- * \brief   Adds p to the list of free pcbs
+ * \brief   Adds p to the list of free pcbs, if p is NULL then it returns false
  * \param[in] p New pcb that needs to be added to the free list
  *
- * \todo    Test this function
  */
 void free_pcb(pcb_t *p);
 
@@ -42,8 +49,6 @@ void free_pcb(pcb_t *p);
  *
  * \return  Returns null if the list of free pcbs is empty, the first free pcb
  * otherwise
- *
- * \todo    Test this function
  */
 pcb_t *alloc_pcb();
 
@@ -52,9 +57,7 @@ pcb_t *alloc_pcb();
  *
  *  \param[in] p Pcb that needs to be checked
  *
- *  \return Returns true if the list contains the pcb, false otherwise
- *
- *  \todo Test this function
+ *  \return Returns true if the list contains the pcb, false otherwise (if pcb is NULL it returns false)
  */
 bool pcb_free_contains(pcb_t *p);
 
@@ -62,9 +65,6 @@ bool pcb_free_contains(pcb_t *p);
  * \brief   creates an empty list of pcb
  * \param[in] head  The head of the list
  *
- * \todo    Test this function
- * \todo    Understand what's supposed to do
- *          because an empty list of pcb is just an empty list(?)
  */
 void mk_empty_proc_q(list_head *head);
 
@@ -72,9 +72,7 @@ void mk_empty_proc_q(list_head *head);
  * \brief     Checks if the list is empty
  * \param[in] head  The head of the list
  *
- * \return  Returns true if the list is empty, false otherwise
- *
- * \todo    Test this function
+ * \return  Returns true if the list is empty or the head is NULL, false otherwise
  */
 int empty_proc_q(list_head *head);
 
@@ -83,7 +81,6 @@ int empty_proc_q(list_head *head);
  * \param[in] head  The head of the list
  * \param[in] p The elements that needs to be added to the list
  *
- * \todo Test this function
  */
 void insert_proc_q(list_head *head, pcb_t *p);
 
@@ -91,10 +88,7 @@ void insert_proc_q(list_head *head, pcb_t *p);
  * \brief   Returns the pointer to the first element of the list
  * \param[in] head:       The head of the list
  *
- * \return  Return the pointer to the first element of the list
- *
- * \todo    check if the function needs to return a pointer or the actual pcb_t
- * element \todo    Test this function
+ * \return  Return the pointer to the first element of the list, if the head is NULL it returns NULL
  */
 pcb_t *head_proc_q(list_head *head);
 
@@ -103,10 +97,8 @@ pcb_t *head_proc_q(list_head *head);
  * \param[in] head  Head of the list (dummy element) where to remove first
  * element
  *
- * \return  Return NULL if the list is empty, otherwise return the deleted
+ * \return  Return NULL if the list is empty or the head parameter is NULL, otherwise return the deleted
  * element
- *
- * \todo    Test this function
  */
 pcb_t *remove_proc_q(list_head *head);
 
@@ -119,8 +111,6 @@ pcb_t *remove_proc_q(list_head *head);
  *
  * \return  Return NULL if list pointed by head doesn't contain PCB pointed by
  * "p" otherwise return the deleted element
- *
- * \todo    Test this function
  */
 pcb_t *out_proc_q(list_head *head, pcb_t *p);
 
@@ -128,7 +118,7 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p);
  * \brief   Check if PCB pointed by p has not child
  * \param[in] p Pointer of PCB
  *
- * \return  Return TRUE if PCB pointed by "p" has not child, otherwise return
+ * \return  Return TRUE if PCB pointed by "p" has not child or is NULL, otherwise return
  * FALSE
  */
 int empty_child(pcb_t *p);
@@ -159,6 +149,8 @@ pcb_t *remove_child(pcb_t *p);
  *
  * \return  Return NULL if "p" has not a parent, otherwise return the deleted
  * element ("p")
+ * 
+ * \todo Test this function!
  */
 pcb_t *out_child(pcb_t *p);
 

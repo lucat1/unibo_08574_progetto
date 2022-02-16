@@ -52,7 +52,6 @@ int main()
     {
         assert(alloc_pcb() == NULL);
     }
-
     it("correctly add a PCB to the pcb_free list")
     {
         free_pcb(pcb2);
@@ -61,6 +60,20 @@ int main()
         assert((alloc_pcb()) == NULL);
     }
 
+    ensure("free_pcb does not crash when the user input is NULL or already contained")
+    {
+        free_pcb(pcb2);
+        int pcb_size = list_size(get_pcb_free());
+        free_pcb(NULL);
+        assert(list_contains(&pcb2->p_list, get_pcb_free()));
+        free_pcb(pcb2);
+        assert(pcb_size == list_size(get_pcb_free()));
+        alloc_pcb();
+    }
+
+    it("returns NULL if head in head_proc_q is NULL"){
+        assert(head_proc_q(NULL) == NULL);
+    }
     it("correctly created an empty PCBs list")
     {
         mk_empty_proc_q(&(pcb1->p_list));
@@ -87,7 +100,18 @@ int main()
         /* check that pcb2 is successfully added */
         assert(head_proc_q(&(pcb1->p_list)) == pcb2);
     }
+    ensure("insert_proc_q does not crash when the user input is NULL")
+    {
+        int len = list_size(&(pcb1->p_list));
+        insert_proc_q(NULL,pcb1);
+        insert_proc_q(&(pcb1->p_list), NULL);
+        assert(len == list_size(&(pcb1->p_list)));
+    }
 
+    ensure("remove_proc_q returns NULL when the head parameter is null")
+    {
+        assert(remove_proc_q(NULL) == NULL);
+    }
     it("correctly removed first PCB from p_list")
     {
         /* assert(pcb2 != NULL && remove_proc_q(&(pcb1->p_list)) == pcb5); */
@@ -116,15 +140,24 @@ int main()
         assert(out_proc_q(&(pcb1->p_list), pcb2) == pcb2);
         assert(!list_contains(&(pcb2->p_list), &(pcb1->p_list)));
     }
-    ensure("fails on removing PCB that doesn't exist from list_head")
+    ensure("out_proc_q fails on removing PCB that doesn't exist from list_head")
     {
         assert(out_proc_q(&(pcb1->p_list), pcb5) == NULL);
         assert(out_proc_q(&(pcb1->p_list), pcb2) == NULL);
     }
+    ensure("out_proc_q returns NULL if the element or the head parameter is NULL")
+    {
+        assert(out_proc_q(NULL, pcb1) == NULL);
+        assert(out_proc_q(&(pcb1->p_list), NULL) == NULL);
+    }
 
-    ensure("that new PCB has not child") { assert(empty_child(pcb1)); }
+    ensure("that new PCB has not children") { assert(empty_child(pcb1)); }
+    ensure("empty_child returns true if the parameter p is NULL")
+    {
+        assert(empty_child(NULL));
+    }
 
-    it("correctly added PCB as child")
+    it("correctly added PCB as child and empty_child returns false when the child list is not empty")
     {
         insert_child(pcb1, pcb_child1);
         assert(list_size(&(pcb1->p_child)) == 1);
@@ -144,6 +177,20 @@ int main()
         /* check siblings list */
         assert(list_contains(&(pcb_child2->p_sib), &(pcb_child1->p_sib)));
         assert(list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)));
+    }
+    ensure("insert_child does not crash when the user input is NULL")
+    {
+        int len = list_size(&(pcb1->p_child));
+        insert_child(NULL,pcb_child1);
+        insert_proc_q(&(pcb1->p_child), NULL);
+        assert(len == list_size(&(pcb1->p_child)));
+    }
+    ensure("insert_child does not add the element when it is already contained in the child list")
+    {
+        // TODO: controlla veramente questa cosa verificando l'ordine (anche nelle insert sopra)
+        int len = list_size(&(pcb1->p_child));
+        insert_child(pcb1, pcb_child1);
+        assert(list_size(&(pcb1->p_child)) == len);
     }
 
     it("correctly removed first child from PCB")

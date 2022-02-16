@@ -13,7 +13,6 @@
 #include "os/types.h"
 #include "os/util.h"
 
-/* TODO: Change the names of pcbFree_table and pcbFree_h */
 static pcb_t pcb_table[MAX_PROC];
 static list_head pcb_free;
 
@@ -28,27 +27,34 @@ void init_pcbs()
     /* Initialize the list */
     INIT_LIST_HEAD(&pcb_free);
 
-    /* Add pcbFree_table elements to the list */
+    /* Add pcb_table elements to the list */
     for (int i = 0; i < MAX_PROC; i++) {
-        /* TODO: check what happens when the element of the array is undefined */
         list_add(&pcb_table[i].p_list, &pcb_free);
     }
 }
 
 bool pcb_free_contains(pcb_t *p)
 {
+    if(p == NULL)
+    {
+        return false;
+    }
     return list_contains(&(p->p_list), &pcb_free);
 }
 
 void free_pcb(pcb_t *p)
 {
-    /* TODO: Check if the element p is already contained in the list (I don't know if it supposed to be already checked or not, so I'll just leave it like this) */
+    if(p == NULL){
+        return;    
+    }
+    if(list_contains(&p->p_list, &pcb_free)){
+        return;
+    }
     list_add(&p->p_list, &pcb_free);
 }
 
 pcb_t *null_pcb(pcb_t *t)
 {
-    /* TODO: Search on the documentation if there are constants rappresenting these values */
     INIT_LIST_HEAD(&(t->p_list));
     INIT_LIST_HEAD(&(t->p_child));
     INIT_LIST_HEAD(&(t->p_sib));
@@ -78,18 +84,20 @@ pcb_t *alloc_pcb()
     }
 }
 
-void mk_empty_proc_q(list_head *head) { INIT_LIST_HEAD(head); }
+void mk_empty_proc_q(list_head *head) { if(head == NULL) return; INIT_LIST_HEAD(head); }
 
-int empty_proc_q(list_head *head) { return list_empty(head); }
+int empty_proc_q(list_head *head) { if(head == NULL) return true; return list_empty(head); }
 
 void insert_proc_q(list_head *head, pcb_t *p)
 {
+    if(p == NULL || head == NULL) return;
+    if(list_contains(&p->p_list, head)) return;
     list_add_tail(&(p->p_list), head);
 }
 
 pcb_t *head_proc_q(list_head *head)
 {
-    if (list_empty(head)) {
+    if (head == NULL || list_empty(head)) {
         return NULL;
     } else {
         return container_of(head->next, pcb_t, p_list);
@@ -113,11 +121,13 @@ pcb_t *remove_proc_q(list_head *head)
 
 pcb_t *out_proc_q(list_head *head, pcb_t *p)
 {
-    list_head *iter = (head)->next;
+    if(head == NULL || p == NULL || list_empty(head)) return NULL;
+
+    list_head *iter = list_next(head);
 
     /* looking for p element */
     for (; container_of(iter, pcb_t, p_list) != (p) && iter != (head);
-         iter = iter->next)
+         iter = list_next(iter))
         ;
 
     /* completed a circle without finding p element */
@@ -131,10 +141,12 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
     return container_of(iter, pcb_t, p_list);
 }
 
-int empty_child(pcb_t *p) { return list_empty(&(p->p_child)); }
+int empty_child(pcb_t *p) { if(p == NULL) return true; return list_empty(&(p->p_child)); }
 
 void insert_child(pcb_t *prnt, pcb_t *p)
 {
+    if(prnt == NULL || p == NULL) return;
+    if(list_contains(&(prnt->p_child), &p->p_list) || list_contains(&(prnt->p_sib), &p->p_sib)) return;
     p->p_parent = prnt;
     pcb_t *first_child = container_of(&((prnt->p_child)), pcb_t, p_child);
 
@@ -172,6 +184,7 @@ pcb_t *out_child(pcb_t *p)
 
     if (p->p_parent == NULL)
         return NULL;
+    if(list_empty(&(p->p_parent)->p_child)) return NULL;
 
     list_head *iter = list_next(&((p->p_parent)->p_child));
 
