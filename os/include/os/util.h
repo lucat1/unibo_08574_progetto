@@ -80,7 +80,6 @@ static inline bool list_contains(const list_head *element,
     return list_search(element, head, exact_cmp) != NULL;
 }
 
-
 #ifdef PANDOS_TESTING
 /**
  * \brief Prints the given list on standard output.
@@ -100,13 +99,54 @@ static inline void list_print(const list_head *head)
 }
 #endif
 
+/**
+ * \brief Computes the mathematical power of an integer base with a non-negative
+ * integer as the exponent. The time cost of a single call to this procedure is
+ * log(exp).
+ * \param[in] base The base of the power.
+ * \param[in] exp The exponent of the power.
+ * \return Returns the result of the exponentiation.
+ */
 int pow(int base, unsigned int exp);
+
+/**
+ * \brief Computes a string representation of a given integer.
+ * \param[in] i The integer whose representation is to be computed.
+ * \param[in] base The positional base of the representation.
+ * \param[out] dest The string buffer where the result is to be stored.
+ * \param[in] len The maximum length of the buffer which may be used.
+ * \return The length of the string representation actually computed.
+ */
 size_t nitoa(int i, int base, char *dest, size_t len);
+
+/**
+ * \brief Prints formatted text on a string buffer up to a certain number of
+ * characters.
+ * \param[out] dest The string buffer on which the formatted text is to be
+ * printed. \param[in] len The maximum number of characters to be printed.
+ * \param[in] fmt The format string to be printed.
+ * \param[in] ... Additional parameters for the format string.
+ * \return The number of characters actually printed.
+ */
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
 
 #ifndef __x86_64__
+/**
+ * \brief Prints formatted text on a stream.
+ * \param[out] fd The file descriptor for the stream to be used.
+ * \param[in] fmt The format string to be printed.
+ * \param[in] ... Additional parameters for the format string.
+ * \return The number of characters actually printed.
+ */
 size_t pandos_fprintf(int fd, const char *fmt, ...);
-#define pandos_printf(...) pandos_fprintf(0, __VA_ARGS__)
+
+/**
+ * \brief Prints formatted text on standard output.
+ * \param[in] fmt The format string to be printed.
+ * \param[in] ... Additional parameters for the format string.
+ * \return The number of characters actually printed.
+ */
+#define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, __VA_ARGS__)
 #endif
 
 #endif /* PANDOS_UTIL_H */

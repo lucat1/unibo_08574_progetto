@@ -50,7 +50,8 @@ void set_semd_free(const list_head new);
 #ifndef PANDOS_TESTING
 static inline
 #endif
-semd_t *alloc_semd(int *sem_addr);
+    semd_t *
+    alloc_semd(int *sem_addr);
 
 /**
  * \brief Deallocates an in-use semaphore.
@@ -63,7 +64,8 @@ semd_t *alloc_semd(int *sem_addr);
 #ifndef PANDOS_TESTING
 static inline
 #endif
-bool free_semd(semd_t *semd);
+    bool
+    free_semd(semd_t *semd);
 
 /**
  * \brief Finds a semaphore descriptor in a given list by its key.
@@ -78,6 +80,7 @@ bool free_semd(semd_t *semd);
 #ifndef PANDOS_TESTING
 static inline
 #endif
-semd_t *find_semd(list_head *list, int *sem_addr);
+    semd_t *
+    find_semd(list_head *list, int *sem_addr);
 
 #endif /* PANDOS_ASL_IMPL_H */

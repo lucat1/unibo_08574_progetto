@@ -9,7 +9,6 @@
 #include "os/util.h"
 #include "os/util_impl.h"
 #include "test/test.h"
-#include <stdio.h>
 #include <string.h>
 
 #define VALUE 1337
@@ -60,13 +59,13 @@ int main()
     {
         char str[100];
         str_target_t w = {str, 100, 0};
-        assert(str_writer((void *)&w, "t") == 1);
-        assert(str_writer((void *)&w, "es") == 2);
-        assert(str_writer((void *)&w, "t ") == 2);
-        assert(str_writer((void *)&w, " test ") == 6);
-        assert(str_writer((void *)&w, "test   ") == 7);
+        assert(str_writer((void *)&w, "t", 1) == 1);
+        assert(str_writer((void *)&w, "es", 2) == 2);
+        assert(str_writer((void *)&w, "t ", 2) == 2);
+        assert(str_writer((void *)&w, " test ", 6) == 6);
+        assert(str_writer((void *)&w, "test   ", 7) == 7);
         char *end = "";
-        assert(!str_writer((void *)&w, end));
+        assert(!str_writer((void *)&w, end, 0));
     }
     ensure("itoa doesn't output when there isn't enough space")
     {

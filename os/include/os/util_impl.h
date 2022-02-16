@@ -32,26 +32,72 @@ typedef unsigned int devreg;
 #include <stdarg.h>
 #endif
 
-int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
-           int base);
+/**
+ * \brief Prints the string representation of a given integer on a given target.
+ * \param[out] target The buffer on which the string representation is printed.
+ * \param[in] writer The utility procedure used to print the string.
+ * \param[in] i The integer whose representation is to be computed.
+ * \param[in] base The positional base of the representation.
+ * \return The length of the string representation actually computed.
+ */
+size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
+              int i, int base);
 
-size_t __printf(void *target, size_t (*writer)(void *, const char *),
+/**
+ * \brief Prints formatted text on a given target.
+ * \param[out] target The buffer on which the string representation is printed.
+ * \param[in] writer The utility procedure used to print the string.
+ * \param[in] fmt The format string to be printed.
+ * \param[in] varg Additional parameters for the format string.
+ * \return The number of characters actually printed.
+ */
+size_t __printf(void *target,
+                size_t (*writer)(void *, const char *, size_t len),
                 const char *fmt, va_list varg);
 
 /**
- * \brief Utility structure for streaming data to a string target and keeping track
- * of the progress
+ * \brief Utility structure for streaming data to a string target and keeping
+ * track of the progress.
  */
 typedef struct str_target {
-    char *str;
-    size_t size, wrote;
+    char *str;    /** Actual character buffer. */
+    size_t size;  /** Size of the character buffer. */
+    size_t wrote; /** Number of characters actually written on the buffer. */
 } str_target_t;
 
-size_t str_writer(void *dest, const char *data);
+/**
+ * \brief Prints a string to the given `str_target`.
+ * Respects the size constraints attached with the given `str_target`.
+ * If `len` is zero, it is ignored. If a terminator character is encountered
+ * before `len` character have been written, the copy process halts.
+ * \param[out] dest The str_target to which the string is to be printed.
+ * \param[in] data The string to be printed.
+ * \param[in] len The length of the string to be printed.
+ * \return Returns the number of written characters.
+ */
+size_t str_writer(void *dest, const char *data, size_t len);
 
 #ifndef __x86_64__
+/**
+ * \brief Prints a single character to the given terminal.
+ * \param[out] term The terminal to be printed on.
+ * \param[in] c The character to be printed.
+ * \return Returns 0 if the character was printed correctly, 1 if the operation
+ * failed because the terminal was in an incorrect state, 2 if any other kind of
+ * failure happened during the operation.
+ */
 int term_putchar(termreg_t *term, char c);
-size_t serial_writer(void *dest, const char *data);
+
+/**
+ * \brief Prints a string to the given serial terminal.
+ * If `len` is zero, it is ignored. If a terminator character is encountered
+ * before `len` character have been written, the copy process halts.
+ * \param[out] dest The serial terminal to which the string is to be printed.
+ * \param[in] data The string to be printed.
+ * \param[in] len The length of the string to be printed.
+ * \return Returns the number of written characters.
+ */
+size_t serial_writer(void *dest, const char *data, size_t len);
 #endif
 
 #endif /* PANDOS_UTIL_IMPL_H */

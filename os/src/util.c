@@ -3,10 +3,8 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-static char *end = "";
+static char *end = "", *neg = "-";
 
-// Computes the power of a given intger base to the given *unsigned* intereger
-// exponent in log(n) time
 int pow(int base, unsigned int exp)
 {
     int tmp;
@@ -17,8 +15,8 @@ int pow(int base, unsigned int exp)
     return (exp % 2 == 0 ? 1 : base) * tmp * tmp;
 }
 
-int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
-           int base)
+size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
+              int i, int base)
 {
     int cpy, digits, wrote, exp;
 
@@ -27,9 +25,8 @@ int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
 
     wrote = 0;
     if (i < 0) {
-        char *neg = "-";
         // Ignore an error here as it'll crop up later either way
-        wrote += writer(target, neg);
+        wrote += writer(target, neg, 1);
         i = -i;
     }
 
@@ -38,16 +35,17 @@ int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
          --digits, i %= exp, exp /= base, wrote += wr) {
         int r = (i / exp); // remainder
         char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
-        wr = writer(target, digit);
+        wr = writer(target, digit, 1);
     }
 
     // always write the string termination char (but don't count it as str
     // length)
-    writer(target, end);
+    writer(target, end, 1);
     return wrote;
 }
 
-size_t __printf(void *target, size_t (*writer)(void *, const char *),
+size_t __printf(void *target,
+                size_t (*writer)(void *, const char *, size_t len),
                 const char *fmt, va_list varg)
 {
     size_t wr, last_wrote;
@@ -57,40 +55,39 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
             ++fmt;
             switch (*fmt) {
                 case 's':
-                    last_wrote = writer(target, va_arg(varg, char *));
+                    last_wrote = writer(target, va_arg(varg, char *), 0);
                     break;
                 case 'c': {
                     char str[2] = {va_arg(varg, int), '\0'};
-                    last_wrote = writer(target, str);
+                    last_wrote = writer(target, str, 1);
                     break;
                 }
                 case 'd':
-                    last_wrote =
-                        __itoa(target, writer, va_arg(varg, int), 10);
+                    last_wrote = __itoa(target, writer, va_arg(varg, int), 10);
                     break;
                 case 'p': {
                     memaddr ptr = va_arg(varg, memaddr);
                     if (ptr != (memaddr)NULL) {
-                        last_wrote = writer(target, "0x");
+                        last_wrote = writer(target, "0x", 2);
                         last_wrote += __itoa(target, writer, (int)ptr, 16);
                     } else
-                        last_wrote = writer(target, "(nil)");
+                        last_wrote = writer(target, "(nil)", 5);
                     break;
                 }
                 case '%': {
                     char *str = "%";
-                    last_wrote = writer(target, str);
+                    last_wrote = writer(target, str, 1);
                     break;
                 }
                 default: {
                     char str[3] = {*(fmt - 1), *fmt, '\0'};
-                    last_wrote = writer(target, str);
+                    last_wrote = writer(target, str, 2);
                     break;
                 }
             }
         } else {
             char str[2] = {*fmt, '\0'};
-            last_wrote = writer(target, str);
+            last_wrote = writer(target, str, 1);
         }
         if (!last_wrote)
             break;
@@ -98,23 +95,26 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
     // if we stpped printing because of a writer error, make sure to print the
     // ending null character
     if (*fmt != '\0')
-        wr += writer(target, end);
+        wr += writer(target, end, 1);
     return wr;
 }
 
-size_t str_writer(void *dest, const char *data)
+size_t str_writer(void *dest, const char *data, size_t len)
 {
     struct str_target *d;
     int i;
+    bool check_len;
 
     d = (str_target_t *)dest;
     i = 0;
-    // Make sure we always write the NULL char (in the approriate location)
+    check_len = len != 0;
+    /* Make sure we always write the NULL char (in the approriate location) */
     if (*data == '\0')
         *(d->str + (d->wrote >= d->size - 1 ? d->wrote : d->wrote + 1)) = '\0';
     else
         while (d->wrote + i < d->size - 1 &&
-               (*(d->str + d->wrote + i) = data[i]) != '\0')
+               (*(d->str + d->wrote + i) = data[i]) != '\0' &&
+               (!check_len || len--))
             ++i;
 
     d->wrote += i;
@@ -154,12 +154,14 @@ int term_putchar(termreg_t *term, char c)
     return (stat == ST_TRANSMITTED) ? 0 : 2;
 }
 
-size_t serial_writer(void *dest, const char *data)
+size_t serial_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     termreg_t *term;
+    bool check_len;
 
-    for (term = (termreg_t *)dest, it = (char *)data; *it != '\0'; ++it)
+    for (it = (char *)data, term = (termreg_t *)dest, check_len = len != 0;
+         *it != '\0' && (!check_len || len--); ++it)
         if (term_putchar(term, *it))
             break;
 
