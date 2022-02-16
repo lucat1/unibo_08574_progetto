@@ -2,17 +2,13 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-#ifdef __x86_64__
-#include <stdarg.h>
-#define varg_arg va_arg
-#define varg_type va_list
-#define varg_init(varg, fmt) va_start(varg, fmt)
-#define varg_end(varg) va_end(varg)
+#ifndef __x86_64__
+#define va_arg(varg, type) (type) * ((type *)varg++)
+#define va_list int *
+#define va_start(varg, fmt) varg = (int *)(&fmt + 1)
+#define va_end(varg) /* noop */
 #else
-#define varg_arg(varg, type) (type) * ((type *)varg++)
-#define varg_type int *
-#define varg_init(varg, fmt) varg = (int *)(&fmt + 1)
-#define varg_end(varg) /* noop */
+#include <stdarg.h>
 #endif
 
 static char *end = "";
@@ -60,7 +56,7 @@ int __itoa(void *target, size_t (*writer)(void *, const char *), int i,
 }
 
 size_t __printf(void *target, size_t (*writer)(void *, const char *),
-                const char *fmt, varg_type varg)
+                const char *fmt, va_list varg)
 {
     size_t wr, last_wrote;
 
@@ -69,27 +65,24 @@ size_t __printf(void *target, size_t (*writer)(void *, const char *),
             ++fmt;
             switch (*fmt) {
                 case 's':
-                    last_wrote = writer(target, varg_arg(varg, char *));
+                    last_wrote = writer(target, va_arg(varg, char *));
                     break;
                 case 'c': {
-                    char str[2] = {varg_arg(varg, int), '\0'};
+                    char str[2] = {va_arg(varg, int), '\0'};
                     last_wrote = writer(target, str);
                     break;
                 }
                 case 'd':
                     last_wrote =
-                        __itoa(target, writer, varg_arg(varg, int), 10);
+                        __itoa(target, writer, va_arg(varg, int), 10);
                     break;
                 case 'p': {
-                    memaddr ptr = varg_arg(varg, memaddr);
-                    if (ptr == (memaddr)NULL) {
-                        char *str = "(null)";
-                        last_wrote = writer(target, str);
-                    } else {
-                        char *str = "0x";
-                        last_wrote = writer(target, str);
+                    memaddr ptr = va_arg(varg, memaddr);
+                    if (ptr != (memaddr)NULL) {
+                        last_wrote = writer(target, "0x");
                         last_wrote += __itoa(target, writer, (int)ptr, 16);
-                    }
+                    } else
+                        last_wrote = writer(target, "(nil)");
                     break;
                 }
                 case '%': {
@@ -154,10 +147,10 @@ size_t nitoa(int i, int base, char *dest, size_t len)
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
 {
     str_writer_t w = {dest, len, 0};
-    varg_type varg;
-    varg_init(varg, fmt);
+    va_list varg;
+    va_start(varg, fmt);
     size_t res = __printf((void *)&w, str_writer, fmt, varg);
-    varg_end(varg);
+    va_end(varg);
     return res;
 }
 
@@ -203,10 +196,10 @@ size_t serial_writer(void *dest, const char *data)
 size_t pandos_fprintf(int fd, const char *fmt, ...)
 {
     termreg_t *term = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, fd);
-    varg_type varg;
-    varg_init(varg, fmt);
+    va_list varg;
+    va_start(varg, fmt);
     size_t res = __printf(term, serial_writer, fmt, varg);
-    varg_end(varg);
+    va_end(varg);
     return res;
 }
 #endif
