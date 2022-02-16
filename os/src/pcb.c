@@ -13,7 +13,7 @@
 #include "os/types.h"
 #include "os/util.h"
 
-// TODO: Change the names of pcbFree_table and pcbFree_h
+/* TODO: Change the names of pcbFree_table and pcbFree_h */
 static pcb_t pcb_table[MAX_PROC];
 static list_head pcb_free;
 
@@ -22,15 +22,15 @@ pcb_t *get_pcb_table() { return pcb_table; }
 list_head *get_pcb_free() { return &pcb_free; }
 #endif
 
-// This function should be called only once during the initialization phase
+/* This function should be called only once during the initialization phase */
 void init_pcbs()
 {
-    // Initialize the list
+    /* Initialize the list */
     INIT_LIST_HEAD(&pcb_free);
 
-    // Add pcbFree_table elements to the list
+    /* Add pcbFree_table elements to the list */
     for (int i = 0; i < MAX_PROC; i++) {
-        // TODO: check what happens when the element of the array is undefined
+        /* TODO: check what happens when the element of the array is undefined */
         list_add(&pcb_table[i].p_list, &pcb_free);
     }
 }
@@ -42,16 +42,13 @@ bool pcb_free_contains(pcb_t *p)
 
 void free_pcb(pcb_t *p)
 {
-    // TODO: Check if the element p is already contained in the list
-    // (I don't know if it supposed to be already checked or not, so I'll just
-    // leave it like this)
+    /* TODO: Check if the element p is already contained in the list (I don't know if it supposed to be already checked or not, so I'll just leave it like this) */
     list_add(&p->p_list, &pcb_free);
 }
 
 pcb_t *null_pcb(pcb_t *t)
 {
-    // TODO: Search on the documentation if
-    // there are constants rappresenting these values
+    /* TODO: Search on the documentation if there are constants rappresenting these values */
     INIT_LIST_HEAD(&(t->p_list));
     INIT_LIST_HEAD(&(t->p_child));
     INIT_LIST_HEAD(&(t->p_sib));
@@ -102,15 +99,15 @@ pcb_t *head_proc_q(list_head *head)
 pcb_t *remove_proc_q(list_head *head)
 {
 
-    // check if list is empty
+    /* check if list is empty */
     if (list_empty(head))
         return NULL;
 
-    // get the first element of the list
+    /* get the first element of the list */
     list_head *to_remove = list_next(head);
     pcb_t *p = container_of(to_remove, pcb_t, p_list);
 
-    // return the pcb pointed by the deleted element
+    /* return the pcb pointed by the deleted element */
     return out_proc_q(head, p);
 }
 
@@ -118,17 +115,17 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
 {
     list_head *iter = (head)->next;
 
-    // looking for p element
+    /* looking for p element */
     for (; container_of(iter, pcb_t, p_list) != (p) && iter != (head);
          iter = iter->next)
         ;
 
-    // completed a circle without finding p element
+    /* completed a circle without finding p element */
     if (iter == head) {
         return NULL;
     }
 
-    // remove p element from list
+    /* remove p element from list */
     list_del(iter);
 
     return container_of(iter, pcb_t, p_list);
@@ -142,7 +139,7 @@ void insert_child(pcb_t *prnt, pcb_t *p)
     pcb_t *first_child = container_of(&((prnt->p_child)), pcb_t, p_child);
 
     list_add_tail(&(p->p_list), &(prnt->p_child));
-    // add p to the list of siblings
+    /* add p to the list of siblings */
     if (first_child != NULL) {
         list_add_tail(&(p->p_sib), &(first_child->p_sib));
     }
@@ -155,18 +152,16 @@ pcb_t *remove_child(pcb_t *p)
 
     list_head *first_child_head = list_next(&(p->p_child));
 
-    // if was set container_of with p_child,
-    // this would have returned "p"
+    /* if was set container_of with p_child, this would have returned "p" */
     pcb_t *ret = container_of(first_child_head, pcb_t, p_list);
 
-    // list_next because for first one is useless
+    /* list_next because for first one is useless */
     list_del((list_next(&(p->p_child))));
-    // remove p from siblings list
-    // TODO find out why it works !
+    /* remove p from siblings list */
     list_del((&(ret->p_sib)));
-    // reset my parent
+    /* reset my parent */
     ret->p_parent = NULL;
-    // clear ret siblings list
+    /* clear ret siblings list */
     INIT_LIST_HEAD(&(ret->p_sib));
 
     return ret;
@@ -180,20 +175,19 @@ pcb_t *out_child(pcb_t *p)
 
     list_head *iter = list_next(&((p->p_parent)->p_child));
 
-    // looking for p element in p_child
+    /* looking for p element in p_child */
     for (; container_of(iter, pcb_t, p_list) != (p); iter = iter->next)
         ;
 
     pcb_t *ret = container_of(iter, pcb_t, p_list);
 
-    // list_next because for first one is useless
+    /* list_next because for first one is useless */
     list_del(iter);
-    // remove p from siblings list
-    // TODO find out why it works !
+    /* remove p from siblings list */
     list_del((&(ret->p_sib)));
-    // reset my parent
+    /* reset my parent */
     ret->p_parent = NULL;
-    // clear ret siblings list
+    /* clear ret siblings list */
     INIT_LIST_HEAD(&(ret->p_sib));
 
     return ret;

@@ -12,7 +12,6 @@
 #include "os/types.h"
 
 #ifdef PANDOS_TESTING
-// The following are utility functions used by test code.
 /**
  * \brief Returns the table of semaphore descriptors.
  * \return A pointer to the local static variable `semd_table`.

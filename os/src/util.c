@@ -25,7 +25,7 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
 
     wrote = 0;
     if (i < 0) {
-        // Ignore an error here as it'll crop up later either way
+        /* Ignore an error here as it'll crop up later either way */
         wrote += writer(target, neg, 1);
         i = -i;
     }
@@ -33,13 +33,12 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
     int wr = 1;
     for (exp = pow(base, digits - 1); digits && wr;
          --digits, i %= exp, exp /= base, wrote += wr) {
-        int r = (i / exp); // remainder
+        int r = (i / exp); /* remainder */
         char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
         wr = writer(target, digit, 1);
     }
 
-    // always write the string termination char (but don't count it as str
-    // length)
+    /* always write the string termination char (but don't count it as str length) */
     writer(target, end, 1);
     return wrote;
 }
@@ -92,8 +91,7 @@ size_t __printf(void *target,
         if (!last_wrote)
             break;
     }
-    // if we stopped printing because of a writer error, make sure to print the
-    // ending null character
+    /* if we stopped printing because of a writer error, make sure to print the ending null character */
     if (*fmt != '\0')
         wr += writer(target, end, 1);
     return wr;
