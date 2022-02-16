@@ -13,7 +13,7 @@
 int main()
 {
     pcb_t *pcb1, *pcb2, *pcb5;
-    pcb_t *pcb_child1, *pcb_child2;
+    pcb_t *pcb_child1, *pcb_child2, *pcb_child3;
     init_pcbs();
     it("correctly allocated MAX_PROC PCBs")
     {
@@ -45,6 +45,8 @@ int main()
                 pcb_child1 = pcb1;
             if (i == 6)
                 pcb_child2 = pcb1;
+            if (i == 7)
+                pcb_child3 = pcb1;
         }
         assert(pcb_child1 != pcb_child2);
     }
@@ -62,14 +64,18 @@ int main()
 
     ensure("free_pcb does not crash when the user input is NULL or already contained")
     {
+        /* add pcb2 to pcb_free */
         free_pcb(pcb2);
+        /* pcb_size should be 1 */
         int pcb_size = list_size(get_pcb_free());
         free_pcb(NULL);
         assert(list_contains(&pcb2->p_list, get_pcb_free()));
+        /* this should be useless */
         free_pcb(pcb2);
         assert(pcb_size == list_size(get_pcb_free()));
-        alloc_pcb();
+        assert((alloc_pcb()) != NULL);
     }
+
 
     it("returns NULL if head in head_proc_q is NULL"){
         assert(head_proc_q(NULL) == NULL);
@@ -151,13 +157,16 @@ int main()
         assert(out_proc_q(&(pcb1->p_list), NULL) == NULL);
     }
 
-    ensure("that new PCB has not children") { assert(empty_child(pcb1)); }
+    ensure("that new PCB has not children") 
+    {
+        assert(empty_child(pcb1)); 
+    }
     ensure("empty_child returns true if the parameter p is NULL")
     {
         assert(empty_child(NULL));
     }
 
-    it("correctly added PCB as child and empty_child returns false when the child list is not empty")
+    it("correctly added PCB as child and empty_child returns false when the children list is not empty")
     {
         insert_child(pcb1, pcb_child1);
         assert(list_size(&(pcb1->p_child)) == 1);
@@ -185,43 +194,70 @@ int main()
         insert_proc_q(&(pcb1->p_child), NULL);
         assert(len == list_size(&(pcb1->p_child)));
     }
-    ensure("insert_child does not add the element when it is already contained in the child list")
+    ensure("insert_child does not add the element when it is already contained in the children list")
     {
-        // TODO: controlla veramente questa cosa verificando l'ordine (anche nelle insert sopra)
         int len = list_size(&(pcb1->p_child));
         insert_child(pcb1, pcb_child1);
         assert(list_size(&(pcb1->p_child)) == len);
+        insert_child(pcb1, pcb_child2);
+        insert_child(pcb1, pcb_child3);
+
+        /* verifying order is same as previous */
+        /* now should be 1 -> 2 -> 3 */
+        list_head *tmp = list_next(&(pcb1->p_child));
+        assert(tmp == &pcb_child1->p_list);
+        tmp = list_next(tmp);
+        assert(tmp == &pcb_child2->p_list);
+        tmp = list_next(tmp);
+        assert(tmp == &pcb_child3->p_list);
+        assert(remove_child(pcb1) == pcb_child1);
+        /* now should be 2 -> 3 */
+        insert_child(pcb1, pcb_child1);
+         /* now should be 2 -> 3 -> 1 */
+        tmp = list_next(&(pcb1->p_child));
+        assert(tmp == &pcb_child2->p_list);
+        tmp = list_next(tmp);
+        assert(tmp == &pcb_child3->p_list);
+        tmp = list_next(tmp);
+        assert(tmp == &pcb_child1->p_list);
     }
 
     it("correctly removed first child from PCB")
     {
-        assert(remove_child(pcb1) == pcb_child1);
-        assert(list_empty(&(pcb_child1->p_sib)));
-        assert(!list_contains(&(pcb_child1->p_list), &(pcb1->p_child)));
-        assert(pcb_child1->p_parent == NULL);
-
         assert(remove_child(pcb1) == pcb_child2);
         assert(list_empty(&(pcb_child2->p_sib)));
         assert(!list_contains(&(pcb_child2->p_list), &(pcb1->p_child)));
         assert(pcb_child2->p_parent == NULL);
 
+        assert(remove_child(pcb1) == pcb_child3);
+        assert(list_empty(&(pcb_child3->p_sib)));
+        assert(!list_contains(&(pcb_child3->p_list), &(pcb1->p_child)));
+        assert(pcb_child3->p_parent == NULL);
+
+        assert(remove_child(pcb1) == pcb_child1);
+        assert(list_empty(&(pcb_child1->p_sib)));
+        assert(!list_contains(&(pcb_child1->p_list), &(pcb1->p_child)));
+        assert(pcb_child1->p_parent == NULL);
+
         assert(list_empty(&(pcb1->p_child)));
 
-        /* pcb_child2 and pcb_child1 are not siblings */
+        /* pcb_child2 and pcb_child1 and pcb_child3 are not siblings */
         assert(!list_contains(&(pcb_child2->p_sib), &(pcb_child1->p_sib)));
         assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child2->p_sib)));
+        assert(!list_contains(&(pcb_child1->p_sib), &(pcb_child3->p_sib)));
     }
 
     ensure("fails on removing child if p_child is empty"){
-        assert(remove_child(pcb1) == NULL)}
+        assert(remove_child(pcb1) == NULL)
+    }
 
     it("correctly remove myself from p_child of p_parent")
     {
+        
         insert_child(pcb1, pcb_child1);
         insert_child(pcb1, pcb_child2);
 
         assert(out_child(pcb_child1) == pcb_child1);
-        assert(pcb_child1->p_parent == NULL);
         assert(!list_contains(&(pcb_child1->p_list), &(pcb1->p_child)));
         assert(!list_empty(&(pcb1->p_child)));
 
