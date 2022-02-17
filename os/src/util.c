@@ -38,7 +38,8 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
         wr = writer(target, digit, 1);
     }
 
-    /* always write the string termination char (but don't count it as str length) */
+    /* always write the string termination char (but don't count it as str
+     * length) */
     writer(target, end, 1);
     return wrote;
 }
@@ -91,7 +92,8 @@ size_t __printf(void *target,
         if (!last_wrote)
             break;
     }
-    /* if we stopped printing because of a writer error, make sure to print the ending null character */
+    /* if we stopped printing because of a writer error, make sure to print the
+     * ending null character */
     if (*fmt != '\0')
         wr += writer(target, end, 1);
     return wr;

@@ -52,7 +52,8 @@ pcb_t *alloc_pcb();
 /**
  *  \brief Checks if the pcb_free list contains a pcb.
  *  \param[in] p Pcb that needs to be checked.
- *  \return Returns true if the list contains the pcb, false otherwise (if pcb is NULL it returns false).
+ *  \return Returns true if the list contains the pcb, false otherwise (if pcb
+ * is NULL it returns false).
  */
 bool pcb_free_contains(pcb_t *p);
 
@@ -65,7 +66,8 @@ void mk_empty_proc_q(list_head *head);
 /**
  * \brief     Checks if the list is empty.
  * \param[in] head  The head of the list.
- * \return  Returns true if the list is empty or the head is NULL, false otherwise.
+ * \return  Returns true if the list is empty or the head is NULL, false
+ * otherwise.
  */
 int empty_proc_q(list_head *head);
 
@@ -79,7 +81,8 @@ void insert_proc_q(list_head *head, pcb_t *p);
 /**
  * \brief   Returns the pointer to the first element of the list.
  * \param[in] head  The head of the list.
- * \return  Return the pointer to the first element of the list, if the head is NULL it returns NULL.
+ * \return  Return the pointer to the first element of the list, if the head is
+ * NULL it returns NULL.
  */
 pcb_t *head_proc_q(list_head *head);
 
@@ -87,8 +90,8 @@ pcb_t *head_proc_q(list_head *head);
  * \brief   Remove the element from the process list pointed by `head` (FIFO)
  * \param[in] head  Head of the list (dummy element) where to remove first.
  *                  element.
- * \return  Return NULL if the list is empty or the head parameter is NULL, otherwise return the deleted
- *          element.
+ * \return  Return NULL if the list is empty or the head parameter is NULL,
+ * otherwise return the deleted element.
  */
 pcb_t *remove_proc_q(list_head *head);
 
@@ -105,8 +108,8 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p);
 /**
  * \brief   Check if PCB pointed by `p` has not children.
  * \param[in] p Pointer of PCB.
- * \return  Return TRUE if PCB pointed by `p` has not children or is NULL, otherwise return
- *          FALSE.
+ * \return  Return TRUE if PCB pointed by `p` has not children or is NULL,
+ * otherwise return FALSE.
  */
 int empty_child(pcb_t *p);
 

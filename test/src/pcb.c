@@ -13,8 +13,7 @@
 bool pcb_free_contains(pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(p == NULL || &p->p_list == NULL)
-    {
+    if (p == NULL || &p->p_list == NULL) {
         return false;
     }
     return list_contains(&p->p_list, get_pcb_free());
@@ -72,7 +71,8 @@ int main()
         assert((alloc_pcb()) == NULL);
     }
 
-    ensure("free_pcb does not crash when the user input is NULL or already contained")
+    ensure("free_pcb does not crash when the user input is NULL or already "
+           "contained")
     {
         /* add pcb2 to pcb_free */
         free_pcb(pcb2);
@@ -86,8 +86,8 @@ int main()
         assert((alloc_pcb()) != NULL);
     }
 
-
-    it("returns NULL if head in head_proc_q is NULL"){
+    it("returns NULL if head in head_proc_q is NULL")
+    {
         assert(head_proc_q(NULL) == NULL);
     }
     it("correctly created an empty PCBs list")
@@ -119,7 +119,7 @@ int main()
     ensure("insert_proc_q does not crash when the user input is NULL")
     {
         int len = list_size(&pcb1->p_list);
-        insert_proc_q(NULL,pcb1);
+        insert_proc_q(NULL, pcb1);
         insert_proc_q(&pcb1->p_list, NULL);
         assert(len == list_size(&pcb1->p_list));
     }
@@ -161,22 +161,21 @@ int main()
         assert(out_proc_q(&pcb1->p_list, pcb5) == NULL);
         assert(out_proc_q(&pcb1->p_list, pcb2) == NULL);
     }
-    ensure("out_proc_q returns NULL if the element or the head parameter is NULL")
+    ensure(
+        "out_proc_q returns NULL if the element or the head parameter is NULL")
     {
         assert(out_proc_q(NULL, pcb1) == NULL);
         assert(out_proc_q(&pcb1->p_list, NULL) == NULL);
     }
 
-    ensure("that new PCB has not children") 
-    {
-        assert(empty_child(pcb1)); 
-    }
+    ensure("that new PCB has not children") { assert(empty_child(pcb1)); }
     ensure("empty_child returns true if the parameter p is NULL")
     {
         assert(empty_child(NULL));
     }
 
-    it("correctly added PCB as child and empty_child returns false when the children list is not empty")
+    it("correctly added PCB as child and empty_child returns false when the "
+       "children list is not empty")
     {
         insert_child(pcb1, pcb_child1);
         assert(list_size(&pcb1->p_child) == 1);
@@ -200,11 +199,12 @@ int main()
     ensure("insert_child does not crash when the user input is NULL")
     {
         int len = list_size(&pcb1->p_child);
-        insert_child(NULL,pcb_child1);
+        insert_child(NULL, pcb_child1);
         insert_proc_q(&pcb1->p_child, NULL);
         assert(len == list_size(&pcb1->p_child));
     }
-    ensure("insert_child does not add the element when it is already contained in the children list")
+    ensure("insert_child does not add the element when it is already contained "
+           "in the children list")
     {
         int len = list_size(&pcb1->p_child);
         insert_child(pcb1, pcb_child1);
@@ -223,7 +223,7 @@ int main()
         assert(remove_child(pcb1) == pcb_child1);
         /* now should be 2 -> 3 */
         insert_child(pcb1, pcb_child1);
-         /* now should be 2 -> 3 -> 1 */
+        /* now should be 2 -> 3 -> 1 */
         tmp = list_next(&pcb1->p_child);
         assert(tmp == &pcb_child2->p_sib);
         tmp = list_next(tmp);
@@ -242,7 +242,6 @@ int main()
         assert(!list_contains(&pcb_child3->p_sib, &pcb1->p_child));
         assert(pcb_child3->p_parent == NULL);
 
-
         assert(remove_child(pcb1) == pcb_child1);
         assert(!list_contains(&pcb_child1->p_sib, &pcb1->p_child));
         assert(pcb_child1->p_parent == NULL);
@@ -251,12 +250,11 @@ int main()
     }
 
     ensure("fails on removing child if p_child is empty"){
-        assert(remove_child(pcb1) == NULL)
-    }
+        assert(remove_child(pcb1) == NULL)}
 
     it("correctly remove myself from p_child of p_parent")
     {
-        
+
         insert_child(pcb1, pcb_child1);
         insert_child(pcb1, pcb_child2);
 
@@ -266,7 +264,6 @@ int main()
         assert(out_child(pcb_child2) == pcb_child2);
         assert(pcb_child2->p_parent == NULL);
         assert(list_empty(&pcb1->p_child));
-
     }
     return 0;
 }

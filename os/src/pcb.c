@@ -36,8 +36,9 @@ void init_pcbs()
 void free_pcb(pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(p == NULL || &p->p_list == NULL || list_contains(&p->p_list, &pcb_free)){
-        return;    
+    if (p == NULL || &p->p_list == NULL ||
+        list_contains(&p->p_list, &pcb_free)) {
+        return;
     }
     list_add(&p->p_list, &pcb_free);
 }
@@ -45,7 +46,7 @@ void free_pcb(pcb_t *p)
 static inline pcb_t *null_pcb(pcb_t *t)
 {
     /* prevent SEGFAULT */
-    if (t == NULL) 
+    if (t == NULL)
         return NULL;
     INIT_LIST_HEAD(&t->p_list);
     INIT_LIST_HEAD(&t->p_child);
@@ -76,20 +77,31 @@ pcb_t *alloc_pcb()
     }
 }
 
-void mk_empty_proc_q(list_head *head) { if(head == NULL) return; INIT_LIST_HEAD(head); }
+void mk_empty_proc_q(list_head *head)
+{
+    if (head == NULL)
+        return;
+    INIT_LIST_HEAD(head);
+}
 
-int empty_proc_q(list_head *head) { if(head == NULL) return true; return list_empty(head); }
+int empty_proc_q(list_head *head)
+{
+    if (head == NULL)
+        return true;
+    return list_empty(head);
+}
 
 void insert_proc_q(list_head *head, pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(p == NULL || head == NULL || &p->p_list == NULL || list_contains(&p->p_list, head)) 
+    if (p == NULL || head == NULL || &p->p_list == NULL ||
+        list_contains(&p->p_list, head))
         return;
     list_add_tail(&p->p_list, head);
 }
 
 pcb_t *head_proc_q(list_head *head)
-{   
+{
     /* prevent SEGFAULT */
     if (head == NULL || list_empty(head)) {
         return NULL;
@@ -116,7 +128,8 @@ pcb_t *remove_proc_q(list_head *head)
 pcb_t *out_proc_q(list_head *head, pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(head == NULL || p == NULL || list_empty(head) || !list_contains(&p->p_list, head)) 
+    if (head == NULL || p == NULL || list_empty(head) ||
+        !list_contains(&p->p_list, head))
         return NULL;
 
     /* remove p element from list */
@@ -125,20 +138,22 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
     return p;
 }
 
-int empty_child(pcb_t *p) { 
+int empty_child(pcb_t *p)
+{
     /* prevent SEGFAULT */
-    if(p == NULL || &p->p_child == NULL) 
-        return true; 
-    return list_empty(&p->p_child); 
+    if (p == NULL || &p->p_child == NULL)
+        return true;
+    return list_empty(&p->p_child);
 }
 
 void insert_child(pcb_t *prnt, pcb_t *p)
 {
     /* prevent SEGFAULT */
     /* Note : list_contains could be removed if performance is required */
-    if(prnt == NULL || p == NULL || p->p_parent != NULL || list_contains(&p->p_sib, &prnt->p_child)) 
+    if (prnt == NULL || p == NULL || p->p_parent != NULL ||
+        list_contains(&p->p_sib, &prnt->p_child))
         return;
-    
+
     /* set new parent */
     p->p_parent = prnt;
     /* add p to children list of prnt */
@@ -147,7 +162,7 @@ void insert_child(pcb_t *prnt, pcb_t *p)
 
 pcb_t *remove_child(pcb_t *p)
 {
-    if(p == NULL || list_empty(&p->p_child))
+    if (p == NULL || list_empty(&p->p_child))
         return NULL;
     return out_child(container_of(list_next(&p->p_child), pcb_t, p_sib));
 }
@@ -156,7 +171,8 @@ pcb_t *out_child(pcb_t *p)
 {
     /* prevent SEGFAULT */
     /* Note : list_contains could be removed if performance is required */
-    if (p == NULL || p->p_parent == NULL || list_empty(&p->p_parent->p_child) || !list_contains(&p->p_sib, &p->p_parent->p_child))
+    if (p == NULL || p->p_parent == NULL || list_empty(&p->p_parent->p_child) ||
+        !list_contains(&p->p_sib, &p->p_parent->p_child))
         return NULL;
 
     /* list_next because for first one is useless */
