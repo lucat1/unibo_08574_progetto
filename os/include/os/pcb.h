@@ -128,7 +128,6 @@ int empty_child(pcb_t *p);
  * \param[in] prnt  PCP where to add the new child
  * \param[in] p Child to be added
  *
- * \todo    Test this function
  */
 void insert_child(pcb_t *prnt, pcb_t *p);
 
@@ -139,18 +138,17 @@ void insert_child(pcb_t *prnt, pcb_t *p);
  * \return  Return NULL if "p" has not child, otherwise return the deleted
  * element
  *
- * \todo    Test this function
  */
 pcb_t *remove_child(pcb_t *p);
 
 /**
  * \brief   Remove the PCB pointed by "p" from the child (p_child) of the parent
- * (p_parent) \param[in] p Element to be removed from parent's child list
+ * (p_parent) 
+ * \param[in] p Element to be removed from parent's child list
  *
  * \return  Return NULL if "p" has not a parent, otherwise return the deleted
  * element ("p")
  * 
- * \todo Test this function!
  */
 pcb_t *out_child(pcb_t *p);
 
