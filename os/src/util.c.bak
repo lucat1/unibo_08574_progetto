@@ -38,7 +38,7 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
         wr = writer(target, digit, 1);
     }
 
-    /* always write the string termination char (but don't count it as string
+    /* always write the string termination char (but don't count it as str
      * length) */
     writer(target, end, 1);
     return wrote;
