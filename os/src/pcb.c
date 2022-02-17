@@ -35,7 +35,6 @@ void init_pcbs()
 
 void free_pcb(pcb_t *p)
 {
-    /* prevent SEGFAULT */
     if (p == NULL || &p->p_list == NULL ||
         list_contains(&p->p_list, &pcb_free)) {
         return;
@@ -45,7 +44,6 @@ void free_pcb(pcb_t *p)
 
 static inline pcb_t *null_pcb(pcb_t *t)
 {
-    /* prevent SEGFAULT */
     if (t == NULL)
         return NULL;
     INIT_LIST_HEAD(&t->p_list);
@@ -93,7 +91,6 @@ int empty_proc_q(list_head *head)
 
 void insert_proc_q(list_head *head, pcb_t *p)
 {
-    /* prevent SEGFAULT */
     if (p == NULL || head == NULL || &p->p_list == NULL ||
         list_contains(&p->p_list, head))
         return;
@@ -102,7 +99,6 @@ void insert_proc_q(list_head *head, pcb_t *p)
 
 pcb_t *head_proc_q(list_head *head)
 {
-    /* prevent SEGFAULT */
     if (head == NULL || list_empty(head)) {
         return NULL;
     } else {
@@ -113,7 +109,6 @@ pcb_t *head_proc_q(list_head *head)
 pcb_t *remove_proc_q(list_head *head)
 {
 
-    /* prevent SEGFAULT */
     if (head == NULL || list_empty(head))
         return NULL;
 
@@ -127,7 +122,6 @@ pcb_t *remove_proc_q(list_head *head)
 
 pcb_t *out_proc_q(list_head *head, pcb_t *p)
 {
-    /* prevent SEGFAULT */
     if (head == NULL || p == NULL || list_empty(head) ||
         !list_contains(&p->p_list, head))
         return NULL;
@@ -140,7 +134,6 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
 
 int empty_child(pcb_t *p)
 {
-    /* prevent SEGFAULT */
     if (p == NULL || &p->p_child == NULL)
         return true;
     return list_empty(&p->p_child);
@@ -148,7 +141,6 @@ int empty_child(pcb_t *p)
 
 void insert_child(pcb_t *prnt, pcb_t *p)
 {
-    /* prevent SEGFAULT */
     /* Note : list_contains could be removed if performance is required */
     if (prnt == NULL || p == NULL || p->p_parent != NULL ||
         list_contains(&p->p_sib, &prnt->p_child))
@@ -169,15 +161,12 @@ pcb_t *remove_child(pcb_t *p)
 
 pcb_t *out_child(pcb_t *p)
 {
-    /* prevent SEGFAULT */
     /* Note : list_contains could be removed if performance is required */
     if (p == NULL || p->p_parent == NULL || list_empty(&p->p_parent->p_child) ||
         !list_contains(&p->p_sib, &p->p_parent->p_child))
         return NULL;
 
-    /* list_next because for first one is useless */
     list_del(&p->p_sib);
-    /* reset my parent */
     p->p_parent = NULL;
 
     return p;

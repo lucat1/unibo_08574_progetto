@@ -12,7 +12,6 @@
 
 bool pcb_free_contains(pcb_t *p)
 {
-    /* prevent SEGFAULT */
     if (p == NULL || &p->p_list == NULL) {
         return false;
     }
