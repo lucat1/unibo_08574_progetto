@@ -10,6 +10,16 @@
 #include "os/util.h"
 #include "test/test.h"
 
+bool pcb_free_contains(pcb_t *p)
+{
+    /* prevent SEGFAULT */
+    if(p == NULL || &(p->p_list) == NULL)
+    {
+        return false;
+    }
+    return list_contains(&(p->p_list), get_pcb_free());
+}
+
 int main()
 {
     pcb_t *pcb1, *pcb2, *pcb5;

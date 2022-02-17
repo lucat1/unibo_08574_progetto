@@ -33,16 +33,6 @@ void init_pcbs()
     }
 }
 
-bool pcb_free_contains(pcb_t *p)
-{
-    /* prevent SEGFAULT */
-    if(p == NULL || &(p->p_list) == NULL)
-    {
-        return false;
-    }
-    return list_contains(&(p->p_list), &pcb_free);
-}
-
 void free_pcb(pcb_t *p)
 {
     /* prevent SEGFAULT */
@@ -52,14 +42,14 @@ void free_pcb(pcb_t *p)
     list_add(&p->p_list, &pcb_free);
 }
 
-pcb_t *null_pcb(pcb_t *t)
+static inline pcb_t *null_pcb(pcb_t *t)
 {
     /* prevent SEGFAULT */
     if (t == NULL) 
         return NULL;
-    INIT_LIST_HEAD(&(t->p_list));
-    INIT_LIST_HEAD(&(t->p_child));
-    INIT_LIST_HEAD(&(t->p_sib));
+    INIT_LIST_HEAD(&t->p_list);
+    INIT_LIST_HEAD(&t->p_child);
+    INIT_LIST_HEAD(&t->p_sib);
     t->p_parent = NULL;
     t->p_time = 0;
     t->p_semAdd = NULL;
@@ -93,11 +83,9 @@ int empty_proc_q(list_head *head) { if(head == NULL) return true; return list_em
 void insert_proc_q(list_head *head, pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(p == NULL || head == NULL || &p->p_list == NULL) 
+    if(p == NULL || head == NULL || &p->p_list == NULL || list_contains(&p->p_list, head)) 
         return;
-    if(list_contains(&p->p_list, head)) 
-        return;
-    list_add_tail(&(p->p_list), head);
+    list_add_tail(&p->p_list, head);
 }
 
 pcb_t *head_proc_q(list_head *head)
@@ -128,105 +116,53 @@ pcb_t *remove_proc_q(list_head *head)
 pcb_t *out_proc_q(list_head *head, pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(head == NULL || p == NULL || list_empty(head)) 
+    if(head == NULL || p == NULL || list_empty(head) || !list_contains(&p->p_list, head)) 
         return NULL;
-
-    list_head *iter = list_next(head);
-
-    /* looking for p element */
-    for (; container_of(iter, pcb_t, p_list) != (p) && iter != (head);
-         iter = list_next(iter))
-        ;
-
-    /* completed a circle without finding p element */
-    if (iter == head) {
-        return NULL;
-    }
 
     /* remove p element from list */
-    list_del(iter);
+    list_del(&p->p_list);
 
-    return container_of(iter, pcb_t, p_list);
+    return p;
 }
 
 int empty_child(pcb_t *p) { 
     /* prevent SEGFAULT */
-    if(p == NULL || &(p->p_child) == NULL) 
+    if(p == NULL || &p->p_child == NULL) 
         return true; 
-    return list_empty(&(p->p_child)); 
+    return list_empty(&p->p_child); 
 }
 
 void insert_child(pcb_t *prnt, pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if(prnt == NULL || p == NULL) return;
-    if(list_contains(&(p->p_list), &(prnt->p_child))) return;
+    /* Note : list_contains could be removed if performance is required */
+    if(prnt == NULL || p == NULL || p->p_parent != NULL || list_contains(&p->p_sib), &prnt->p_child)) 
+        return;
     
     /* set new parent */
     p->p_parent = prnt;
-    pcb_t *first_child = container_of(&((prnt->p_child)), pcb_t, p_child);
-    
     /* add p to children list of prnt */
-    list_add_tail(&(p->p_list), &(prnt->p_child));
-    /* add p to the list of siblings */
-    if (first_child != NULL) {
-        /* if p is already in p_sib stop execution */
-        if(list_contains(&(p->p_sib), &(first_child->p_sib))) 
-            return;
-        list_add_tail(&(p->p_sib), &(first_child->p_sib));
-    }
+    list_add_tail(&p->p_sib, &prnt->p_child);
 }
 
 pcb_t *remove_child(pcb_t *p)
 {
-    /* can't remove if p has no children */
-    if (empty_child(p))
+    if(p == NULL || p->p_child == NULL)
         return NULL;
-
-    list_head *first_child_head = list_next(&(p->p_child));
-
-    /* if was set container_of with p_child, this would have returned "p" */
-    pcb_t *ret = container_of(first_child_head, pcb_t, p_list);
-
-    /* list_next because for first one is useless */
-    list_del(first_child_head);
-    /* remove p from siblings list */
-    list_del((&(ret->p_sib)));
-    /* reset my parent */
-    ret->p_parent = NULL;
-    /* clear ret siblings list */
-    INIT_LIST_HEAD(&(ret->p_sib));
-
-    return ret;
+    return out_child(list_next(p->p_child));
 }
 
 pcb_t *out_child(pcb_t *p)
 {
     /* prevent SEGFAULT */
-    if (p->p_parent == NULL)
+    /* Note : list_contains could be removed if performance is required */
+    if (p == NULL || p->p_parent == NULL || list_empty(&p->p_parent->p_child) || !list_contains(&p->p_sib, &p->p_parent->p_child))
         return NULL;
-    if(list_empty(&(p->p_parent)->p_child)) 
-        return NULL;
-    /* verifying that p is in p_child of his p_parent */
-    if(!list_contains(&(p->p_list), &(p->p_parent)->p_child))
-        return NULL;
-
-    list_head *iter = list_next(&((p->p_parent)->p_child));
-
-    /* looking for p element in p_child */
-    for (; container_of(iter, pcb_t, p_list) != (p); iter = list_next(iter))
-        ;
-
-    pcb_t *ret = container_of(iter, pcb_t, p_list);
 
     /* list_next because for first one is useless */
-    list_del(iter);
-    /* remove p from siblings list */
-    list_del((&(ret->p_sib)));
+    list_del(p->p_sib);
     /* reset my parent */
     ret->p_parent = NULL;
-    /* clear ret siblings list */
-    INIT_LIST_HEAD(&(ret->p_sib));
 
     return ret;
 }
