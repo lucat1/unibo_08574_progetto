@@ -31,8 +31,9 @@ list_head *get_pcb_free();
 
 /**
  * \brief   Initialize the list of free pcbs (pcb_free) from the table of pcbs
- *          (pcb_table) This function should be called only once during the
- *          initialization phase.
+ *          (pcb_table).
+ *          This function should be called only once during the initialization
+ * phase.
  */
 void init_pcbs();
 
@@ -100,8 +101,8 @@ pcb_t *remove_proc_q(list_head *head);
  *          pointed by `head`.
  * \param[in] head  Head of the list.
  * \param[in] p Pointer of PCB to remove from list pointed by `head`.
- * \return  Return NULL if list pointed by head doesn't contain PCB pointed by
- *          `p` otherwise return the deleted element.
+ * \return  Returns NULL if the list pointed by head doesn't contain the PCB pointed by
+ *          `p`, otherwise returns the deleted element.
  */
 pcb_t *out_proc_q(list_head *head, pcb_t *p);
 
