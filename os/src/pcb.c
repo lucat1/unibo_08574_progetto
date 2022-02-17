@@ -136,7 +136,7 @@ void insert_child(pcb_t *prnt, pcb_t *p)
 {
     /* prevent SEGFAULT */
     /* Note : list_contains could be removed if performance is required */
-    if(prnt == NULL || p == NULL || p->p_parent != NULL || list_contains(&p->p_sib), &prnt->p_child)) 
+    if(prnt == NULL || p == NULL || p->p_parent != NULL || list_contains(&p->p_sib, &prnt->p_child)) 
         return;
     
     /* set new parent */
@@ -147,9 +147,9 @@ void insert_child(pcb_t *prnt, pcb_t *p)
 
 pcb_t *remove_child(pcb_t *p)
 {
-    if(p == NULL || p->p_child == NULL)
+    if(p == NULL || list_empty(&p->p_child))
         return NULL;
-    return out_child(list_next(p->p_child));
+    return out_child(container_of(list_next(&p->p_child), pcb_t, p_sib));
 }
 
 pcb_t *out_child(pcb_t *p)
@@ -160,9 +160,9 @@ pcb_t *out_child(pcb_t *p)
         return NULL;
 
     /* list_next because for first one is useless */
-    list_del(p->p_sib);
+    list_del(&p->p_sib);
     /* reset my parent */
-    ret->p_parent = NULL;
+    p->p_parent = NULL;
 
-    return ret;
+    return p;
 }
