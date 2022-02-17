@@ -1,4 +1,5 @@
 #include "os/asl.h"
+#include "os/asl_impl.h"
 #include "os/util.h"
 #include "test/test.h"
 #include <stdlib.h>
@@ -14,8 +15,8 @@ int main()
     key = rand();
     init_asl();
     init_pcbs();
-    example_pcb = allocPcb();
-    example_pcb1 = allocPcb();
+    example_pcb = alloc_pcb();
+    example_pcb1 = alloc_pcb();
     /* alloc_semd */
     ensure("alloc_semd fails with a null argument")
     {
@@ -30,23 +31,6 @@ int main()
         assert(list_empty(&sem->s_procq));
         free_semd(sem);
     }
-    /* free_semd */
-    ensure("free_smd fails with an illegal argument")
-    {
-        assert(free_semd(NULL));
-        semd_t *sem = alloc_semd(&key);
-        insert_blocked(&key, example_pcb);
-        assert(free_semd(sem));
-        remove_blocked(&key);
-        assert(!free_semd(sem));
-    }
-    it("correctly deallocates an old semd")
-    {
-        semd_t *sem = alloc_semd(&key);
-        assert(!free_semd(sem));
-        assert(!list_size(get_semd_h()));
-        assert(list_size(get_semd_free()) == MAX_PROC);
-    }
     /* find_semd */
     ensure("find_semd fails with an illegal argument")
     {
@@ -60,8 +44,25 @@ int main()
         assert(find_semd(get_semd_h(), &key) == semd);
         free_semd(semd);
     }
+    /* free_semd */
+    ensure("free_smd fails with an illegal argument")
+    {
+        assert(free_semd(NULL));
+        semd_t *sem = alloc_semd(&key);
+        assert(!insert_blocked(&key, example_pcb));
+        assert(free_semd(sem));
+        remove_blocked(&key);
+        assert(!free_semd(sem));
+    }
+    it("correctly deallocates an old semd")
+    {
+        semd_t *sem = alloc_semd(&key);
+        assert(!free_semd(sem));
+        assert(!list_size(get_semd_h()));
+        assert(list_size(get_semd_free()) == MAX_PROC);
+    }
     /* init_asl */
-    it("intializes the table of semaphores correctly")
+    it("initializes the table of semaphores correctly")
     {
         assert(list_size(get_semd_free()) == MAX_PROC);
         assert(list_empty(get_semd_h()));
@@ -80,7 +81,7 @@ int main()
     example_pcb->p_semAdd = NULL;
     ensure("insert_blocked creates a new semd when required")
     {
-        assert(example_pcb);
+        assert(example_pcb != NULL);
         assert(!insert_blocked(&key, example_pcb));
         created = find_semd(get_semd_h(), &key);
     }
@@ -90,7 +91,7 @@ int main()
     }
     ensure("insert_blocked returns an existing semd when available")
     {
-        assert(example_pcb);
+        assert(example_pcb != NULL);
         assert(!insert_blocked(&key, example_pcb1));
         assert(list_is_last(&created->s_link, get_semd_h()));
     }
@@ -113,12 +114,12 @@ int main()
     /* out_blocked */
     ensure("out_blocked fails with a wrong PCB")
     {
-        assert(!out_blocked(NULL));
-        assert(!out_blocked(example_pcb));
+        assert(out_blocked(NULL) == NULL);
+        assert(out_blocked(example_pcb) == NULL);
         semd_t *semd = alloc_semd(&key);
         assert(!insert_blocked(&key, example_pcb));
         list_del(find_semd(get_semd_h(), &key)->s_procq.next);
-        assert(!out_blocked(example_pcb));
+        assert(out_blocked(example_pcb) == NULL);
         INIT_LIST_HEAD(&example_pcb->p_list);
         example_pcb->p_semAdd = NULL;
         free_semd(semd);
@@ -138,9 +139,9 @@ int main()
     /* head_blocked */
     ensure("head_blocked fails with a wrong sem_addr")
     {
-        assert(!head_blocked(NULL));
+        assert(head_blocked(NULL) == NULL);
         assert(list_empty(get_semd_h()));
-        assert(!head_blocked(&key));
+        assert(head_blocked(&key) == NULL);
     }
     it("computes the head of a PCB queue without removing it")
     {
@@ -155,8 +156,8 @@ int main()
     /* remove_blocked */
     ensure("remove_blocked fails with a wrong semaphore")
     {
-        assert(!remove_blocked(NULL));
-        assert(!remove_blocked(&key));
+        assert(remove_blocked(NULL) == NULL);
+        assert(remove_blocked(&key) == NULL);
     }
     ensure("remove_blocked returns the right pcb")
     {
@@ -171,7 +172,7 @@ int main()
 
         assert(list_empty(get_semd_h()));
     }
-    freePcb(example_pcb);
-    freePcb(example_pcb1);
+    free_pcb(example_pcb);
+    free_pcb(example_pcb1);
     return 0;
 }

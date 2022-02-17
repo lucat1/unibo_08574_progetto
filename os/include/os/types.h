@@ -13,12 +13,13 @@
 #include <umps/types.h>
 
 typedef signed int cpu_t;
-typedef unsigned int memaddr;
 /* Avoid re-defining size_t on a modern architecture */
 #ifdef __x86_64__
+typedef unsigned long memaddr;
 #include <stdbool.h>
 #include <stddef.h>
 #else
+typedef unsigned int memaddr;
 typedef unsigned int size_t;
 #define bool _Bool
 #define true 1
