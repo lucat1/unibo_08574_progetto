@@ -101,8 +101,8 @@ pcb_t *remove_proc_q(list_head *head);
  *          pointed by `head`.
  * \param[in] head  Head of the list.
  * \param[in] p Pointer of PCB to remove from list pointed by `head`.
- * \return  Returns NULL if the list pointed by head doesn't contain the PCB
- * pointed by `p`, otherwise returns the deleted element.
+ * \return Returns NULL if the list pointed by head doesn't contain the PCB
+ *         pointed by `p`, otherwise returns the deleted element.
  */
 pcb_t *out_proc_q(list_head *head, pcb_t *p);
 
@@ -131,9 +131,10 @@ pcb_t *remove_child(pcb_t *p);
 
 /**
  * \brief   Removes the PCB pointed by `p` from the child (p_child) of the
- * parent (p_parent). \param[in] p Element to be removed from parent's child
- * list. \return  Returns NULL if `p` has not a parent, otherwise returns the
- * deleted element (`p`).
+ * parent (p_parent).
+ * \param[in] p Element to be removed from parent's child list.
+ * \return  Returns NULL if `p` has not a parent, otherwise returns the deleted
+ *          element (`p`).
  */
 pcb_t *out_child(pcb_t *p);
 
