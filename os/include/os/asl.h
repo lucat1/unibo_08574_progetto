@@ -20,7 +20,8 @@
 void init_asl();
 /**
  * \brief Blocks the given pcb on the required semaphore, adding a new one if
- * necessary. The function can fail if any of these conditions are met:
+ * necessary.
+ * The function can fail if any of these conditions are met:
  * - The semaphore address is NULL (error code 1).
  * - The pcb pointer is NULL (error code 2).
  * - The pcb is already blocked on another semaphore (error code 3).

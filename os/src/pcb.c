@@ -5,7 +5,6 @@
  * \author Alessandro Frau
  * \author Gianmaria Rovelli
  * \date 17-01-2022
- *
  */
 
 #include "os/pcb.h"
@@ -21,7 +20,6 @@ pcb_t *get_pcb_table() { return pcb_table; }
 list_head *get_pcb_free() { return &pcb_free; }
 #endif
 
-/* This function should be called only once during the initialization phase */
 void init_pcbs()
 {
     /* Initialize the list */
@@ -126,7 +124,7 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
         !list_contains(&p->p_list, head))
         return NULL;
 
-    /* remove p element from list */
+    /* Remove p element from list */
     list_del(&p->p_list);
 
     return p;
@@ -141,14 +139,15 @@ int empty_child(pcb_t *p)
 
 void insert_child(pcb_t *prnt, pcb_t *p)
 {
-    /* Note : list_contains could be removed if performance is required */
+    /* Note: `list_contains` is a costly pedantic check on the input data. It
+     * can be safely removed if performance is a concern. */
     if (prnt == NULL || p == NULL || p->p_parent != NULL ||
         list_contains(&p->p_sib, &prnt->p_child))
         return;
 
-    /* set new parent */
+    /* Set new parent */
     p->p_parent = prnt;
-    /* add p to children list of prnt */
+    /* Add `p` to children list of `prnt` */
     list_add_tail(&p->p_sib, &prnt->p_child);
 }
 
@@ -168,6 +167,5 @@ pcb_t *out_child(pcb_t *p)
 
     list_del(&p->p_sib);
     p->p_parent = NULL;
-
     return p;
 }
