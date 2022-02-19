@@ -18,6 +18,7 @@
  * available semaphores in the free pool.
  */
 void init_asl();
+
 /**
  * \brief Blocks the given pcb on the required semaphore, adding a new one if
  * necessary.
@@ -32,12 +33,14 @@ void init_asl();
  * otherwise.
  */
 int insert_blocked(int *sem_addr, pcb_t *p);
+
 /**
  * \brief Removes a a blocked pcb from its semaphore, removing the semaphore
  * from the list of in-use semds if no more processes are blocked on it.
  * \param[in] pcb A pointer to the pcb to unblock
  * \return The unblocked pcb, or NULL if an error is encountered.
  */
+
 pcb_t *out_blocked(pcb_t *pcb);
 /**
  * \brief Returns the first pcb blocked on the given semaphore.
@@ -45,6 +48,7 @@ pcb_t *out_blocked(pcb_t *pcb);
  * \return The first pcb blocked on the semaphore, or NULL if an error occurred.
  */
 pcb_t *head_blocked(int *sem_addr);
+
 /**
  * \brief Removes the first pcb blocked on the given semaphore.
  * \param[in] sem_addr A pointer to the semaphore address
