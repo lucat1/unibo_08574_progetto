@@ -36,15 +36,6 @@ cmake ..
 make
 ```
 
-## Documentation
-The project offline documentation can be generated via [Doxygen](https://www.doxygen.nl).
-The following commands will produce the output TeX files in `build/docs/latex`.
-```sh
-mkdir build && cd build
-cmake ..
-make docs
-```
-
 ## Compiling on the host machine for testing
 The cmake build system allows us to easily swap C compilers and we can use that
 to our advantage. Compiling for the host's system architecture allows us to run
@@ -54,6 +45,15 @@ cross-compilation via the `CROSS_COMPILE` option and run tests as shown below:
 mkdir buildt && cd buildt
 cmake -DCROSS_COMPILE=0 ..
 make && make test
+```
+
+## Documentation
+The project offline documentation can be generated via [Doxygen](https://www.doxygen.nl).
+The following commands will produce the output TeX files in `build/docs/latex`.
+```sh
+mkdir build && cd build
+cmake ..
+make docs
 ```
 
 ## Setup workspace with the Clangd LSP
