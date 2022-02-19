@@ -1,0 +1,3 @@
+Procedures across the implementation and the provided test file have been
+renamed to follow our naming convetion. The include paths in the given header
+and source files have also been adapted to our project structure.
