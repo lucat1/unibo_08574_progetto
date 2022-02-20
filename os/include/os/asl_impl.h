@@ -57,7 +57,7 @@ static inline
  * The procedure fails if the semaphore is NULL or it has remaining processes
  * blocked on it. After this preliminary check the semaphore is moved from the
  * free to the busy list.
- * \param[in] sem_addr The semaphore key to look for.
+ * \param[in] semd The semaphore key to look for.
  * \return Returns true if an error occurred, false otherwise.
  */
 #ifndef PANDOS_TESTING
