@@ -30,9 +30,10 @@ the host machine. The following cmake options are available:
   like `clangd` or `ccls` to offer meaningful advice.
 
 ### Cross-compilation for the MIPS architecture:
-The standard default cmake build will compile all project phases and generate a
-UMPS3 kernel for each. Provided You call the artifact directory `build` the
-emulator configuration found in `machines/phase{n}` should work out of the box.
+The standard default cmake build will compile all project phases (i.e. the tests
+in `phase{n}`) and generate a UMPS3 kernel for each. Provided you call the
+artifact directory `build` the emulator configuration found in
+`machines/phase{n}` should work out of the box.
 ```sh
 mkdir build && cd build
 cmake ..
