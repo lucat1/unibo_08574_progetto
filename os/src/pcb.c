@@ -33,8 +33,7 @@ void init_pcbs()
 
 void free_pcb(pcb_t *p)
 {
-    if (p == NULL || &p->p_list == NULL ||
-        list_contains(&p->p_list, &pcb_free)) {
+    if (p == NULL || list_contains(&p->p_list, &pcb_free)) {
         return;
     }
     list_add(&p->p_list, &pcb_free);
@@ -89,8 +88,7 @@ int empty_proc_q(list_head *head)
 
 void insert_proc_q(list_head *head, pcb_t *p)
 {
-    if (p == NULL || head == NULL || &p->p_list == NULL ||
-        list_contains(&p->p_list, head))
+    if (p == NULL || head == NULL || list_contains(&p->p_list, head))
         return;
     list_add_tail(&p->p_list, head);
 }
@@ -132,7 +130,7 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
 
 int empty_child(pcb_t *p)
 {
-    if (p == NULL || &p->p_child == NULL)
+    if (p == NULL)
         return true;
     return list_empty(&p->p_child);
 }
