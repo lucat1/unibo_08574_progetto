@@ -146,7 +146,7 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
  * \param[in] ... Additional parameters for the format string.
  * \return The number of characters actually printed.
  */
-#define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, __VA_ARGS__)
+#define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
 #endif
 
 #endif /* PANDOS_UTIL_H */

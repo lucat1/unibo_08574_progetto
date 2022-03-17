@@ -54,7 +54,7 @@ add_subdirectory(os)
 
 if(CROSS_COMPILE)
     add_subdirectory(phase1)
-    # add_subdirectory(phase2)
+    add_subdirectory(phase2)
     # add_subdirectory(phase3)
 endif()
 
