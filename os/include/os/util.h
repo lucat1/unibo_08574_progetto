@@ -7,8 +7,8 @@
  * \date 17-01-2022
  */
 
-#ifndef PANDOS_UTIL_H
-#define PANDOS_UTIL_H
+#ifndef PANDOS_OS_UTIL_H
+#define PANDOS_OS_UTIL_H
 
 #include "list.h"
 #include "types.h"
@@ -149,4 +149,4 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
 #define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
 #endif
 
-#endif /* PANDOS_UTIL_H */
+#endif /* PANDOS_OS_UTIL_H */

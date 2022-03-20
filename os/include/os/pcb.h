@@ -5,7 +5,6 @@
  * \author Alessandro Frau
  * \author Gianmaria Rovelli
  * \date 17-01-2022
- *
  */
 
 #ifndef PANDOS_PCB_H

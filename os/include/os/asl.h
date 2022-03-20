@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file
  * \brief Active Semaphore List
  *
  * \author Luca Tagliavini
