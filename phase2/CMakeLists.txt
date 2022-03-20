@@ -2,6 +2,9 @@ project(phase2)
 add_executable(${PROJECT_NAME}
     src/init.c
     src/glob.c
+    src/interrupt.c
+    src/util.c
+    src/scheduler.c
     src/main.c
 )
 
