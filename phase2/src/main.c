@@ -1,21 +1,14 @@
-/*********************************P1TEST.C*******************************
+/**
+ * \file main.c
+ * \brief Entrypoint for the PandOS+ kernel.
  *
- *	Test program for the modules ASL and pcbQueues (phase 1).
- *
- *	Produces progress messages on terminal 0 in addition
- *		to the array ``okbuf[]''
- *		Error messages will also appear on terminal 0 in
- *		addition to the array ``errbuf[]''.
- *
- *		Aborts as soon as an error is detected.
- *
- *      Modified by Michael Goldweber on May 15, 2004
+ * \author Luca Tagliavini
+ * \date 17-03-2022
  */
 
 #include "init.h"
-#include "os/util.h"
 
-int main(void)
+int main(int argc)
 {
     init();
     return 0;

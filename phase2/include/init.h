@@ -10,6 +10,6 @@
 #ifndef PANDOS_INIT_H
 #define PANDOS_INIT_H
 
-void init();
+extern void init();
 
 #endif /* PANDOS_INIT_H */
