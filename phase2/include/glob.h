@@ -3,6 +3,7 @@
  * \brief Global variables
  *
  * \author Luca Tagliavini
+ * \author Stefano Volpe
  * \date 17-03-2022
  */
 

@@ -5,7 +5,6 @@
  * \author Luca Tagliavini
  * \author Stefano Volpe
  * \date 20-03-2022
- *
  */
 
 #ifndef PANDOS_UTIL_H

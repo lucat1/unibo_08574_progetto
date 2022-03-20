@@ -2,7 +2,10 @@
  * \file init.c
  * \brief Implementation \ref init.h
  *
- * \author Luca Tagliavini \date 17-03-2022 */
+ * \author Luca Tagliavini
+ * \author Stefano Volpe
+ * \date 17-03-2022
+ */
 
 #include "init.h"
 #include "glob.h"

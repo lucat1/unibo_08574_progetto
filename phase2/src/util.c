@@ -1,3 +1,12 @@
+/**
+ * \file pcb.h
+ * \brief PCB implementation
+ *
+ * \author Luca Tagliavini
+ * \author Stefano Volpe
+ * \date 20-03-2022
+ */
+
 #include "util.h"
 #include "glob.h"
 #include "os/pcb.h"

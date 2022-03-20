@@ -1,8 +1,9 @@
 /**
  * \file schedule.h
- * \brief The PandOS scheduler.
+ * \brief Interfaces for the process scheduler.
  *
  * \author Luca Tagliavini
+ * \author Stefano Volpe
  * \date 20-03-2022
  */
 
