@@ -7,9 +7,38 @@
  * \date 20-03-2022
  */
 
-#ifndef PANDOS_SCHEDULER
-#define PANDOS_SCHEDULER
+#ifndef PANDOS_SCHEDULER_H
+#define PANDOS_SCHEDULER_H
 
-extern void schedule();
+#include "os/list.h"
+#include "os/types.h"
 
-#endif /* PANDOS_SCHEDULER */
+/* Number of started but not yet terminated processes. */
+extern int running_count;
+/* Number of processes softly blocked, that is they have been started but have
+ * been blocked by either an I/O operation or a timer request. */
+extern int blocked_count;
+/* Tail pointer to a queue of processes that are in the ready state. */
+extern list_head ready_queue_lo, ready_queue_hi;
+/* Pointer to the currently running process */
+extern pcb_t *active_process;
+
+/**
+ * \brief Spawns a process and returns the allocated structure.
+ * \param[in] priority The proprity of the spawned process. Either 1 for high or
+ * 0 for low.
+ * \return The allocated process descriptor.
+ */
+pcb_t *spawn_process(bool priority);
+
+void kill_process(pcb_t *p);
+
+/* Externally implemented function to hand the processor over to a new
+ * process
+ */
+extern void scheduler_takeover();
+
+void init_scheduler();
+void schedule();
+
+#endif /* PANDOS_SCHEDULER_H */

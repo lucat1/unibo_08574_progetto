@@ -65,10 +65,10 @@ typedef struct pcb_t {
     int *p_sem_add;
 
     /* Pointer to the support struct */
-    support_t *p_support_struct;
+    support_t *p_support;
 
     /* Indicator of priority; 0 - low, 1 - high */
-    int p_prio;
+    bool p_prio; /* NOTE: the type has been changed to bool */
 
     /* process id */
     int p_pid;

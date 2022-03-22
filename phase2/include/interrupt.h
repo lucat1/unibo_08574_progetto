@@ -10,6 +10,6 @@
 #ifndef PANDOS_INTERRUPT_H
 #define PANDOS_INTERRUPT_H
 
-void interrupt_handler();
+void exception_handler();
 
 #endif /* PANDOS_INTERRUPT_H */

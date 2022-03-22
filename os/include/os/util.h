@@ -10,8 +10,8 @@
 #ifndef PANDOS_OS_UTIL_H
 #define PANDOS_OS_UTIL_H
 
-#include "list.h"
-#include "types.h"
+#include "os/list.h"
+#include "os/types.h"
 #ifdef PANDOS_TESTING
 #include <stdio.h>
 #endif

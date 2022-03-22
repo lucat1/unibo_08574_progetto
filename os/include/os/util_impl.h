@@ -80,9 +80,9 @@ size_t str_writer(void *dest, const char *data, size_t len);
 
 #ifndef __x86_64__
 /* Number of lines in the memory print buffer */
-#define MEM_WRITER_LINES 64
+#define MEM_WRITER_LINES 256
 /* Length of a single line in characters */
-#define MEM_WRITER_LINE_LENGTH 42
+#define MEM_WRITER_LINE_LENGTH 80
 
 /**
  * \brief Prints a single character to the given terminal.
@@ -92,7 +92,7 @@ size_t str_writer(void *dest, const char *data, size_t len);
  * operation failed because the terminal was in an incorrect state, 2 if any
  * other kind of failure happened during the operation.
  */
-int term_putchar(termreg_t *term, char c);
+static int term_putchar(termreg_t *term, char c);
 
 /**
  * \brief Prints a string to the given serial terminal.
@@ -103,7 +103,7 @@ int term_putchar(termreg_t *term, char c);
  * length of the string to be printed. \return Returns the number of written
  * characters.
  */
-size_t serial_writer(void *dest, const char *data, size_t len);
+static size_t serial_writer(void *dest, const char *data, size_t len);
 
 /**
  * \brief Utility structure for streaming data to raw memory.
@@ -114,7 +114,7 @@ typedef struct memory_target {
     size_t ch;   /** Index of the current character in the current line */
 } memory_target_t;
 
-size_t memory_writer(void *dest, const char *data, size_t len);
+static size_t memory_writer(void *dest, const char *data, size_t len);
 #endif
 
 #endif /* PANDOS_UTIL_IMPL_H */

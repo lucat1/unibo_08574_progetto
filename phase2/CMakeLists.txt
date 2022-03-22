@@ -1,11 +1,11 @@
 project(phase2)
 add_executable(${PROJECT_NAME}
-    src/init.c
-    src/glob.c
+    src/native_scheduler.c
+    src/semaphores.c
     src/interrupt.c
-    src/util.c
-    src/main.c
     test/p2test.c
+    src/init.c
+    src/main.c
 )
 
 set(CMAKE_C_COMPILER ${MIPSEL_CC})

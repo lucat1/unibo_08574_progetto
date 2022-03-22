@@ -58,6 +58,10 @@ static inline pcb_t *null_pcb(pcb_t *t)
     for (int i = 0; i < STATE_GPR_LEN; i++) {
         t->p_s.gpr[i] = 0;
     }
+    /* New fields (phase2) */
+    t->p_support = NULL;
+    t->p_prio = 0;
+    t->p_pid = 0;
     return t;
 }
 

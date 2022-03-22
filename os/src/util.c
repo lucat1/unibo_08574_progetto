@@ -138,7 +138,7 @@ size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
 }
 
 #ifndef __x86_64__
-int term_putchar(termreg_t *term, char c)
+static int term_putchar(termreg_t *term, char c)
 {
     devreg stat;
 
@@ -154,7 +154,7 @@ int term_putchar(termreg_t *term, char c)
     return (stat == ST_TRANSMITTED) ? 0 : 2;
 }
 
-size_t serial_writer(void *dest, const char *data, size_t len)
+static size_t serial_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     termreg_t *term;
@@ -173,9 +173,11 @@ size_t serial_writer(void *dest, const char *data, size_t len)
  * slightly modified along the way): kputchar, next_line
  */
 
-#define clean_line(l)                                                          \
-    for (size_t i = 0; i < MEM_WRITER_LINE_LENGTH; i++)                        \
-        mem->buffer[l][i] = ' ';
+static inline void clean_line(memory_target_t *mem, size_t line)
+{
+    for (size_t i = 0; i < MEM_WRITER_LINE_LENGTH; i++)
+        mem->buffer[line][i] = ' ';
+}
 
 // Skip to next line
 static inline void next_line(memory_target_t *mem)
@@ -183,21 +185,21 @@ static inline void next_line(memory_target_t *mem)
     mem->line = (mem->line + 1) % MEM_WRITER_LINES;
     mem->ch = 0;
     /* Clean out the rest of the line for aesthetic purposes */
-    clean_line(mem->line);
+    clean_line(mem, mem->line);
 }
 
-static void kputchar(memory_target_t *mem, char str)
+static void kputchar(memory_target_t *mem, char ch)
 {
-    if (str == '\n')
+    if (ch == '\n')
         next_line(mem);
     else {
-        mem->buffer[mem->line][mem->ch] = str;
+        mem->buffer[mem->line][mem->ch] = ch;
         if (++mem->ch >= MEM_WRITER_LINE_LENGTH)
             next_line(mem);
     }
 }
 
-size_t memory_writer(void *dest, const char *data, size_t len)
+static size_t memory_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     memory_target_t *mem;
@@ -206,7 +208,7 @@ size_t memory_writer(void *dest, const char *data, size_t len)
     /* Clean the first line during the first print */
     mem = (memory_target_t *)dest;
     if (mem->line == 0 && mem->ch == 0)
-        clean_line(mem->line);
+        clean_line(mem, mem->line);
 
     for (it = (char *)data, check_len = len != 0;
          *it != '\0' && (!check_len || len--); ++it)

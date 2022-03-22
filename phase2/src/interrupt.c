@@ -8,7 +8,103 @@
  */
 
 #include "interrupt.h"
+#include "os/scheduler.h"
 #include "os/util.h"
+#include "umps/cp0.h"
+#include <umps/arch.h>
+#include <umps/libumps.h>
 
 /* TODO: fill me */
-void interrupt_handler() { pandos_printf("interrupt caught\n"); }
+static inline void interrupt_handler() { pandos_kprintf("(::) iterrupt\n"); }
+
+static inline void tbl_handler()
+{
+    if (active_process->p_support == NULL)
+        kill_process(active_process);
+    else {
+        support_t *s = active_process->p_support;
+        pandos_kprintf("(::) handoff to support %d\n", s->sup_asid);
+        /* TODO: tell the scheduler to handoff the control to s->sup_asid;
+         * with the appropriate state found in s->sup_except_state ??????
+         * read the docs i guess
+         */
+    }
+}
+
+/* TODO: fill me */
+static inline void trap_handler() { pandos_kprintf("(::) trap\n"); }
+
+static inline void syscall_handler()
+{
+    const int id = active_process->p_s.reg_a0;
+    switch (id) {
+        case CREATEPROCESS:
+            pandos_kprintf("(::) syscall CREATEPROCESS\n");
+            /* TODO */
+            break;
+        case TERMPROCESS:
+            pandos_kprintf("(::) syscall TERMPROCESS\n");
+            /* TODO */
+            break;
+        case PASSEREN:
+            pandos_kprintf("(::) syscall PASSEREN\n");
+            /* TODO */
+            break;
+        case VERHOGEN:
+            pandos_kprintf("(::) syscall VERHOGEN\n");
+            /* TODO */
+            break;
+        case DOIO:
+            pandos_kprintf("(::) syscall DOIO\n");
+            /* TODO */
+            break;
+        case GETTIME:
+            pandos_kprintf("(::) syscall GETTIME\n");
+            /* TODO */
+            break;
+        case CLOCKWAIT:
+            pandos_kprintf("(::) syscall CLOCKWAIT\n");
+            /* TODO */
+            break;
+        case GETSUPPORTPTR:
+            pandos_kprintf("(::) syscall GETSUPPORTPTR\n");
+            /* TODO */
+            break;
+        case GETPROCESSID:
+            pandos_kprintf("(::) syscall GETPROCESSID\n");
+            /* TODO */
+            break;
+        case YIELD:
+            pandos_kprintf("(::) syscall YIELD\n");
+            /* TODO */
+            break;
+        default:
+            pandos_kprintf("(::) invalid system call %d\n", id);
+            /* TODO */
+            break;
+    }
+}
+
+void exception_handler()
+{
+    /* First things first: save the processor state in the appropriate process
+     * state structure */
+    STST(&active_process->p_s);
+    /* active_process->p_s.cause could have been used instead of getCAUSE() */
+    switch (CAUSE_GET_EXCCODE(getCAUSE())) {
+        case 0:
+            interrupt_handler();
+            break;
+        case 1:
+        case 2:
+        case 3:
+            tbl_handler();
+            break;
+        case 8:
+            syscall_handler();
+            break;
+        default: /* 4-7, 9-12 */
+            trap_handler();
+            break;
+    }
+}
