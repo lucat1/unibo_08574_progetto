@@ -10,4 +10,4 @@
 #include "os/util.h"
 
 /* TODO */
-inline void schedule() { pandos_printf(":: schedule\n"); }
+inline void schedule() { pandos_kprintf(":: schedule\n"); }

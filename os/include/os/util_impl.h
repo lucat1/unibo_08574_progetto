@@ -11,6 +11,7 @@
 #define PANDOS_UTIL_IMPL_H
 
 #include "os/types.h"
+#include "umps/libumps.h"
 
 #ifndef __x86_64__
 #define va_arg(varg, type) (type) * ((type *)varg++)
@@ -78,13 +79,18 @@ typedef struct str_target {
 size_t str_writer(void *dest, const char *data, size_t len);
 
 #ifndef __x86_64__
+/* Number of lines in the memory print buffer */
+#define MEM_WRITER_LINES 64
+/* Length of a single line in characters */
+#define MEM_WRITER_LINE_LENGTH 42
+
 /**
  * \brief Prints a single character to the given terminal.
  * \param[out] term The terminal to be printed on.
  * \param[in] c The character to be printed.
- * \return Returns 0 if the character was printed correctly, 1 if the operation
- * failed because the terminal was in an incorrect state, 2 if any other kind of
- * failure happened during the operation.
+ * \return Returns 0 if the character was printed correctly, 1 if the
+ * operation failed because the terminal was in an incorrect state, 2 if any
+ * other kind of failure happened during the operation.
  */
 int term_putchar(termreg_t *term, char c);
 
@@ -92,12 +98,23 @@ int term_putchar(termreg_t *term, char c);
  * \brief Prints a string to the given serial terminal.
  * If `len` is zero, it is ignored. If a terminator character is encountered
  * before `len` character have been written, the copy process halts.
- * \param[out] dest The serial terminal to which the string is to be printed.
- * \param[in] data The string to be printed.
- * \param[in] len The length of the string to be printed.
- * \return Returns the number of written characters.
+ * \param[out] dest The serial terminal to which the string is to be
+ * printed. \param[in] data The string to be printed. \param[in] len The
+ * length of the string to be printed. \return Returns the number of written
+ * characters.
  */
 size_t serial_writer(void *dest, const char *data, size_t len);
+
+/**
+ * \brief Utility structure for streaming data to raw memory.
+ */
+typedef struct memory_target {
+    char buffer[MEM_WRITER_LINES][MEM_WRITER_LINE_LENGTH];
+    size_t line; /** Index of the next to write */
+    size_t ch;   /** Index of the current character in the current line */
+} memory_target_t;
+
+size_t memory_writer(void *dest, const char *data, size_t len);
 #endif
 
 #endif /* PANDOS_UTIL_IMPL_H */

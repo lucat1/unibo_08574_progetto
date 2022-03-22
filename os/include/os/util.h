@@ -131,6 +131,7 @@ size_t nitoa(int i, int base, char *dest, size_t len);
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
 
 #ifndef __x86_64__
+
 /**
  * \brief Prints formatted text on a stream.
  * \param[out] fd The file descriptor for the stream to be used.
@@ -147,6 +148,8 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
  * \return The number of characters actually printed.
  */
 #define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
+
+size_t pandos_kprintf(const char *fmt, ...);
 #endif
 
 #endif /* PANDOS_OS_UTIL_H */
