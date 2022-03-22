@@ -26,6 +26,27 @@ typedef unsigned int size_t;
 #define false 0
 #endif
 
+/* Page Table Entry descriptor */
+typedef struct pte_entry_t {
+    unsigned int pte_entry_hi;
+    unsigned int pte_entry_lo;
+} pte_entry_t;
+
+/* Support level context */
+typedef struct context_t {
+    unsigned int stack_ptr;
+    unsigned int status;
+    unsigned int pc;
+} context_t;
+
+/* Support level descriptor */
+typedef struct support_t {
+    int sup_asid;                    /* process ID */
+    state_t sup_except_state[2];     /* old state exceptions */
+    context_t sup_except_context[2]; /* new contexts for passing up	*/
+    pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
+} support_t;
+
 /* process table entry type */
 typedef struct pcb_t {
     /* process queue  */
@@ -41,7 +62,16 @@ typedef struct pcb_t {
     cpu_t p_time; /* cpu time used by proc */
 
     /* Pointer to the semaphore the process is currently blocked on */
-    int *p_semAdd;
+    int *p_sem_add;
+
+    /* Pointer to the support struct */
+    support_t *p_support_struct;
+
+    /* Indicator of priority; 0 - low, 1 - high */
+    int p_prio;
+
+    /* process id */
+    int p_pid;
 } pcb_t;
 
 /* semaphore descriptor (SEMD) data structure */

@@ -15,18 +15,10 @@
 #include "os/const.h"
 #include "os/pcb.h"
 #include "os/util.h"
+#include "p2test.h"
 #include "umps/cp0.h"
 #include "umps/libumps.h"
 #include "util.h"
-
-/* TODO: change with tutor provided code */
-static void uTLB_RefillHandler()
-{
-    setENTRYHI(0x80000000);
-    setENTRYLO(0x00000000);
-    TLBWR();
-    LDST((state_t *)0x0FFFF000);
-}
 
 /* Initialize the Pass Up Vector handlers to the given procedures until the
  * support level is implemented.
@@ -39,9 +31,6 @@ inline void init_puv()
     pv->exception_handler = (memaddr)interrupt_handler;
     pv->exception_stackPtr = KERNELSTACK;
 }
-
-/* TODO: Remove and replace with the routine provided by the tutor */
-int test() { return 0; }
 
 inline void init_process()
 {

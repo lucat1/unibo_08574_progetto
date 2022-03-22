@@ -18,6 +18,6 @@
         "asid": 64,
         "file": "../build/phase2/phase2.stab.umps"
     },
-    "tlb-floor-address": "0xffffffff",
+    "tlb-floor-address": "0x80000000",
     "tlb-size": 16
 }

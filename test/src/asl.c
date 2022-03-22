@@ -73,12 +73,12 @@ int main()
         assert(insert_blocked(NULL, example_pcb));
         assert(insert_blocked(&key, NULL));
     }
-    example_pcb->p_semAdd = &key + rand();
+    example_pcb->p_sem_add = &key + rand();
     ensure("insert_blocked fails with a pcb that's already blocked")
     {
         assert(insert_blocked(&key, example_pcb));
     }
-    example_pcb->p_semAdd = NULL;
+    example_pcb->p_sem_add = NULL;
     ensure("insert_blocked creates a new semd when required")
     {
         assert(example_pcb != NULL);
@@ -121,7 +121,7 @@ int main()
         list_del(find_semd(get_semd_h(), &key)->s_procq.next);
         assert(out_blocked(example_pcb) == NULL);
         INIT_LIST_HEAD(&example_pcb->p_list);
-        example_pcb->p_semAdd = NULL;
+        example_pcb->p_sem_add = NULL;
         free_semd(semd);
     }
     it("removes the appropriate PCB and returns it")

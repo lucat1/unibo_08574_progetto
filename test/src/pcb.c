@@ -34,7 +34,7 @@ int main()
             assert(list_empty(&pcb1->p_child));
             assert(list_empty(&pcb1->p_sib));
             assert(pcb1->p_parent == NULL);
-            assert(pcb1->p_semAdd == NULL);
+            assert(pcb1->p_sem_add == NULL);
             assert(pcb1->p_time == 0);
             assert(pcb1->p_s.entry_hi == 0);
             assert(pcb1->p_s.cause == 0);

@@ -98,7 +98,7 @@ int insert_blocked(int *sem_addr, pcb_t *p)
         return 1;
     if (p == NULL)
         return 2;
-    if (p->p_semAdd != NULL)
+    if (p->p_sem_add != NULL)
         return 3;
 
     /* Return an error when we run out of memory */
@@ -106,19 +106,19 @@ int insert_blocked(int *sem_addr, pcb_t *p)
         (sem = alloc_semd(sem_addr)) == NULL)
         return 4;
     list_add_tail(&p->p_list, &sem->s_procq);
-    p->p_semAdd = sem_addr;
+    p->p_sem_add = sem_addr;
     return 0;
 }
 
 pcb_t *out_blocked(pcb_t *pcb)
 {
     semd_t *sem;
-    if (pcb == NULL || (sem = find_semd(&semd_h, pcb->p_semAdd)) == NULL ||
+    if (pcb == NULL || (sem = find_semd(&semd_h, pcb->p_sem_add)) == NULL ||
         !list_contains(&pcb->p_list, &sem->s_procq))
         return NULL;
 
     list_del(&pcb->p_list);
-    pcb->p_semAdd = NULL;
+    pcb->p_sem_add = NULL;
     if (list_empty(&sem->s_procq))
         free_semd(sem);
     return pcb;

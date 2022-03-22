@@ -48,7 +48,7 @@ static inline pcb_t *null_pcb(pcb_t *t)
     INIT_LIST_HEAD(&t->p_sib);
     t->p_parent = NULL;
     t->p_time = 0;
-    t->p_semAdd = NULL;
+    t->p_sem_add = NULL;
     t->p_s.entry_hi = 0;
     t->p_s.cause = 0;
     t->p_s.status = UNINSTALLED;

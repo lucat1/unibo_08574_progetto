@@ -37,26 +37,19 @@
 
 #define MAX_PROC 20
 
-#define CREATEPROCESS 1
-#define TERMPROCESS 2
-#define PASSEREN 3
-#define VERHOGEN 4
-#define IOWAIT 5
-#define GETTIME 6
-#define CLOCKWAIT 7
-#define GETSUPPORTPTR 8
-#define TERMINATE 9
-#define GET_TOD 10
-#define WRITEPRINTER 11
-#define WRITETERMINAL 12
-#define READTERMINAL 13
-#define DISK_GET 14
-#define DISK_PUT 15
-#define FLASH_READ 16
-#define FLASH_WRITE 17
-#define DELAY 18
-#define PSEMVIRT 19
-#define VSEMVIRT 20
+#define CREATEPROCESS -1
+#define TERMPROCESS -2
+#define PASSEREN -3
+#define VERHOGEN -4
+#define DOIO -5
+#define GETTIME -6
+#define CLOCKWAIT -7
+#define GETSUPPORTPTR -8
+#define GETPROCESSID -9
+#define YIELD -10
+
+#define PROCESS_PRIO_LOW 0
+#define PROCESS_PRIO_HIGH 1
 
 /* Status register constants */
 #define ALLOFF 0x00000000
