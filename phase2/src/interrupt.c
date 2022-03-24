@@ -36,7 +36,7 @@ static inline void trap_handler() { pandos_kprintf("(::) trap\n"); }
 
 static inline void syscall_handler()
 {
-    const int id = active_process->p_s.reg_a0;
+    const int id = (int)active_process->p_s.reg_a0;
     switch (id) {
         case CREATEPROCESS:
             pandos_kprintf("(::) syscall CREATEPROCESS\n");
@@ -80,17 +80,17 @@ static inline void syscall_handler()
             break;
         default:
             pandos_kprintf("(::) invalid system call %d\n", id);
-            /* TODO */
+            PANIC();
             break;
     }
 }
 
 void exception_handler()
 {
-    /* First things first: save the processor state in the appropriate process
-     * state structure */
-    STST(&active_process->p_s);
-    /* active_process->p_s.cause could have been used instead of getCAUSE() */
+    state_t *p_s = (state_t *)BIOSDATAPAGE;
+    p_s->pc_epc = p_s->reg_t9 += WORD_SIZE;
+    memcpy(&active_process->p_s, p_s, sizeof(state_t));
+    /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
             interrupt_handler();
@@ -107,4 +107,6 @@ void exception_handler()
             trap_handler();
             break;
     }
+    /* TODO: maybe rescheduling shouldn't be done all the time */
+    schedule();
 }

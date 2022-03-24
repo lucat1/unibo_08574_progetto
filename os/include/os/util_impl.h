@@ -80,9 +80,9 @@ size_t str_writer(void *dest, const char *data, size_t len);
 
 #ifndef __x86_64__
 /* Number of lines in the memory print buffer */
-#define MEM_WRITER_LINES 256
+#define MEM_WRITER_LINES 64
 /* Length of a single line in characters */
-#define MEM_WRITER_LINE_LENGTH 80
+#define MEM_WRITER_LINE_LENGTH 40
 
 /**
  * \brief Prints a single character to the given terminal.
