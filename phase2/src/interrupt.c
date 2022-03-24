@@ -15,9 +15,13 @@
 #include <umps/libumps.h>
 
 /* TODO: fill me */
-static inline void interrupt_handler() { pandos_kprintf("(::) iterrupt\n"); }
+static inline bool interrupt_handler()
+{
+    pandos_kprintf("(::) iterrupt\n");
+    return false;
+}
 
-static inline void tbl_handler()
+static inline bool tbl_handler()
 {
     if (active_process->p_support == NULL)
         kill_process(active_process);
@@ -29,12 +33,17 @@ static inline void tbl_handler()
          * read the docs i guess
          */
     }
+    return false;
 }
 
 /* TODO: fill me */
-static inline void trap_handler() { pandos_kprintf("(::) trap\n"); }
+static inline bool trap_handler()
+{
+    pandos_kprintf("(::) trap\n");
+    return false;
+}
 
-static inline void syscall_handler()
+static inline bool syscall_handler()
 {
     const int id = (int)active_process->p_s.reg_a0;
     switch (id) {
@@ -83,30 +92,40 @@ static inline void syscall_handler()
             PANIC();
             break;
     }
+    return false;
 }
 
 void exception_handler()
 {
-    state_t *p_s = (state_t *)BIOSDATAPAGE;
-    p_s->pc_epc = p_s->reg_t9 += WORD_SIZE;
+    state_t *p_s;
+    bool return_control = false;
+
+    p_s = (state_t *)BIOSDATAPAGE;
     memcpy(&active_process->p_s, p_s, sizeof(state_t));
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
-            interrupt_handler();
+            return_control = interrupt_handler();
             break;
         case 1:
         case 2:
         case 3:
-            tbl_handler();
+            return_control = tbl_handler();
             break;
         case 8:
-            syscall_handler();
+            return_control = syscall_handler();
+            /* ALWAYS increment the PC to prevent system call loops */
+            active_process->p_s.pc_epc = active_process->p_s.reg_t9 +=
+                WORD_SIZE;
             break;
         default: /* 4-7, 9-12 */
-            trap_handler();
+            return_control = trap_handler();
             break;
     }
     /* TODO: maybe rescheduling shouldn't be done all the time */
-    schedule();
+    /* TODO: increement active_pocess->p_time */
+    if (return_control)
+        LDST(&active_process->p_s);
+    else
+        schedule();
 }
