@@ -35,12 +35,19 @@ pcb_t *spawn_process(bool priority)
     p->p_pid = ++pid_count;
     p->p_prio = priority;
     ++running_count;
-    list_add(&p->p_list, priority ? &ready_queue_hi : &ready_queue_lo);
+    queue_process(p);
     return p;
 }
 
+inline void queue_process(pcb_t *p)
+{
+    insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
+}
+
 void kill_process(pcb_t *p)
-{ /* TODO */
+{
+    --running_count;
+    remove_proc_q(&p->p_list);
 }
 
 void schedule()

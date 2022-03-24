@@ -30,7 +30,9 @@ extern pcb_t *active_process;
  * \return The allocated process descriptor.
  */
 pcb_t *spawn_process(bool priority);
-
+/* adds a process to the appropriate queue, does not change the running_count.
+ * That is up to the caller */
+extern void queue_process(pcb_t *p);
 void kill_process(pcb_t *p);
 
 /* Externally implemented function to hand the processor over to a new

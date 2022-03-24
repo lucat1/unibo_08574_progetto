@@ -126,6 +126,8 @@ void exception_handler()
     /* TODO: increement active_pocess->p_time */
     if (return_control)
         LDST(&active_process->p_s);
-    else
+    else {
+        queue_process(active_process);
         schedule();
+    }
 }
