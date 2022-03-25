@@ -18,7 +18,7 @@ inline void reset_timer() { setTIMER(TIMER_VALUE * *(int *)(TIMESCALEADDR)); }
 
 void scheduler_wait()
 {
-    setSTATUS(getSTATUS() | STATUS_IEc);
+    setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK);
     reset_timer();
     while (1)
         WAIT();

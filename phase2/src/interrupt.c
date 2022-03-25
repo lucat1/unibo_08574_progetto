@@ -60,7 +60,7 @@ static inline bool V(int *sem_addr)
 /* TODO: fill me */
 static inline control_t interrupt_handler()
 {
-    pandos_kprintf("(::) iterrupt\n");
+    pandos_kprintf("(::) interrupt\n");
 
     return control_preserve;
 }
