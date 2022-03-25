@@ -9,11 +9,6 @@
 #ifndef PANDOS_INTERRUPT_H
 #define PANDOS_INTERRUPT_H
 
-void exception_handler();
-
-void syscall_create_process();
-void syscall_verhogen();
-void syscall_passeren();
-void syscall_do_io();
+void exception_handler();   
 
 #endif /* PANDOS_INTERRUPT_H */

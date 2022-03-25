@@ -45,6 +45,154 @@ static inline bool trap_handler() {
     return false;
 }
 
+
+
+static inline void syscall_create_process(){
+    /* parameters of syscall */
+    state_t *p_s = (state_t *)active_process->p_s.reg_a1;
+    int p_prio = (int) active_process->p_s.reg_a2;
+    support_t *p_supportStruct = (support_t *)active_process->p_s.reg_a3;
+
+    /* spawn new process */
+    pcb_t *c = spawn_process(p_prio);
+    c->p_support = p_supportStruct;
+    c->p_s = *(p_s);
+
+    /* checks if there are enough resources */
+    if (c == NULL) { /* lack of resorces */
+        pandos_kprintf("(::) cannot create new process due to lack of resouces\n");
+        /* set caller's v0 to -1 */
+        active_process->p_s.reg_v0 = -1;
+        PANIC();
+        return;
+    }
+
+    /* adds new process to process queue */
+    insert_proc_q(&active_process->p_list , c);
+
+    /* adds new process as child of caller process */
+    insert_child(active_process , c);
+
+    /* sets caller's v0 to new process pid */
+    active_process->p_s.reg_v0 = c->p_pid;
+}
+
+/* TODO : generate interrupt to stop time slice */
+static inline void syscall_terminate_process() {
+    /* Generate an interrupt to signal the end of Current Process’s time quantum/slice. 
+       The PLT is reserved for this purpose. */
+
+    int pid = active_process->p_s.reg_a1;
+    pcb_t *p = NULL;
+
+    /* if pid is 0 then the target is the caller's process */
+    if(pid == 0) p = active_process;
+    else {
+        /* TODO : finds pcb by pid */
+    }
+
+    /* checks that process with requested pid exists */
+    if (p == NULL) {
+        pandos_kprintf("(::) Could not terminate a NULL process\n");
+        PANIC();
+        return;
+    }
+
+    /* recursively removes progeny of active process */
+      
+    /* removes active process from parent's children */
+    out_child(p);
+
+    /* calls scheduler */
+    kill_process(p);
+
+    /* ??? */
+    active_process->p_s.reg_v0 = pid;
+}
+
+
+/* TODO : NSYS4 */
+static inline void syscall_verhogen () {
+    int *sem_addr = (int *)active_process->p_s.reg_a1;
+    pcb_t *p = remove_blocked(sem_addr);
+    
+    if(p != NULL) {
+        queue_process(p); 
+    }
+}
+
+/* TODO : NSYS3 */
+static inline void syscall_passeren () {
+    int *sem_addr = (int *)active_process->p_s.reg_a1;   
+
+    /* TODO : Update the accumulated CPU time for the Current Process */
+
+    int r = insert_blocked(sem_addr, active_process);
+
+    if(r > 0) {
+        pandos_kprintf("(::) PASSEREN error (%p)\n", r);
+        PANIC();
+        return;
+    }
+
+    /* TODO : update blocked_count ??? */
+
+    pcb_t *p = remove_blocked(sem_addr);
+
+    queue_process(p);
+}
+
+
+#define TERM0ADDR 0x10000254
+/* TODO : NSYS5 */
+static inline void syscall_do_io () {
+    int *cmd_addr = (int *)active_process->p_s.reg_a1;
+    int cmd_value = (int)active_process->p_s.reg_a2;
+
+    /* TEMP : to be removed */
+    unsigned int *addr = (unsigned int *)cmd_addr-1;
+
+    *cmd_addr = cmd_value;
+
+    //devreg_t *dev = (devreg_t *)addr;
+    //unsigned int *trans_command = addr + 12;
+    pandos_kprintf("(::) TERM (%p)\n", addr);
+
+    int a = DEV_REG_ADDR(7, 0);
+    pandos_kprintf("(::) addr (%p)\n", a);
+
+    /* do_io is a synchronous operation */
+
+    /*
+    int r = insert_blocked(cmd_addr, active_process);
+    
+    if(r > 0) {
+        pandos_kprintf("(::) DO_IO error (%p)\n", r);
+        PANIC();
+        return;
+    }
+
+    pcb_t *p = remove_blocked(cmd_addr);
+
+    queue_process(p);
+
+    pandos_kprintf("(::) THERE (%p)\n", p->p_s.status);
+    */
+
+    //active_process->p_s.reg_v0 = *addr;
+
+    /*  
+        Il valore
+        ritornato deve essere il contenuto del registro di status
+        del dispositivo. 
+    */
+
+   /* return control */
+   //return true;
+}
+
+
+
 static inline bool syscall_handler()
 {
     const int id = (int)active_process->p_s.reg_a0;
@@ -141,136 +289,3 @@ void exception_handler()
         schedule();
     }
 }
-
-
-
-void syscall_create_process(){
-    /* parameters of syscall */
-    state_t *p_s = (state_t *)active_process->p_s.reg_a1;
-    int p_prio = (int) active_process->p_s.reg_a2;
-    support_t *p_supportStruct = (support_t *)active_process->p_s.reg_a3;
-
-    /* spawn new process */
-    pcb_t *c = spawn_process(p_prio);
-    c->p_support = p_supportStruct;
-    c->p_s = *(p_s);
-
-    /* checks if there are enough resources */
-    if (c == NULL) { /* lack of resorces */
-        pandos_kprintf("(::) cannot create new process due to lack of resouces\n");
-        /* set caller's v0 to -1 */
-        active_process->p_s.reg_v0 = -1;
-        PANIC();
-        return;
-    }
-
-    /* adds new process to process queue */
-    insert_proc_q(&active_process->p_list , c);
-
-    /* adds new process as child of caller process */
-    insert_child(active_process , c);
-
-    /* sets caller's v0 to new process pid */
-    active_process->p_s.reg_v0 = c->p_pid;
-}
-
-/* TODO : generate interrupt to stop time slice */
-void syscall_terminate_process() {
-    /* Generate an interrupt to signal the end of Current Process’s time quantum/slice. 
-       The PLT is reserved for this purpose. */
-
-    int pid = active_process->p_s.reg_a1;
-    pcb_t *p = NULL;
-
-    /* if pid is 0 then the target is the caller's process */
-    if(pid == 0) p = active_process;
-    else {
-        /* TODO : finds pcb by pid */
-    }
-
-    /* checks that process with requested pid exists */
-    if (p == NULL) {
-        pandos_kprintf("(::) Could not terminate a NULL process\n");
-        PANIC();
-        return;
-    }
-
-    /* recursively removes progeny of active process */
-      
-    /* removes active process from parent's children */
-    out_child(p);
-
-    /* calls scheduler */
-    kill_process(p);
-
-    /* ??? */
-    active_process->p_s.reg_v0 = pid;
-}
-
-
-/* TODO : NSYS4 */
-void syscall_verhogen () {
-    int *sem_addr = (int *)active_process->p_s.reg_a1;
-    pcb_t *p = remove_blocked(sem_addr);
-    
-    if(p != NULL) {
-        queue_process(p); 
-    }
-}
-
-/* TODO : NSYS3 */
-void syscall_passeren () {
-    int *sem_addr = (int *)active_process->p_s.reg_a1;   
-
-    /* TODO : Update the accumulated CPU time for the Current Process */
-
-    int r = insert_blocked(sem_addr, active_process);
-
-    if(r > 0) {
-        pandos_kprintf("(::) PASSEREN error (%p)\n", r);
-        PANIC();
-        return;
-    }
-
-    /* TODO : update blocked_count ??? */
-
-    pcb_t *p = remove_blocked(sem_addr);
-
-    queue_process(p);
-}
-
-
-/* TODO : NSYS5 */
-void syscall_do_io () {
-    int *cmd_addr = (int *)active_process->p_s.reg_a1;
-    int cmd_value = (int)active_process->p_s.reg_a2;
-
-    cmd_addr = &cmd_value;
-
-    /* do_io is a synchronous operation */
-    int r = insert_blocked(cmd_addr, active_process);
-    
-    if(r > 0) {
-        pandos_kprintf("(::) DO_IO error (%p)\n", r);
-        PANIC();
-        return;
-    }
-
-    pcb_t *p = remove_blocked(cmd_addr);
-
-    queue_process(p);
-
-    pandos_kprintf("(::) THERE (%p)\n", p->p_s.status);
-
-    active_process->p_s.reg_v0 = (int)p->p_s.status;
-
-    /*  
-        Il valore
-        ritornato deve essere il contenuto del registro di status
-        del dispositivo. 
-    */
-
-   /* return control */
-   //return true;
-}
-

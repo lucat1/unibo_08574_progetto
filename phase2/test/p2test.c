@@ -111,9 +111,7 @@ void print(char *msg)
     devregtr *command = base + 3;
     devregtr status;
 
-    pandos_kprintf("(::) qua %s\n", s);
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    pandos_kprintf("(::) printing %c\n", s);
     int i = 0;
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
@@ -149,7 +147,6 @@ void test()
     pandos_kprintf("(::) test starts\n");
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
     
-    pandos_kprintf("(::) try to print\n");
     print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
