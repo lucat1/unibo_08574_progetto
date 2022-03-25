@@ -12,9 +12,37 @@
 #include "os/util.h"
 #include "os/pcb.h"
 #include "os/asl.h"
+#include "semaphore.h"
 #include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
+
+static inline bool P(int *sem_addr, pcb_t *p) {
+    if(*sem_addr > 0) {
+        *sem_addr = *sem_addr-1;
+        return true;
+    }else {
+        int r = insert_blocked(sem_addr, p);
+
+        if(r > 0) {
+            pandos_kprintf("(::) PASSEREN error (%p)\n", r);
+            PANIC();
+        }
+
+        return false;
+    }
+}
+
+static inline bool V(int *sem_addr) {
+    pcb_t *p = remove_blocked(sem_addr);
+    if(p == NULL) { /* means that sem_proc is empty */
+        *sem_addr = *sem_addr+1;
+        return true;
+    }else {
+        queue_process(p);
+        return false;
+    }
+}
 
 /* TODO: fill me */
 static inline bool interrupt_handler() { 
@@ -112,40 +140,30 @@ static inline void syscall_terminate_process() {
 
 
 /* TODO : NSYS4 */
-static inline void syscall_verhogen () {
+static inline bool syscall_verhogen () {
     int *sem_addr = (int *)active_process->p_s.reg_a1;
-    pcb_t *p = remove_blocked(sem_addr);
-    
-    if(p != NULL) {
-        queue_process(p); 
-    }
+
+    return V(sem_addr);
 }
 
 /* TODO : NSYS3 */
-static inline void syscall_passeren () {
+static inline bool syscall_passeren () {
     int *sem_addr = (int *)active_process->p_s.reg_a1;   
 
     /* TODO : Update the accumulated CPU time for the Current Process */
 
-    int r = insert_blocked(sem_addr, active_process);
-
-    if(r > 0) {
-        pandos_kprintf("(::) PASSEREN error (%p)\n", r);
-        PANIC();
-        return;
-    }
+    return P(sem_addr, active_process);
 
     /* TODO : update blocked_count ??? */
 
-    pcb_t *p = remove_blocked(sem_addr);
+    //pcb_t *p = remove_blocked(sem_addr);
 
-    queue_process(p);
+    //queue_process(p);
 }
 
 
-#define TERM0ADDR 0x10000254
 /* TODO : NSYS5 */
-static inline void syscall_do_io () {
+static inline bool syscall_do_io () {
     int *cmd_addr = (int *)active_process->p_s.reg_a1;
     int cmd_value = (int)active_process->p_s.reg_a2;
 
@@ -161,23 +179,10 @@ static inline void syscall_do_io () {
     int a = DEV_REG_ADDR(7, 0);
     pandos_kprintf("(::) addr (%p)\n", a);
 
-    /* do_io is a synchronous operation */
+    P(termw_semaphores[0], active_process);
 
-    /*
-    int r = insert_blocked(cmd_addr, active_process);
-    
-    if(r > 0) {
-        pandos_kprintf("(::) DO_IO error (%p)\n", r);
-        PANIC();
-        return;
-    }
-
-    pcb_t *p = remove_blocked(cmd_addr);
-
-    queue_process(p);
-
-    pandos_kprintf("(::) THERE (%p)\n", p->p_s.status);
-    */
+    /* returns control */
+    return true;
 
     //active_process->p_s.reg_v0 = *addr;
 
@@ -186,11 +191,7 @@ static inline void syscall_do_io () {
         ritornato deve essere il contenuto del registro di status
         del dispositivo. 
     */
-
-   /* return control */
-   //return true;
 }
-
 
 
 static inline bool syscall_handler()
@@ -209,17 +210,17 @@ static inline bool syscall_handler()
         case PASSEREN:
             pandos_kprintf("(::) syscall PASSEREN\n");
             /* TODO */
-            syscall_passeren();
+            return syscall_passeren();
             break;
         case VERHOGEN:
             pandos_kprintf("(::) syscall VERHOGEN\n");
             /* TODO */
-            syscall_verhogen();
+            return syscall_verhogen();
             break;
         case DOIO:
             pandos_kprintf("(::) syscall DOIO\n");
             /* TODO */
-            syscall_do_io();
+            return syscall_do_io();
             break;
         case GETTIME:
             pandos_kprintf("(::) syscall GETTIME\n");

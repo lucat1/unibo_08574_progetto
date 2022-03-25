@@ -13,13 +13,13 @@
 #include "os/types.h"
 
 /* Semaphores for each device */
-extern int disk_semaphores[DEVPERINT];
-extern int tape_semaphores[DEVPERINT];
-extern int ethernet_semaphores[DEVPERINT];
-extern int printer_semaphores[DEVPERINT];
-extern int termr_semaphores[DEVPERINT];
-extern int termw_semaphores[DEVPERINT];
-extern int timer_semaphore;
+int disk_semaphores[DEVPERINT];
+int tape_semaphores[DEVPERINT];
+int ethernet_semaphores[DEVPERINT];
+int printer_semaphores[DEVPERINT];
+int termr_semaphores[DEVPERINT];
+int termw_semaphores[DEVPERINT];
+int timer_semaphore;
 
 extern void init_semaphores();
 
