@@ -18,9 +18,10 @@ inline void reset_timer() { setTIMER(TIMER_VALUE * *(int *)(TIMESCALEADDR)); }
 
 void scheduler_wait()
 {
-    setSTATUS(STATUS_IEp | STATUS_KUp);
+    setSTATUS(getSTATUS() | STATUS_IEc);
     reset_timer();
-    WAIT();
+    while (1)
+        WAIT();
 }
 
 void scheduler_takeover()

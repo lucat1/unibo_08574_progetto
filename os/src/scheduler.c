@@ -58,7 +58,6 @@ void kill_process(pcb_t *p)
 void schedule()
 {
     pandos_kprintf(":: scheduling...\n");
-    list_print(&ready_queue_hi);
     if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))
@@ -68,5 +67,7 @@ void schedule()
         scheduler_wait();
     }
 
+    /* This point should never be reached unless processes have been
+     * re-scheduled (i.e. when waiting for events in a soft blocked state ) */
     scheduler_takeover();
 }

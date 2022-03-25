@@ -181,7 +181,7 @@ static inline control_t syscall_do_io()
     return ctrl;
 }
 
-static inline bool syscall_handler()
+static inline control_t syscall_handler()
 {
     const int id = (int)active_process->p_s.reg_a0;
     switch (id) {
@@ -235,7 +235,7 @@ static inline bool syscall_handler()
             break;
     }
 
-    return false;
+    return control_schedule;
 }
 
 void exception_handler()
