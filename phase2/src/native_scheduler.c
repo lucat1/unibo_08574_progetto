@@ -10,6 +10,7 @@
 #include "os/scheduler.h"
 #include "os/util.h"
 #include "umps/const.h"
+#include "umps/cp0.h"
 #include "umps/libumps.h"
 
 #define TIMER_VALUE 100
@@ -19,5 +20,7 @@ void scheduler_takeover()
 {
     pandos_kprintf(":: letting pid:%d take over (%p)\n", active_process->p_pid,
                    active_process);
+    /* Enable interrupts */
+    active_process->p_s.status = STATUS_IEp;
     LDST(&active_process->p_s);
 }

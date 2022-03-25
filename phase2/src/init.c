@@ -36,7 +36,6 @@ inline void init_puv()
 inline void init_process()
 {
     pcb_t *p = spawn_process(true);
-    p->p_s.status = STATUS_IEp;
     RAMTOP(p->p_s.reg_sp);
     p->p_s.pc_epc = p->p_s.reg_t9 = (memaddr)test;
 }
