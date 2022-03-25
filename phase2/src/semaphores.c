@@ -10,13 +10,13 @@
 #include "semaphores.h"
 #include "os/pcb.h"
 
-// int disk_semaphores[DEVPERINT];
-// int tape_semaphores[DEVPERINT];
-// int ethernet_semaphores[DEVPERINT];
-// int printer_semaphores[DEVPERINT];
-// int termr_semaphores[DEVPERINT];
-// int termw_semaphores[DEVPERINT];
-// int timer_semaphore;
+int disk_semaphores[DEVPERINT];
+int tape_semaphores[DEVPERINT];
+int ethernet_semaphores[DEVPERINT];
+int printer_semaphores[DEVPERINT];
+int termr_semaphores[DEVPERINT];
+int termw_semaphores[DEVPERINT];
+int timer_semaphore;
 
 inline void init_semaphores()
 {

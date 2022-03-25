@@ -12,9 +12,6 @@
 
 #include "os/list.h"
 #include "os/types.h"
-#ifdef PANDOS_TESTING
-#include <stdio.h>
-#endif
 
 /**
  * \brief Computes the size of a given list.
@@ -88,30 +85,10 @@ static inline void memcpy(void *dest, void *src, size_t len)
         d[i] = s[i];
 }
 
-#ifdef PANDOS_TESTING
 /**
- * \brief Prints the given list on standard output.
- * \param[in] head The list to be printed.
- */
-static inline void list_print(const list_head *head)
-{
-    const list_head *iter;
-    if (head) {
-        if (list_empty(head))
-            printf("empty list\n");
-        else
-            for (iter = head->next; iter != head; iter = iter->next)
-                printf("%p = {%p, %p}\n", iter, iter->prev, iter->next);
-    } else
-        printf("NULL list\n");
-}
-#endif
-
-/**
- * \brief Computes the mathematical power of an integer base with a non-negative
- * integer as the exponent. The time cost of a single call to this procedure is
- * log(exp).
- * \param[in] base The base of the power.
+ * \brief Computes the mathematical power of an integer base with a
+ * non-negative integer as the exponent. The time cost of a single call
+ * to this procedure is log(exp). \param[in] base The base of the power.
  * \param[in] exp The exponent of the power.
  * \return Returns the result of the exponentiation.
  */
@@ -128,12 +105,11 @@ int pow(int base, unsigned int exp);
 size_t nitoa(int i, int base, char *dest, size_t len);
 
 /**
- * \brief Prints formatted text on a string buffer up to a certain number of
- * characters.
- * \param[out] dest The string buffer on which the formatted text is to be
- * printed. \param[in] len The maximum number of characters to be printed.
- * \param[in] fmt The format string to be printed.
- * \param[in] ... Additional parameters for the format string.
+ * \brief Prints formatted text on a string buffer up to a certain
+ * number of characters. \param[out] dest The string buffer on which the
+ * formatted text is to be printed. \param[in] len The maximum number of
+ * characters to be printed. \param[in] fmt The format string to be
+ * printed. \param[in] ... Additional parameters for the format string.
  * \return The number of characters actually printed.
  */
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
@@ -159,5 +135,28 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
 
 size_t pandos_kprintf(const char *fmt, ...);
 #endif
+
+/**
+ * \brief Prints the given list on standard output.
+ * \param[in] head The list to be printed.
+ */
+static inline void list_print(const list_head *head)
+{
+#ifdef __x86_64__
+#include <stdio.h>
+#define __print printf
+#else
+#define __print pandos_kprintf
+#endif
+    const list_head *iter;
+    if (head) {
+        if (list_empty(head))
+            __print("empty list\n");
+        else
+            for (iter = head->next; iter != head; iter = iter->next)
+                __print("%p = {%p, %p}\n", iter, iter->prev, iter->next);
+    } else
+        __print("NULL list\n");
+}
 
 #endif /* PANDOS_OS_UTIL_H */

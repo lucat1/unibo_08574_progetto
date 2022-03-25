@@ -8,50 +8,64 @@
  */
 
 #include "interrupt.h"
+#include "os/asl.h"
+#include "os/pcb.h"
 #include "os/scheduler.h"
 #include "os/util.h"
-#include "os/pcb.h"
-#include "os/asl.h"
-#include "semaphore.h"
+#include "semaphores.h"
 #include "umps/cp0.h"
+#include "umps/types.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-static inline bool P(int *sem_addr, pcb_t *p) {
-    if(*sem_addr > 0) {
-        *sem_addr = *sem_addr-1;
-        return true;
-    }else {
+typedef enum control {
+    control_preserve, /* returns the control to the active_process */
+    control_block,   /* the active_process has been blocked, so the scheduler is
+                        called */
+    control_schedule /* the scheduler will be called including the
+                        active_process */
+} control_t;
+
+static inline control_t P(int *sem_addr, pcb_t *p)
+{
+    if (*sem_addr > 0) {
+        *sem_addr = *sem_addr - 1;
+        return control_schedule;
+    } else {
+        /* TODO: dequeing here is useless if the p is the current_process */
+        dequeue_process(p);
         int r = insert_blocked(sem_addr, p);
 
-        if(r > 0) {
+        if (r > 0) {
             pandos_kprintf("(::) PASSEREN error (%p)\n", r);
             PANIC();
         }
 
-        return false;
+        return control_block;
     }
 }
 
-static inline bool V(int *sem_addr) {
+static inline bool V(int *sem_addr)
+{
     pcb_t *p = remove_blocked(sem_addr);
-    if(p == NULL) { /* means that sem_proc is empty */
-        *sem_addr = *sem_addr+1;
-        return true;
-    }else {
+    if (p == NULL) { /* means that sem_proc is empty */
+        *sem_addr = *sem_addr + 1;
+        return control_preserve;
+    } else {
         queue_process(p);
-        return false;
+        return control_schedule;
     }
 }
 
 /* TODO: fill me */
-static inline bool interrupt_handler() { 
-    pandos_kprintf("(::) iterrupt\n"); 
-    
-    return false;
+static inline control_t interrupt_handler()
+{
+    pandos_kprintf("(::) iterrupt\n");
+
+    return control_preserve;
 }
 
-static inline bool tbl_handler()
+static inline control_t tbl_handler()
 {
     if (active_process->p_support == NULL)
         kill_process(active_process);
@@ -64,21 +78,21 @@ static inline bool tbl_handler()
          */
     }
 
-    return false;
+    return control_schedule;
 }
 
 /* TODO: fill me */
-static inline bool trap_handler() { 
-    pandos_kprintf("(::) trap\n"); 
-    return false;
+static inline control_t trap_handler()
+{
+    pandos_kprintf("(::) trap\n");
+    return control_schedule;
 }
 
-
-
-static inline void syscall_create_process(){
+static inline void syscall_create_process()
+{
     /* parameters of syscall */
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
-    int p_prio = (int) active_process->p_s.reg_a2;
+    bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_supportStruct = (support_t *)active_process->p_s.reg_a3;
 
     /* spawn new process */
@@ -88,33 +102,32 @@ static inline void syscall_create_process(){
 
     /* checks if there are enough resources */
     if (c == NULL) { /* lack of resorces */
-        pandos_kprintf("(::) cannot create new process due to lack of resouces\n");
+        pandos_kprintf(
+            "(::) cannot create new process due to lack of resouces\n");
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
-        PANIC();
-        return;
-    }
+        /* adds new process to process queue */
+        insert_proc_q(&active_process->p_list, c);
 
-    /* adds new process to process queue */
-    insert_proc_q(&active_process->p_list , c);
-
-    /* adds new process as child of caller process */
-    insert_child(active_process , c);
-
-    /* sets caller's v0 to new process pid */
-    active_process->p_s.reg_v0 = c->p_pid;
+        /* adds new process as child of caller process */
+        insert_child(active_process, c);
+    } else
+        /* sets caller's v0 to new process pid */
+        active_process->p_s.reg_v0 = c->p_pid;
 }
 
 /* TODO : generate interrupt to stop time slice */
-static inline void syscall_terminate_process() {
-    /* Generate an interrupt to signal the end of Current Process’s time quantum/slice. 
-       The PLT is reserved for this purpose. */
+static inline void syscall_terminate_process()
+{
+    /* Generate an interrupt to signal the end of Current Process’s time q
+       antum/slice. The PLT is reserved for this purpose. */
 
     int pid = active_process->p_s.reg_a1;
     pcb_t *p = NULL;
 
     /* if pid is 0 then the target is the caller's process */
-    if(pid == 0) p = active_process;
+    if (pid == 0)
+        p = active_process;
     else {
         /* TODO : finds pcb by pid */
     }
@@ -127,7 +140,7 @@ static inline void syscall_terminate_process() {
     }
 
     /* recursively removes progeny of active process */
-      
+
     /* removes active process from parent's children */
     out_child(p);
 
@@ -138,61 +151,35 @@ static inline void syscall_terminate_process() {
     active_process->p_s.reg_v0 = pid;
 }
 
-
 /* TODO : NSYS4 */
-static inline bool syscall_verhogen () {
-    int *sem_addr = (int *)active_process->p_s.reg_a1;
-
-    return V(sem_addr);
+static inline control_t syscall_verhogen()
+{
+    return V((int *)active_process->p_s.reg_a1);
 }
 
 /* TODO : NSYS3 */
-static inline bool syscall_passeren () {
-    int *sem_addr = (int *)active_process->p_s.reg_a1;   
-
+static inline control_t syscall_passeren()
+{
     /* TODO : Update the accumulated CPU time for the Current Process */
-
-    return P(sem_addr, active_process);
-
     /* TODO : update blocked_count ??? */
-
-    //pcb_t *p = remove_blocked(sem_addr);
-
-    //queue_process(p);
+    return P((int *)active_process->p_s.reg_a1, active_process);
 }
 
-
 /* TODO : NSYS5 */
-static inline bool syscall_do_io () {
+static inline control_t syscall_do_io()
+{
     int *cmd_addr = (int *)active_process->p_s.reg_a1;
     int cmd_value = (int)active_process->p_s.reg_a2;
 
-    /* TEMP : to be removed */
-    unsigned int *addr = (unsigned int *)cmd_addr-1;
+    /* TODO: chose the correct index and semaphore */
+    int *sem_kind = termw_semaphores, i = 0;
+    control_t ctrl = P(&sem_kind[i], active_process);
 
+    /* Finally write the data */
     *cmd_addr = cmd_value;
 
-    //devreg_t *dev = (devreg_t *)addr;
-    //unsigned int *trans_command = addr + 12;
-    pandos_kprintf("(::) TERM (%p)\n", addr);
-
-    int a = DEV_REG_ADDR(7, 0);
-    pandos_kprintf("(::) addr (%p)\n", a);
-
-    P(termw_semaphores[0], active_process);
-
-    /* returns control */
-    return true;
-
-    //active_process->p_s.reg_v0 = *addr;
-
-    /*  
-        Il valore
-        ritornato deve essere il contenuto del registro di status
-        del dispositivo. 
-    */
+    return ctrl;
 }
-
 
 static inline bool syscall_handler()
 {
@@ -254,39 +241,42 @@ static inline bool syscall_handler()
 void exception_handler()
 {
     state_t *p_s;
-    bool return_control = false;
+    control_t ctrl = control_schedule;
 
     p_s = (state_t *)BIOSDATAPAGE;
     memcpy(&active_process->p_s, p_s, sizeof(state_t));
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
-            return_control = interrupt_handler();
+            ctrl = interrupt_handler();
             break;
         case 1:
         case 2:
         case 3:
-            return_control = tbl_handler();
+            ctrl = tbl_handler();
             break;
         case 8:
-            return_control = syscall_handler();
+            ctrl = syscall_handler();
             /* ALWAYS increment the PC to prevent system call loops */
-            active_process->p_s.pc_epc +=
-                WORD_SIZE;
-            active_process->p_s.reg_t9 +=
-                WORD_SIZE;
+            active_process->p_s.pc_epc += WORD_SIZE;
+            active_process->p_s.reg_t9 += WORD_SIZE;
             break;
         default: /* 4-7, 9-12 */
-            return_control = trap_handler();
+            ctrl = trap_handler();
             break;
     }
     /* TODO: maybe rescheduling shouldn't be done all the time */
     /* TODO: increement active_pocess->p_time */
-    if (return_control) {
-        LDST(&active_process->p_s);
-    }
-    else {
-        queue_process(active_process);
-        schedule();
+    switch (ctrl) {
+        case control_preserve:
+            LDST(&active_process->p_s);
+            break;
+        case control_block:
+            schedule();
+            break;
+        case control_schedule:
+            queue_process(active_process);
+            schedule();
+            break;
     }
 }

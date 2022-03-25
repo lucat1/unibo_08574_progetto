@@ -16,6 +16,13 @@
 #define TIMER_VALUE 100
 inline void reset_timer() { setTIMER(TIMER_VALUE * *(int *)(TIMESCALEADDR)); }
 
+void scheduler_wait()
+{
+    setSTATUS(STATUS_IEp | STATUS_KUp);
+    reset_timer();
+    WAIT();
+}
+
 void scheduler_takeover()
 {
     pandos_kprintf(":: letting pid:%d take over (%p)\n", active_process->p_pid,

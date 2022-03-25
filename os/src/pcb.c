@@ -108,7 +108,6 @@ pcb_t *head_proc_q(list_head *head)
 
 pcb_t *remove_proc_q(list_head *head)
 {
-
     if (head == NULL || list_empty(head))
         return NULL;
 

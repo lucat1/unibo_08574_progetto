@@ -11,6 +11,7 @@
 #define PANDOS_SCHEDULER_H
 
 #include "os/list.h"
+#include "os/pcb.h"
 #include "os/types.h"
 
 /* Number of started but not yet terminated processes. */
@@ -33,8 +34,10 @@ pcb_t *spawn_process(bool priority);
 /* adds a process to the appropriate queue, does not change the running_count.
  * That is up to the caller */
 extern void queue_process(pcb_t *p);
+extern void dequeue_process(pcb_t *p);
 void kill_process(pcb_t *p);
 
+extern void scheduler_wait();
 /* Externally implemented function to hand the processor over to a new
  * process
  */
