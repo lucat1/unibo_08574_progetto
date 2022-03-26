@@ -75,7 +75,6 @@ static inline control_t syscall_handler()
     switch (id) {
         case CREATEPROCESS:
             pandos_kprintf("(::) syscall CREATEPROCESS\n");
-            /* TODO */
             return syscall_create_process();
             break;
         case TERMPROCESS:
@@ -84,17 +83,14 @@ static inline control_t syscall_handler()
             break;
         case PASSEREN:
             pandos_kprintf("(::) syscall PASSEREN\n");
-            /* TODO */
             return syscall_passeren();
             break;
         case VERHOGEN:
             pandos_kprintf("(::) syscall VERHOGEN\n");
-            /* TODO */
             return syscall_verhogen();
             break;
         case DOIO:
             pandos_kprintf("(::) syscall DOIO\n");
-            /* TODO */
             return syscall_do_io();
             break;
         case GETTIME:
@@ -103,11 +99,11 @@ static inline control_t syscall_handler()
             break;
         case CLOCKWAIT:
             pandos_kprintf("(::) syscall CLOCKWAIT\n");
-            /* TODO */
+            return syscall_wait_for_clock();
             break;
         case GETSUPPORTPTR:
             pandos_kprintf("(::) syscall GETSUPPORTPTR\n");
-            /* TODO */
+            return syscall_get_support_data();
             break;
         case GETPROCESSID:
             pandos_kprintf("(::) syscall GETPROCESSID\n");
@@ -115,7 +111,7 @@ static inline control_t syscall_handler()
             break;
         case YIELD:
             pandos_kprintf("(::) syscall YIELD\n");
-            /* TODO */
+            return syscall_yeld();
             break;
         default:
             pandos_kprintf("(::) invalid system call %d\n", id);
@@ -163,7 +159,7 @@ void exception_handler()
             schedule();
             break;
         case control_schedule:
-            queue_process(active_process);
+            enqueue_process(active_process);
             schedule();
             break;
     }

@@ -40,11 +40,11 @@ pcb_t *spawn_process(bool priority)
     p->p_pid = ++pid_count; /* TODO: Change this with the actual implementation */
     p->p_prio = priority;
     ++running_count;
-    queue_process(p);
+    enqueue_process(p);
     return p;
 }
 
-inline void queue_process(pcb_t *p)
+inline void enqueue_process(pcb_t *p)
 {
     insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }

@@ -238,4 +238,9 @@ size_t pandos_kprintf(const char *fmt, ...)
     va_end(varg);
     return res;
 }
+
+void pandos_kclean()
+{
+    pandos_kprintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+}
 #endif

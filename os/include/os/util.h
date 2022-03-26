@@ -134,6 +134,8 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
 #define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
 
 size_t pandos_kprintf(const char *fmt, ...);
+
+void pandos_kclean();
 #endif
 
 /**

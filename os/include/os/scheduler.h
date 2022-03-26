@@ -33,7 +33,7 @@ extern pcb_t *active_process;
 pcb_t *spawn_process(bool priority);
 /* adds a process to the appropriate queue, does not change the running_count.
  * That is up to the caller */
-extern void queue_process(pcb_t *p);
+extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
 void kill_process(pcb_t *p);
 

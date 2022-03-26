@@ -146,8 +146,10 @@ void test()
 {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    print("xgampx was here :3\n");
-
+    print("xgampx and taken were here :3\n");
+    pandos_kclean();
+    pandos_kclean();
+    pandos_kclean();
     print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
@@ -263,13 +265,12 @@ void test()
     print("p3 is started\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
-
     SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
+
     SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
 
     p4pid = SYSCALL(CREATEPROCESS, (int)&p4state, PROCESS_PRIO_LOW,
                     (int)NULL); /* start p4     */
-
     pFiveSupport.sup_except_context[GENERALEXCEPT].stack_ptr = (int)p5Stack;
     pFiveSupport.sup_except_context[GENERALEXCEPT].status =
         ALLOFF | IEPBITON | CAUSEINTMASK | TEBITON;
@@ -389,9 +390,12 @@ void p2()
 /* p3 -- clock semaphore test process */
 void p3()
 {
+    print("inside p3\n");
+    pandos_kclean();
     cpu_t time1, time2;
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int i;
+    print("ciao");
 
     time1 = 0;
     time2 = 0;
@@ -402,7 +406,6 @@ void p3()
         SYSCALL(CLOCKWAIT, 0, 0, 0);
         STCK(time2); /* new time of day */
     }
-
     print("p3 - CLOCKWAIT OK\n");
 
     /* now let's check to see if we're really charge for CPU

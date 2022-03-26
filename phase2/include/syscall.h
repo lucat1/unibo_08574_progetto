@@ -49,38 +49,7 @@ static inline control_t V(int *sem_addr)
         *sem_addr = *sem_addr + 1;
         return control_preserve;
     } else {
-        queue_process(p);
-        return control_schedule;
-    }
-}
-
-static inline control_t syscall_create_process()
-{
-    /* parameters of syscall */
-    state_t *p_s = (state_t *)active_process->p_s.reg_a1;
-    bool p_prio = (bool)active_process->p_s.reg_a2;
-    support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
-
-    /* spawn new process */
-    pcb_t *c = spawn_process(p_prio);
-
-    /* checks if there are enough resources */
-    if (c == NULL) { /* lack of resorces */
-        pandos_kprintf(
-            "(::) cannot create new process due to lack of resources\n");
-        /* set caller's v0 to -1 */
-        active_process->p_s.reg_v0 = -1;
-        return control_preserve;
-    } else{
-        c->p_support = p_support_struct;
-        c->p_s = *(p_s);
-        /* p_time is already set to 0 from the alloc_pcb call inside spawn_process */
-        /* p_sem_add is already set to NULL from the alloc_pcb call inside spawn_process */
-
-        /* adds new process as child of caller process */
-        insert_child(active_process, c);
-        /* sets caller's v0 to new process pid */
-        active_process->p_s.reg_v0 = c->p_pid;
+        enqueue_process(p);
         return control_schedule;
     }
 }
@@ -126,6 +95,39 @@ static inline pcb_t* search_all_lists(int pid){
     return NULL;
 }
 
+/* TODO: NSYS1 */
+static inline control_t syscall_create_process()
+{
+    /* parameters of syscall */
+    state_t *p_s = (state_t *)active_process->p_s.reg_a1;
+    bool p_prio = (bool)active_process->p_s.reg_a2;
+    support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
+
+    /* spawn new process */
+    pcb_t *c = spawn_process(p_prio);
+
+    /* checks if there are enough resources */
+    if (c == NULL) { /* lack of resorces */
+        pandos_kprintf(
+            "(::) cannot create new process due to lack of resources\n");
+        /* set caller's v0 to -1 */
+        active_process->p_s.reg_v0 = -1;
+        return control_preserve;
+    } else{
+        c->p_support = p_support_struct;
+        c->p_s = *(p_s);
+        /* p_time is already set to 0 from the alloc_pcb call inside spawn_process */
+        /* p_sem_add is already set to NULL from the alloc_pcb call inside spawn_process */
+
+        /* adds new process as child of caller process */
+        insert_child(active_process, c);
+        /* sets caller's v0 to new process pid */
+        active_process->p_s.reg_v0 = c->p_pid;
+        return control_schedule;
+    }
+}
+
+/* TODO: finish testing NSYS2 */
 /* TODO : generate interrupt to stop time slice */
 static inline control_t syscall_terminate_process()
 {
@@ -166,18 +168,18 @@ static inline control_t syscall_terminate_process()
     return control_schedule;
 }
 
-/* TODO : NSYS4 */
-static inline control_t syscall_verhogen()
-{
-    return V((int *)active_process->p_s.reg_a1);
-}
-
-/* TODO : NSYS3 */
+/* NSYS3 */
 static inline control_t syscall_passeren()
 {
     /* TODO : Update the accumulated CPU time for the Current Process */
     /* TODO : update blocked_count ??? */
     return P((int *)active_process->p_s.reg_a1, active_process);
+}
+
+/* NSYS4 */
+static inline control_t syscall_verhogen()
+{
+    return V((int *)active_process->p_s.reg_a1);
 }
 
 /* TODO : NSYS5 */
@@ -211,12 +213,27 @@ static inline control_t syscall_do_io()
     return ctrl;
 }
 
+/* TODO: test NSYS6 */
 static inline control_t syscall_get_cpu_time()
 {
     active_process->p_s.reg_v0 = active_process->p_time;
     return control_schedule;
 }
 
+/* TODO: test NSYS7 */
+static inline control_t syscall_wait_for_clock()
+{
+    return control_schedule;
+}
+
+/* TODO: test  NSYS8 */
+static inline control_t syscall_get_support_data()
+{
+    //active_process->p_s.reg_v0 = active_process->p_support;
+    return control_schedule;
+}
+
+/* TODO: test NSYS9 */
 static inline control_t syscall_get_process_id()
 {
     int parent = (int) active_process->p_s.reg_a1;
@@ -229,5 +246,18 @@ static inline control_t syscall_get_process_id()
     return control_preserve;
 }
 
+/* TODO: test NSYS10 */
+static inline control_t syscall_yeld()
+{
+    /* TODO: The active process should note be in any queue so this action is useless
+     * I'm leaving it just in case I'm wrong.
+     */
+    dequeue_process(active_process);
+
+
+    /* TODO: Understand if this action should be made by the scheduler or by the syscall itself */
+    enqueue_process(active_process);
+    return control_schedule;
+}
 
 #endif /* PANDOS_SYSCALL_H */
