@@ -10,7 +10,9 @@
 #include "os/scheduler.h"
 #include "os/list.h"
 #include "os/pcb.h"
+#include "os/asl.h"
 #include "os/util.h"
+#include "syscall.h"
 
 int running_count;
 int blocked_count;
@@ -55,7 +57,15 @@ inline void dequeue_process(pcb_t *p)
 void kill_process(pcb_t *p)
 {
     --running_count;
+
+    /* In case it is blocked by a semaphore*/
+    out_blocked(p);
+
+    /* In case it is in the ready queue */
     dequeue_process(p);
+
+    /* Set pcb as free */
+    free_pcb(p);
 }
 
 void schedule()

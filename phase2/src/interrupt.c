@@ -80,7 +80,7 @@ static inline control_t syscall_handler()
             break;
         case TERMPROCESS:
             pandos_kprintf("(::) syscall TERMPROCESS\n");
-            /* TODO */
+            return syscall_terminate_process();
             break;
         case PASSEREN:
             pandos_kprintf("(::) syscall PASSEREN\n");
@@ -99,7 +99,7 @@ static inline control_t syscall_handler()
             break;
         case GETTIME:
             pandos_kprintf("(::) syscall GETTIME\n");
-            /* TODO */
+            return syscall_get_cpu_time();
             break;
         case CLOCKWAIT:
             pandos_kprintf("(::) syscall CLOCKWAIT\n");

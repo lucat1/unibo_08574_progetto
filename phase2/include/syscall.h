@@ -13,6 +13,7 @@
 
 #include "os/types.h"
 #include "os/asl.h"
+#include "os/pcb.h"
 #include "os/util.h"
 #include "syscall.h"
 #include "semaphores.h"
@@ -21,8 +22,6 @@
 #include "umps/types.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
-
-
 
 static inline control_t P(int *sem_addr, pcb_t *p)
 {
@@ -86,8 +85,49 @@ static inline control_t syscall_create_process()
     }
 }
 
+/* TODO: Maybe optimize this solution */
+static inline void delete_progeny(pcb_t *p){
+    list_head *myqueue = NULL;
+    mk_empty_proc_q(myqueue);
+    insert_proc_q(myqueue, p);
+    while((p = remove_proc_q(myqueue)) != NULL){
+        pcb_t *child;
+        while((child = remove_child(p)) != NULL){
+            insert_proc_q(myqueue, child);
+        }
+        kill_process(p);
+    }
+}
+
+/* TODO: Optimize this implementation and change it when we change how the pid are generated */
+static inline pcb_t* find_pcb_by_pid(list_head *list, int pid){
+    pcb_t *pos;
+    list_for_each_entry(pos, list, p_list){
+        if(pos->p_pid == pid){
+            return pos;
+        }
+    }
+    return NULL;
+}
+
+static inline pcb_t* search_all_lists(int pid){
+    pcb_t *param;
+    if((param = find_pcb_by_pid(&ready_queue_lo, pid)) != NULL){
+        return param;
+    }
+    if((param = find_pcb_by_pid(&ready_queue_hi, pid)) != NULL){
+        return param;
+    }
+    if(pid == active_process->p_pid){
+        return active_process;
+    }
+    
+    /* TODO: Search on the semaphores !!!!!!!!!!!!!*/
+    return NULL;
+}
+
 /* TODO : generate interrupt to stop time slice */
-static inline void syscall_terminate_process()
+static inline control_t syscall_terminate_process()
 {
     /* Generate an interrupt to signal the end of Current Process’s time q
        antum/slice. The PLT is reserved for this purpose. */
@@ -99,19 +139,23 @@ static inline void syscall_terminate_process()
     if (pid == 0)
         p = active_process;
     else {
-        /* TODO : finds pcb by pid */
+        p = search_all_lists(pid);
+        if(p == NULL){
+            pandos_kprintf("(::) Could not find a pcb with this pid");
+        }
     }
 
     /* checks that process with requested pid exists */
     if (p == NULL) {
         pandos_kprintf("(::) Could not terminate a NULL process\n");
         PANIC();
-        return;
+        return control_schedule;
     }
 
-    /* recursively removes progeny of active process */
+    /* recursively removes progeny of process that should be terminated */
+    delete_progeny(p);
 
-    /* removes active process from parent's children */
+    /* removes process that should be terminated from parent's children */
     out_child(p);
 
     /* calls scheduler */
@@ -119,6 +163,7 @@ static inline void syscall_terminate_process()
 
     /* ??? */
     active_process->p_s.reg_v0 = pid;
+    return control_schedule;
 }
 
 /* TODO : NSYS4 */
@@ -164,6 +209,12 @@ static inline control_t syscall_do_io()
     active_process->p_s.reg_v0 = *(cmd_addr-1);
 
     return ctrl;
+}
+
+static inline control_t syscall_get_cpu_time()
+{
+    active_process->p_s.reg_v0 = active_process->p_time;
+    return control_schedule;
 }
 
 static inline control_t syscall_get_process_id()
