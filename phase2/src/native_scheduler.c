@@ -14,13 +14,13 @@
 #include "umps/libumps.h"
 
 #define TIMER_VALUE 100
-inline void reset_timer() { setTIMER(TIMER_VALUE * *(int *)(TIMESCALEADDR)); }
+inline void reset_timer() { setTIMER(TRANSLATE_TIME(TIMER_VALUE)); }
 
 void scheduler_wait()
 {
     /* setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK); */
     /* setSTATUS(getSTATUS() | STATUS_IEc); */
-    reset_timer();
+    //reset_timer();
     /* while(1) */
     WAIT();
 }

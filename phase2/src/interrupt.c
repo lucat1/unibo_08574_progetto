@@ -23,17 +23,15 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-/*findDeviceNumber() viene utilizzato per identificare il numero del device che
- * ha sollevato l'interrupt*/
-int findDeviceNumber(memaddr *bitmap)
-{
-    int device_n = 0;
-
-    while (*bitmap > 1) {
-        device_n++;
-        *bitmap >>= 1;
-    }
-    return device_n;
+/*find_device_number() viene utilizzato per identificare il numero del device che ha sollevato l'interrupt*/
+int find_device_number(memaddr* bitmap) {
+  int device_n = 0;
+  
+  while (*bitmap > 1) {
+    device_n++;
+    *bitmap >>= 1;
+  }
+  return device_n;
 }
 
 static inline memaddr *get_terminal_transm_status(int devicenumber)
@@ -65,10 +63,8 @@ static inline control_t interrupt_handler()
 
     int cause = getCAUSE();
 
-    pandos_kprintf("(::) CAUSE %d\n", cause);
-
-    if (CAUSE_IP_GET(cause, IL_IPI)) {
-        /* ACK_IPI; */
+    if(CAUSE_IP_GET(cause, IL_IPI)) {
+		/* ACK_IPI; */
         /* TODO */
         pandos_kprintf("(::) IL_IPI \n");
     }
@@ -77,11 +73,23 @@ static inline control_t interrupt_handler()
         /* setTIMER(SCHED_TIME_SLICE); */
         /* TODO */
 
-        pandos_kprintf("(::) IL_LOCAL_TIMER \n");
-    }
+        //int devicenumber = find_device_number((memaddr*)CDEV_BITMAP_ADDR(IL_LOCAL_TIMER));
 
-    else if (CAUSE_IP_GET(cause, IL_TIMER)) {
-        /*Exctract pcb and put them into the ready queue*/
+        int tod = *(int *)TODLOADDR;
+        pandos_kprintf("(::) IL_LOCAL_TIMER (%d) - \n", (unsigned int)getTIMER(), tod);
+        //active_process->p_s.timer = 5000;
+        setTIMER(TRANSLATE_TIME(100000));
+        tod = *(int *)TODLOADDR;
+        pandos_kprintf("(::) IL_LOCAL_TIMER (%d) - \n", (unsigned int)getTIMER(), tod);
+        pandos_kprintf("(::) \n");
+        pandos_kprintf("(::) \n");
+        //*DEVICE_COMMAND(IL_LOCAL_TIMER, devicenumber) = DEV_C_ACK;
+
+        return control_schedule;
+	}
+    
+    else if(CAUSE_IP_GET(cause, IL_TIMER)) {
+		/*Exctract pcb and put them into the ready queue*/
 
         pandos_kprintf("(::) IL_TIMER \n");
 
@@ -108,28 +116,24 @@ static inline control_t interrupt_handler()
                 break;
             }
         }
-
-        int devicenumber = findDeviceNumber((memaddr *)CDEV_BITMAP_ADDR(il));
-        pcb_t *p = V(&sem[il - IL_DISK][devicenumber]);
+        
+		int devicenumber = find_device_number((memaddr*)CDEV_BITMAP_ADDR(il));
+        pcb_t *p = V(&sem[il-IL_DISK][devicenumber]);
         control_t ctrl = mask_V(p);
-        /* 		if( (unblocked = V(&sem_ethernet[devicenumber])) !=
-           NULL){
-                                        //Se un processo ha chiamato la SYS dei
-           TAPE, V() lo sblocca e aggiorna lo status unblocked->p_s.reg_v0 =
-           *DEVICE_STATUS(il, devicenumber);
-                                        insertProcQ(&ready_queue[unblocked->numCPU],
-           unblocked);
-                                } */
+/* 		if( (unblocked = V(&sem_ethernet[devicenumber])) != NULL){
+				//Se un processo ha chiamato la SYS dei TAPE, V() lo sblocca e aggiorna lo status
+				unblocked->p_s.reg_v0 = *DEVICE_STATUS(il, devicenumber);
+				insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
+			} */
 
         /* ACK al device */
         *DEVICE_COMMAND(il, devicenumber) = DEV_C_ACK;
         return ctrl;
 
-    } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        /*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha
-         * sollevato l'interrupt*/
-        int devicenumber =
-            findDeviceNumber((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
+    }
+    else if(CAUSE_IP_GET(cause, IL_TERMINAL)) {
+		/*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha sollevato l'interrupt*/
+		int devicenumber = find_device_number((memaddr*)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
         /* TODO : order is important, check */
         memaddr *(*get_status[2])(int dev) = {get_terminal_transm_status,

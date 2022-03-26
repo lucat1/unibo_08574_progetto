@@ -52,6 +52,8 @@
 #define PROCESS_PRIO_HIGH 1
 
 
+#define TRANSLATE_TIME(t) t * *(int *)(TIMESCALEADDR)
+
 /* TODO : palese rubati */
 /*Offset of register terminal */
 #define DEV_C_ACK   1 /* command common to all devices */
