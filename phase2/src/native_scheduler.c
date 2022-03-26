@@ -32,4 +32,7 @@ void scheduler_takeover()
     /* Enable interrupts */
     active_process->p_s.status |= STATUS_IEp;
     LDST(&active_process->p_s);
+    /* Enable the processor Local Timer */
+    if (!active_process->p_prio)
+        active_process->p_s.status |= STATUS_TE;
 }
