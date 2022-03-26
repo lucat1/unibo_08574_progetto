@@ -36,3 +36,9 @@ void scheduler_takeover()
     if (!active_process->p_prio)
         active_process->p_s.status |= STATUS_TE;
 }
+
+void scheduler_panic(const char *msg)
+{
+    pandos_kprintf("PANIC: %s", msg);
+    PANIC();
+}

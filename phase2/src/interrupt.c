@@ -10,127 +10,140 @@
  */
 
 #include "interrupt.h"
-#include "syscall.h"
-#include "os/const.h"
+#include "interrupt_impl.h"
 #include "os/asl.h"
+#include "os/const.h"
 #include "os/pcb.h"
 #include "os/scheduler.h"
 #include "os/util.h"
 #include "semaphores.h"
+#include "syscall.h"
 #include "umps/cp0.h"
 #include "umps/types.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
+/*findDeviceNumber() viene utilizzato per identificare il numero del device che
+ * ha sollevato l'interrupt*/
+int findDeviceNumber(memaddr *bitmap)
+{
+    int device_n = 0;
 
-/*findDeviceNumber() viene utilizzato per identificare il numero del device che ha sollevato l'interrupt*/
-int findDeviceNumber(memaddr* bitmap) {
-  int device_n = 0;
-  
-  while (*bitmap > 1) {
-    device_n++;
-    *bitmap >>= 1;
-  }
-  return device_n;
+    while (*bitmap > 1) {
+        device_n++;
+        *bitmap >>= 1;
+    }
+    return device_n;
 }
 
-static inline memaddr* get_terminal_transm_status(int devicenumber) {
-    return (memaddr*)TERMINAL_TRANSM_STATUS(devicenumber);
+static inline memaddr *get_terminal_transm_status(int devicenumber)
+{
+    return (memaddr *)TERMINAL_TRANSM_STATUS(devicenumber);
 }
 
-static inline memaddr* get_terminal_recv_status(int devicenumber) {
-    return (memaddr*)TERMINAL_RECV_STATUS(devicenumber);
+static inline memaddr *get_terminal_recv_status(int devicenumber)
+{
+    return (memaddr *)TERMINAL_RECV_STATUS(devicenumber);
 }
 
-static inline memaddr* get_terminal_transm_command(int devicenumber) {
-    return (memaddr*)TERMINAL_TRANSM_COMMAND(devicenumber);
+static inline memaddr *get_terminal_transm_command(int devicenumber)
+{
+    return (memaddr *)TERMINAL_TRANSM_COMMAND(devicenumber);
 }
 
-static inline memaddr* get_terminal_recv_command(int devicenumber) {
-    return (memaddr*)TERMINAL_RECV_COMMAND(devicenumber);
+static inline memaddr *get_terminal_recv_command(int devicenumber)
+{
+    return (memaddr *)TERMINAL_RECV_COMMAND(devicenumber);
 }
-
 
 /* TODO: now is hardcoded */
 static inline control_t interrupt_handler()
 {
     pandos_kprintf("(::) interrupt\n");
 
-    //pcb_t *unblocked; /* Puntatore a processo sbloccato */
+    // pcb_t *unblocked; /* Puntatore a processo sbloccato */
 
     int cause = getCAUSE();
 
     pandos_kprintf("(::) CAUSE %d\n", cause);
 
-    if(CAUSE_IP_GET(cause, IL_IPI)) {
-		/* ACK_IPI; */
+    if (CAUSE_IP_GET(cause, IL_IPI)) {
+        /* ACK_IPI; */
         /* TODO */
         pandos_kprintf("(::) IL_IPI \n");
-	}
-    
-    else if(CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
-		/* setTIMER(SCHED_TIME_SLICE); */
+    }
+
+    else if (CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
+        /* setTIMER(SCHED_TIME_SLICE); */
         /* TODO */
 
         pandos_kprintf("(::) IL_LOCAL_TIMER \n");
-	}
-    
-    else if(CAUSE_IP_GET(cause, IL_TIMER)) {
-		/*Exctract pcb and put them into the ready queue*/
+    }
+
+    else if (CAUSE_IP_GET(cause, IL_TIMER)) {
+        /*Exctract pcb and put them into the ready queue*/
 
         pandos_kprintf("(::) IL_TIMER \n");
 
-        /* 
-		lock(MUTEX_CLOCK);
-		while ((unblocked = V(&pseudo_clock))){
-			insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
-		}
-		SET_IT(SCHED_PSEUDO_CLOCK);
-		unlock(MUTEX_CLOCK);
+        /*
+                lock(MUTEX_CLOCK);
+                while ((unblocked = V(&pseudo_clock))){
+                        insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
+                }
+                SET_IT(SCHED_PSEUDO_CLOCK);
+                unlock(MUTEX_CLOCK);
         */
-	} 
-    else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) || CAUSE_IP_GET(cause, IL_ETHERNET) || CAUSE_IP_GET(cause, IL_PRINTER)){
-        
+    } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
+               CAUSE_IP_GET(cause, IL_ETHERNET) ||
+               CAUSE_IP_GET(cause, IL_PRINTER)) {
+
         /* TODO */
         int il = IL_DISK;
-        int *sem[] = { disk_semaphores, tape_semaphores, ethernet_semaphores, printer_semaphores };
+        int *sem[] = {disk_semaphores, tape_semaphores, ethernet_semaphores,
+                      printer_semaphores};
         /* inverse priority */
-        for(int i = IL_DISK; i < IL_PRINTER; i++) {
+        for (int i = IL_DISK; i < IL_PRINTER; i++) {
             if (CAUSE_IP_GET(cause, i)) {
                 il = i;
                 break;
             }
         }
-        
-		int devicenumber = findDeviceNumber((memaddr*)CDEV_BITMAP_ADDR(il));
-        pcb_t *p = V(&sem[il-IL_DISK][devicenumber]);
-        control_t ctrl = mask_V(p);
-/* 		if( (unblocked = V(&sem_ethernet[devicenumber])) != NULL){
-				//Se un processo ha chiamato la SYS dei TAPE, V() lo sblocca e aggiorna lo status
-				unblocked->p_s.reg_v0 = *DEVICE_STATUS(il, devicenumber);
-				insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
-			} */
 
-		/* ACK al device */
-		*DEVICE_COMMAND(il, devicenumber) = DEV_C_ACK;
+        int devicenumber = findDeviceNumber((memaddr *)CDEV_BITMAP_ADDR(il));
+        pcb_t *p = V(&sem[il - IL_DISK][devicenumber]);
+        control_t ctrl = mask_V(p);
+        /* 		if( (unblocked = V(&sem_ethernet[devicenumber])) !=
+           NULL){
+                                        //Se un processo ha chiamato la SYS dei
+           TAPE, V() lo sblocca e aggiorna lo status unblocked->p_s.reg_v0 =
+           *DEVICE_STATUS(il, devicenumber);
+                                        insertProcQ(&ready_queue[unblocked->numCPU],
+           unblocked);
+                                } */
+
+        /* ACK al device */
+        *DEVICE_COMMAND(il, devicenumber) = DEV_C_ACK;
         return ctrl;
 
-    }
-    else if(CAUSE_IP_GET(cause, IL_TERMINAL)) {
-		/*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha sollevato l'interrupt*/
-		int devicenumber = findDeviceNumber((memaddr*)CDEV_BITMAP_ADDR(IL_TERMINAL));
+    } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
+        /*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha
+         * sollevato l'interrupt*/
+        int devicenumber =
+            findDeviceNumber((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
         /* TODO : order is important, check */
-        memaddr *(*get_status[2]) (int dev) = { get_terminal_transm_status, get_terminal_recv_status };
-        memaddr *(*get_cmd[2]) (int dev) = { get_terminal_transm_command, get_terminal_recv_command };
-        int *sem[] = { termw_semaphores, termr_semaphores };
+        memaddr *(*get_status[2])(int dev) = {get_terminal_transm_status,
+                                              get_terminal_recv_status};
+        memaddr *(*get_cmd[2])(int dev) = {get_terminal_transm_command,
+                                           get_terminal_recv_command};
+        int *sem[] = {termw_semaphores, termr_semaphores};
 
         for (int i = 0; i < 2; i++) {
             int status = *get_status[i](devicenumber) & TERMSTATMASK;
-            if(status != DEV_S_READY) {
+            if (status != DEV_S_READY) {
                 pcb_t *p = V(&sem[i][devicenumber]);
                 control_t ctrl = mask_V(p);
-                if(ctrl == control_schedule)
+                if (ctrl == control_schedule)
                     last_process->p_s.reg_v0 = status;
                 else
                     active_process->p_s.reg_v0 = status;
@@ -140,13 +153,12 @@ static inline control_t interrupt_handler()
                 return ctrl;
             }
         }
-	}
+    }
 
     /* The
 newly unblocked pcb is enqueued back on the Ready Queue and control
 is returned to the Current Process unless the newly unblocked process
 has higher prority of the Current Process. */
-
 
     return control_schedule;
 }
@@ -171,59 +183,6 @@ static inline control_t tbl_handler()
 static inline control_t trap_handler()
 {
     pandos_kprintf("(::) trap\n");
-    return control_schedule;
-}
-
-static inline control_t syscall_handler()
-{
-    const int id = (int)active_process->p_s.reg_a0;
-    switch (id) {
-        case CREATEPROCESS:
-            pandos_kprintf("(::) syscall CREATEPROCESS\n");
-            return syscall_create_process();
-            break;
-        case TERMPROCESS:
-            pandos_kprintf("(::) syscall TERMPROCESS\n");
-            return syscall_terminate_process();
-            break;
-        case PASSEREN:
-            pandos_kprintf("(::) syscall PASSEREN\n");
-            return syscall_passeren();
-            break;
-        case VERHOGEN:
-            pandos_kprintf("(::) syscall VERHOGEN\n");
-            return syscall_verhogen();
-            break;
-        case DOIO:
-            pandos_kprintf("(::) syscall DOIO\n");
-            return syscall_do_io();
-            break;
-        case GETTIME:
-            pandos_kprintf("(::) syscall GETTIME\n");
-            return syscall_get_cpu_time();
-            break;
-        case CLOCKWAIT:
-            pandos_kprintf("(::) syscall CLOCKWAIT\n");
-            return syscall_wait_for_clock();
-            break;
-        case GETSUPPORTPTR:
-            pandos_kprintf("(::) syscall GETSUPPORTPTR\n");
-            return syscall_get_support_data();
-            break;
-        case GETPROCESSID:
-            pandos_kprintf("(::) syscall GETPROCESSID\n");
-            return syscall_get_process_id();
-            break;
-        case YIELD:
-            pandos_kprintf("(::) syscall YIELD\n");
-            return syscall_yeld();
-            break;
-        default:
-            pandos_kprintf("(::) invalid system call %d\n", id);
-            PANIC();
-            break;
-    }
-
     return control_schedule;
 }
 

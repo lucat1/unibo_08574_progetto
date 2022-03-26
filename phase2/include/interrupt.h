@@ -1,5 +1,5 @@
 /**
- * \file init.h
+ * \file interrupt.h
  * \brief Implementation of internal init routines.
  *
  * \author Luca Tagliavini
@@ -9,6 +9,6 @@
 #ifndef PANDOS_INTERRUPT_H
 #define PANDOS_INTERRUPT_H
 
-void exception_handler();   
+void exception_handler();
 
 #endif /* PANDOS_INTERRUPT_H */

@@ -26,6 +26,9 @@ extern pcb_t *active_process;
 
 extern pcb_t *last_process;
 
+extern pcb_t *V(int *sem_addr);
+extern pcb_t *P(int *sem_addr, pcb_t *p);
+
 /**
  * \brief Spawns a process and returns the allocated structure.
  * \param[in] priority The proprity of the spawned process. Either 1 for high or
@@ -38,6 +41,8 @@ pcb_t *spawn_process(bool priority);
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
 void kill_process(pcb_t *p);
+
+extern void scheduler_panic(const char *msg);
 
 extern void scheduler_wait();
 /* Externally implemented function to hand the processor over to a new
