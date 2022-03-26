@@ -135,7 +135,7 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
 
 size_t pandos_kprintf(const char *fmt, ...);
 
-void pandos_kclean();
+void pandos_kclear();
 #endif
 
 /**

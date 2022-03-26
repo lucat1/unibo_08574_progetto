@@ -173,10 +173,10 @@ static size_t serial_writer(void *dest, const char *data, size_t len)
  * slightly modified along the way): kputchar, next_line
  */
 
-static inline void clean_line(memory_target_t *mem, size_t line)
+static inline void clean_line(memory_target_t *mem, size_t line, char c)
 {
     for (size_t i = 0; i < MEM_WRITER_LINE_LENGTH; i++)
-        mem->buffer[line][i] = ' ';
+        mem->buffer[line][i] = c;
 }
 
 // Skip to next line
@@ -185,7 +185,8 @@ static inline void next_line(memory_target_t *mem)
     mem->line = (mem->line + 1) % MEM_WRITER_LINES;
     mem->ch = 0;
     /* Clean out the rest of the line for aesthetic purposes */
-    clean_line(mem, mem->line);
+    clean_line(mem, mem->line, ' ');
+    clean_line(mem, (mem->line + 1) % MEM_WRITER_LINES, '-');
 }
 
 static void kputchar(memory_target_t *mem, char ch)
@@ -193,8 +194,8 @@ static void kputchar(memory_target_t *mem, char ch)
     if (ch == '\n')
         next_line(mem);
     else {
-        mem->buffer[mem->line][mem->ch] = ch;
-        if (++mem->ch >= MEM_WRITER_LINE_LENGTH)
+        mem->buffer[mem->line][mem->ch++] = ch;
+        if (mem->ch >= MEM_WRITER_LINE_LENGTH)
             next_line(mem);
     }
 }
@@ -207,8 +208,10 @@ static size_t memory_writer(void *dest, const char *data, size_t len)
 
     /* Clean the first line during the first print */
     mem = (memory_target_t *)dest;
-    if (mem->line == 0 && mem->ch == 0)
-        clean_line(mem, mem->line);
+    if (mem->line == 0 && mem->ch == 0) {
+        clean_line(mem, mem->line, ' ');
+        clean_line(mem, mem->line + 1, ' ');
+    }
 
     for (it = (char *)data, check_len = len != 0;
          *it != '\0' && (!check_len || len--); ++it)
@@ -239,8 +242,12 @@ size_t pandos_kprintf(const char *fmt, ...)
     return res;
 }
 
-void pandos_kclean()
+void pandos_kclear()
 {
-    pandos_kprintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    for (size_t i = 0; i < MEM_WRITER_LINES; i++)
+        for (size_t j = 0; j < MEM_WRITER_LINE_LENGTH; j++)
+            klog.buffer[i][j] = ' ';
+    klog.line = 0;
+    klog.ch = 0;
 }
 #endif
