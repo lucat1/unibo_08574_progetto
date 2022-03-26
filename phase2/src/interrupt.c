@@ -57,12 +57,21 @@ static inline bool V(int *sem_addr)
     }
 }
 
-/* TODO: fill me */
+#define TERM0ADDR 0x10000254
+/* TODO: now is hardcoded */
 static inline control_t interrupt_handler()
 {
     pandos_kprintf("(::) interrupt\n");
 
-    return control_preserve;
+    /* sends back ACK */
+    unsigned int *base = (unsigned int *)(TERM0ADDR);
+    unsigned int *command = base + 3;
+    int _ACK = 1;
+    unsigned int value = _ACK;
+    *command = value;
+
+    int *sem_kind = termw_semaphores, i = 0;
+    return V(&sem_kind[i]);
 }
 
 static inline control_t tbl_handler()
@@ -175,8 +184,18 @@ static inline control_t syscall_do_io()
     int *sem_kind = termw_semaphores, i = 0;
     control_t ctrl = P(&sem_kind[i], active_process);
 
+    /* TODO : now is hardcoded (7) */
+    active_process->p_s.status |= STATUS_IM(7);
+
     /* Finally write the data */
     *cmd_addr = cmd_value;
+
+    int *base = cmd_addr - *(cmd_addr & DEV_REG_START);
+    int status = *(base + 2);
+
+    /* TODO : now is hardcoded -1 */
+    pandos_kprintf("(::) v0 (%d)\n", status);
+    active_process->p_s.reg_v0 = status;
 
     return ctrl;
 }

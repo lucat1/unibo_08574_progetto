@@ -18,10 +18,11 @@ inline void reset_timer() { setTIMER(TIMER_VALUE * *(int *)(TIMESCALEADDR)); }
 
 void scheduler_wait()
 {
-    setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK);
+    /* setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK); */
+    /* setSTATUS(getSTATUS() | STATUS_IEc); */
     reset_timer();
-    while (1)
-        WAIT();
+    /* while(1) */
+    WAIT();
 }
 
 void scheduler_takeover()
@@ -29,6 +30,6 @@ void scheduler_takeover()
     pandos_kprintf(":: letting pid:%d take over (%p)\n", active_process->p_pid,
                    active_process);
     /* Enable interrupts */
-    active_process->p_s.status = STATUS_IEp;
+    active_process->p_s.status |= STATUS_IEp;
     LDST(&active_process->p_s);
 }
