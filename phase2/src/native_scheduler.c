@@ -21,7 +21,6 @@ void scheduler_wait()
     /* setSTATUS(getSTATUS() | STATUS_IEc); */
     // reset_timer();
     // while (1)
-    pandos_kprintf("-- WAIT\n");
     WAIT();
 }
 
