@@ -85,4 +85,12 @@ typedef struct semd_t {
     list_head s_link;
 } semd_t;
 
+typedef enum control {
+    control_preserve, /* returns the control to the active_process */
+    control_block,   /* the active_process has been blocked, so the scheduler is
+                        called */
+    control_schedule /* the scheduler will be called including the
+                        active_process */
+} control_t;
+
 #endif /* PANDOS_TYPES_H */
