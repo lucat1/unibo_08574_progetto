@@ -52,6 +52,8 @@
 #define PROCESS_PRIO_HIGH 1
 
 
+#define PLT_INTERVAL 5000
+#define IT_INTERVAL 100000
 #define TRANSLATE_TIME(t) t * *(int *)(TIMESCALEADDR)
 
 /* TODO : palese rubati */

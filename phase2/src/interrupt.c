@@ -11,6 +11,7 @@
 
 #include "interrupt.h"
 #include "interrupt_impl.h"
+#include "native_scheduler.h"
 #include "os/asl.h"
 #include "os/const.h"
 #include "os/pcb.h"
@@ -75,14 +76,8 @@ static inline control_t interrupt_handler()
 
         //int devicenumber = find_device_number((memaddr*)CDEV_BITMAP_ADDR(IL_LOCAL_TIMER));
 
-        int tod = *(int *)TODLOADDR;
-        pandos_kprintf("(::) IL_LOCAL_TIMER (%d) - \n", (unsigned int)getTIMER(), tod);
-        //active_process->p_s.timer = 5000;
-        setTIMER(TRANSLATE_TIME(100000));
-        tod = *(int *)TODLOADDR;
-        pandos_kprintf("(::) IL_LOCAL_TIMER (%d) - \n", (unsigned int)getTIMER(), tod);
-        pandos_kprintf("(::) \n");
-        pandos_kprintf("(::) \n");
+        setTIMER(TRANSLATE_TIME(PLT_INTERVAL));
+
         //*DEVICE_COMMAND(IL_LOCAL_TIMER, devicenumber) = DEV_C_ACK;
 
         return control_schedule;
@@ -91,7 +86,9 @@ static inline control_t interrupt_handler()
     else if(CAUSE_IP_GET(cause, IL_TIMER)) {
 		/*Exctract pcb and put them into the ready queue*/
 
-        pandos_kprintf("(::) IL_TIMER \n");
+        int tod = *(int *)TODLOADDR;
+        pandos_kprintf("(::) IL_TIMER  (%p)\n", tod);
+        reset_timer();
 
         /*
                 lock(MUTEX_CLOCK);

@@ -13,8 +13,7 @@
 #include "umps/cp0.h"
 #include "umps/libumps.h"
 
-#define TIMER_VALUE 100
-inline void reset_timer() { setTIMER(TRANSLATE_TIME(TIMER_VALUE)); }
+inline void reset_timer() { LDIT(TRANSLATE_TIME(IT_INTERVAL)); }
 
 void scheduler_wait()
 {
