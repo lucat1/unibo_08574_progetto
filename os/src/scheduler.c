@@ -32,7 +32,10 @@ void init_scheduler()
 pcb_t *spawn_process(bool priority)
 {
     pcb_t *p = alloc_pcb();
-    p->p_pid = ++pid_count;
+    if(p == NULL){
+        return NULL;
+    }
+    p->p_pid = ++pid_count; /* TODO: Change this with the actual implementation */
     p->p_prio = priority;
     ++running_count;
     queue_process(p);
@@ -57,7 +60,7 @@ void kill_process(pcb_t *p)
 
 void schedule()
 {
-    pandos_kprintf(":: scheduling...\n");
+    /*pandos_kprintf(":: scheduling...\n");*/
     if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))

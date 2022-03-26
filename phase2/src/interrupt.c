@@ -2,8 +2,10 @@
  * \file interrupt.c
  * \brief Interrupt and trap handler
  *
- * TODO: fill me
- * \author Pino Pallino
+ * TODO: Implement all the syscalls.
+ * \author Alessandro Frau
+ * \author Gianmaria Rovelli
+ * \author Luca Tagliavini
  * \date 20-03-2022
  */
 
@@ -103,32 +105,35 @@ static inline control_t trap_handler()
     return control_schedule;
 }
 
-static inline void syscall_create_process()
+static inline control_t syscall_create_process()
 {
     /* parameters of syscall */
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
-    support_t *p_supportStruct = (support_t *)active_process->p_s.reg_a3;
+    support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
 
     /* spawn new process */
     pcb_t *c = spawn_process(p_prio);
-    c->p_support = p_supportStruct;
-    c->p_s = *(p_s);
 
     /* checks if there are enough resources */
     if (c == NULL) { /* lack of resorces */
         pandos_kprintf(
-            "(::) cannot create new process due to lack of resouces\n");
+            "(::) cannot create new process due to lack of resources\n");
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
-        /* adds new process to process queue */
-        insert_proc_q(&active_process->p_list, c);
+        return control_preserve;
+    } else{
+        c->p_support = p_support_struct;
+        c->p_s = *(p_s);
+        /* p_time is already set to 0 from the alloc_pcb call inside spawn_process */
+        /* p_sem_add is already set to NULL from the alloc_pcb call inside spawn_process */
 
         /* adds new process as child of caller process */
         insert_child(active_process, c);
-    } else
         /* sets caller's v0 to new process pid */
         active_process->p_s.reg_v0 = c->p_pid;
+        return control_schedule;
+    }
 }
 
 /* TODO : generate interrupt to stop time slice */
@@ -201,10 +206,26 @@ static inline control_t syscall_do_io()
    //int status = *(base+2);
 
     /* TODO : now is hardcoded -1 */
-    pandos_kprintf("(::) v0 (%p)\n", *(cmd_addr-1));
+    int acc = 0;
+    while(acc < 1000){
+        acc++;
+    }
+    /*pandos_kprintf("(::) v0 (%p)\n", *(cmd_addr-1));*/
     active_process->p_s.reg_v0 = *(cmd_addr-1);
 
     return ctrl;
+}
+
+static inline control_t syscall_get_process_id()
+{
+    int parent = (int) active_process->p_s.reg_a1;
+    /* if parent then return parent pid, else return active process pid */
+    if(!parent){
+        active_process->p_s.reg_v0 = active_process->p_pid;
+    }else{
+        active_process->p_s.reg_v0 = active_process->p_parent->p_pid;
+    }
+    return control_preserve;
 }
 
 static inline control_t syscall_handler()
@@ -214,7 +235,7 @@ static inline control_t syscall_handler()
         case CREATEPROCESS:
             pandos_kprintf("(::) syscall CREATEPROCESS\n");
             /* TODO */
-            syscall_create_process();
+            return syscall_create_process();
             break;
         case TERMPROCESS:
             pandos_kprintf("(::) syscall TERMPROCESS\n");
@@ -249,7 +270,7 @@ static inline control_t syscall_handler()
             break;
         case GETPROCESSID:
             pandos_kprintf("(::) syscall GETPROCESSID\n");
-            /* TODO */
+            return syscall_get_process_id();
             break;
         case YIELD:
             pandos_kprintf("(::) syscall YIELD\n");
