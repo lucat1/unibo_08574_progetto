@@ -17,7 +17,7 @@ int main(int argc)
     init();
     schedule();
 
-    pandos_kprintf(":: scheduler quit. fatal\n");
+    pandos_kfprintf(&kstderr, "!! PANIC: Scheduler quit\n");
     PANIC();
     return -1;
 }

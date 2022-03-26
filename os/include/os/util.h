@@ -133,9 +133,27 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
  */
 #define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
 
-size_t pandos_kprintf(const char *fmt, ...);
+/* Number of lines in the memory print buffer */
+#define MEM_WRITER_LINES 64
+/* Length of a single line in characters */
+#define MEM_WRITER_LINE_LENGTH 40
 
-void pandos_kclear();
+/**
+ * \brief Utility structure for streaming data to raw memory.
+ */
+typedef struct memory_target {
+    char buffer[MEM_WRITER_LINES][MEM_WRITER_LINE_LENGTH];
+    size_t line; /** Index of the next to write */
+    size_t ch;   /** Index of the current character in the current line */
+} memory_target_t;
+
+/* The variable to look for when debugging to check out the log */
+extern memory_target_t kstdout, kstderr, kverb, kdebug;
+
+size_t pandos_kfprintf(memory_target_t *, const char *fmt, ...);
+#define pandos_kprintf(fmt, ...) pandos_kfprintf(&kstdout, fmt, ##__VA_ARGS__)
+
+void pandos_kclear(memory_target_t *mem);
 #endif
 
 /**

@@ -230,24 +230,24 @@ size_t pandos_fprintf(int fd, const char *fmt, ...)
     return res;
 }
 
-/* The variable to look for when debugging to check out the log */
-memory_target_t klog = {.line = 0, .ch = 0};
+memory_target_t kstdout = {.line = 0, .ch = 0}, kstderr = {.line = 0, .ch = 0},
+                kverb = {.line = 0, .ch = 0}, kdebug = {.line = 0, .ch = 0};
 
-size_t pandos_kprintf(const char *fmt, ...)
+size_t pandos_kfprintf(memory_target_t *mem, const char *fmt, ...)
 {
     va_list varg;
     va_start(varg, fmt);
-    size_t res = __printf(&klog, memory_writer, fmt, varg);
+    size_t res = __printf(mem, memory_writer, fmt, varg);
     va_end(varg);
     return res;
 }
 
-void pandos_kclear()
+void pandos_kclear(memory_target_t *mem)
 {
     for (size_t i = 0; i < MEM_WRITER_LINES; i++)
         for (size_t j = 0; j < MEM_WRITER_LINE_LENGTH; j++)
-            klog.buffer[i][j] = ' ';
-    klog.line = 0;
-    klog.ch = 0;
+            mem->buffer[i][j] = ' ';
+    mem->line = 0;
+    mem->ch = 0;
 }
 #endif

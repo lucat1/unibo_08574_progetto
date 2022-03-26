@@ -20,15 +20,16 @@ void scheduler_wait()
 {
     /* setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK); */
     /* setSTATUS(getSTATUS() | STATUS_IEc); */
-    //reset_timer();
-    /* while(1) */
+    // reset_timer();
+    // while (1)
+    pandos_kprintf("-- WAIT\n");
     WAIT();
 }
 
 void scheduler_takeover()
 {
-    pandos_kprintf(":: letting pid:%d take over (%p)\n", active_process->p_pid,
-                   active_process);
+    pandos_kprintf(">> TAKEOVER(%d,%p)\n", active_process->p_pid,
+                   active_process->p_s.pc_epc);
     /* Enable interrupts */
     active_process->p_s.status |= STATUS_IEp;
     LDST(&active_process->p_s);
@@ -39,6 +40,6 @@ void scheduler_takeover()
 
 void scheduler_panic(const char *msg)
 {
-    pandos_kprintf("PANIC: %s", msg);
+    pandos_kfprintf(&kstderr, "!! PANIC: %s", msg);
     PANIC();
 }

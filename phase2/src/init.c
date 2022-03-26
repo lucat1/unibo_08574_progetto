@@ -42,17 +42,17 @@ inline void init_process()
 
 inline void init()
 {
-    pandos_kprintf(":: init_puv\n");
+    pandos_kprintf("-- init_puv\n");
     init_puv();
-    pandos_kprintf(":: init_scheduler\n");
+    pandos_kprintf("-- init_scheduler\n");
     init_scheduler();
-    pandos_kprintf(":: init_semaphores\n");
+    pandos_kprintf("-- init_semaphores\n");
     init_semaphores();
-    pandos_kprintf(":: init_pcbs & init_asl\n");
+    pandos_kprintf("-- init_pcbs & init_asl\n");
     init_pcbs();
     init_asl();
-    pandos_kprintf(":: reset_timer\n");
+    pandos_kprintf("-- reset_timer\n");
     reset_timer();
-    pandos_kprintf(":: init_process\n");
+    pandos_kprintf("-- init_process\n");
     init_process();
 }

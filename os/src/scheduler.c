@@ -102,15 +102,12 @@ void kill_process(pcb_t *p)
 
 void schedule()
 {
-    /*pandos_kprintf(":: scheduling...\n");*/
     if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
-    else {
-        pandos_kprintf(":: possibly deadlock, waiting\n");
+    else
         scheduler_wait();
-    }
 
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state ) */

@@ -116,7 +116,6 @@ void print(char *msg)
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status = SYSCALL(DOIO, (int)command, (int)value, 0);
-        // pandos_kprintf("(::) status at (%d) %p\n", i, status);
         if ((status & TERMSTATMASK) != RECVD) {
             PANIC();
         }
@@ -147,7 +146,6 @@ void test()
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
     print("xgampx and taken were here :3\n");
-    pandos_kclear();
     print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
@@ -389,7 +387,6 @@ void p2()
 void p3()
 {
     print("inside p3\n");
-    pandos_kclear();
     cpu_t time1, time2;
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int i;

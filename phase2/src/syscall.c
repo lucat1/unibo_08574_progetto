@@ -19,6 +19,8 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
+#define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
+
 /* TODO: Maybe optimize this solution */
 static inline void delete_progeny(pcb_t *p)
 {
@@ -78,8 +80,7 @@ static inline control_t syscall_create_process()
 
     /* checks if there are enough resources */
     if (c == NULL) { /* lack of resorces */
-        pandos_kprintf(
-            "(::) cannot create new process due to lack of resources\n");
+        pandos_kfprintf(&kstderr, "!! ERROR: Cannot create new process\n");
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
         return control_preserve;
@@ -112,18 +113,13 @@ static inline control_t syscall_terminate_process()
     /* if pid is 0 then the target is the caller's process */
     if (pid == 0)
         p = active_process;
-    else {
+    else
         p = search_all_lists(pid);
-        if (p == NULL) {
-            pandos_kprintf("(::) Could not find a pcb with this pid");
-        }
-    }
 
     /* checks that process with requested pid exists */
     if (p == NULL) {
-        pandos_kprintf("(::) Could not terminate a NULL process\n");
+        pandos_kfprintf(&kstderr, "!! PANIC: Could not find pid:%d\n", pid);
         PANIC();
-        return control_schedule;
     }
 
     /* recursively removes progeny of process that should be terminated */
@@ -176,11 +172,14 @@ static inline control_t syscall_do_io()
     }
 
     if (i_n == IL_TERMINAL) {
-        pandos_kprintf(":: addr : (%p)\n", cmd_addr);
-        pandos_kprintf(":: start : (%p)\n", (int *)DEV_REG_START);
-        pandos_kprintf(":: base : (%p)\n", base);
-        pandos_kprintf(":: c : (%p)\n", TERMINAL_GET_COMMAND_TYPE(cmd_addr));
-        pandos_kprintf(":: device : (%p, %p)\n", i_n, d_n);
+        pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
+        pandos_kfprintf(&kverb, "addr: (%p)\n", cmd_addr);
+        pandos_kfprintf(&kverb, "start: (%p)\n", (int *)DEV_REG_START);
+        pandos_kfprintf(&kverb, "base: (%p)\n", base);
+        pandos_kfprintf(&kverb, "c: (%p)\n",
+                        TERMINAL_GET_COMMAND_TYPE(cmd_addr));
+        pandos_kfprintf(&kverb, "device: (%p, %p)\n", i_n, d_n);
+        pandos_kfprintf(&kverb, "------ DO_IO_END  -----\n");
 
         int *sem_kind, i = d_n;
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
@@ -254,47 +253,47 @@ inline control_t syscall_handler()
     const int id = (int)active_process->p_s.reg_a0;
     switch (id) {
         case CREATEPROCESS:
-            pandos_kprintf("(::) syscall CREATEPROCESS\n");
+            pandos_syscall("CREATEPROCESS");
             return syscall_create_process();
             break;
         case TERMPROCESS:
-            pandos_kprintf("(::) syscall TERMPROCESS\n");
+            pandos_syscall("TERMPROCESS");
             return syscall_terminate_process();
             break;
         case PASSEREN:
-            pandos_kprintf("(::) syscall PASSEREN\n");
+            pandos_syscall("PASSEREN");
             return syscall_passeren();
             break;
         case VERHOGEN:
-            pandos_kprintf("(::) syscall VERHOGEN\n");
+            pandos_syscall("VERHOGEN");
             return syscall_verhogen();
             break;
         case DOIO:
-            pandos_kprintf("(::) syscall DOIO\n");
+            pandos_syscall("DOIO");
             return syscall_do_io();
             break;
         case GETTIME:
-            pandos_kprintf("(::) syscall GETTIME\n");
+            pandos_syscall("GETTIME");
             return syscall_get_cpu_time();
             break;
         case CLOCKWAIT:
-            pandos_kprintf("(::) syscall CLOCKWAIT\n");
+            pandos_syscall("CLOCKWAIT");
             return syscall_wait_for_clock();
             break;
         case GETSUPPORTPTR:
-            pandos_kprintf("(::) syscall GETSUPPORTPTR\n");
+            pandos_syscall("GETSUPPORTPTR");
             return syscall_get_support_data();
             break;
         case GETPROCESSID:
-            pandos_kprintf("(::) syscall GETPROCESSID\n");
+            pandos_syscall("GETPROCESSID");
             return syscall_get_process_id();
             break;
         case YIELD:
-            pandos_kprintf("(::) syscall YIELD\n");
+            pandos_syscall("YIELD");
             return syscall_yeld();
             break;
         default:
-            pandos_kprintf("(::) invalid system call %d\n", id);
+            pandos_kfprintf(&kstderr, "!! PANIC: Invalid syscall value %d", id);
             PANIC();
             break;
     }
