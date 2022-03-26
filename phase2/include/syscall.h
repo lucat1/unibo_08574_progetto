@@ -176,7 +176,7 @@ static inline control_t syscall_terminate_process()
 
     /* ??? */
     active_process->p_s.reg_v0 = pid;
-    return control_schedule;
+    return control_block;
 }
 
 /* NSYS3 */
@@ -249,7 +249,8 @@ static inline control_t syscall_get_cpu_time()
 /* TODO: test NSYS7 */
 static inline control_t syscall_wait_for_clock()
 {
-    return control_schedule;
+    
+    return mask_P(P(&timer_semaphore, active_process));
 }
 
 /* TODO: test  NSYS8 */

@@ -12,7 +12,6 @@
 #include "os/pcb.h"
 #include "os/asl.h"
 #include "os/util.h"
-#include "syscall.h"
 
 int running_count;
 int blocked_count;
