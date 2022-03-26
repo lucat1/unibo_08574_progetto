@@ -9,12 +9,12 @@
  */
 
 #include "syscall.h"
+#include "interrupt_impl.h"
 #include "os/asl.h"
 #include "os/scheduler.h"
 #include "os/util.h"
 #include "semaphores.h"
 #include "syscall.h"
-#include "syscall_impl.h"
 #include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
