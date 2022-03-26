@@ -70,6 +70,12 @@ static inline control_t interrupt_handler()
     unsigned int value = _ACK;
     *command = value;
 
+    /* The
+newly unblocked pcb is enqueued back on the Ready Queue and control
+is returned to the Current Process unless the newly unblocked process
+has higher prority of the Current Process. */
+
+
     int *sem_kind = termw_semaphores, i = 0;
     return V(&sem_kind[i]);
 }
@@ -190,12 +196,13 @@ static inline control_t syscall_do_io()
     /* Finally write the data */
     *cmd_addr = cmd_value;
 
-    int *base = cmd_addr - *(cmd_addr & DEV_REG_START);
-    int status = *(base + 2);
+    //termreg_t *d = (termreg_t *)cmd_addr-3;
+    //int base = (int)((*cmd_addr - DEV_REG_START));
+   //int status = *(base+2);
 
     /* TODO : now is hardcoded -1 */
-    pandos_kprintf("(::) v0 (%d)\n", status);
-    active_process->p_s.reg_v0 = status;
+    pandos_kprintf("(::) v0 (%p)\n", *(cmd_addr-1));
+    active_process->p_s.reg_v0 = *(cmd_addr-1);
 
     return ctrl;
 }

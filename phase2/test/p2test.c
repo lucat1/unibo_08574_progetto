@@ -116,7 +116,7 @@ void print(char *msg)
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status = SYSCALL(DOIO, (int)command, (int)value, 0);
-        pandos_kprintf("(::) status at (%d) %p\n", i, status);
+        //pandos_kprintf("(::) status at (%d) %p\n", i, status);
         if ((status & TERMSTATMASK) != RECVD) {
             PANIC();
         }
