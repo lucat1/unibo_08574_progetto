@@ -24,6 +24,8 @@ extern list_head ready_queue_lo, ready_queue_hi;
 /* Pointer to the currently running process */
 extern pcb_t *active_process;
 
+extern pcb_t *last_process;
+
 /**
  * \brief Spawns a process and returns the allocated structure.
  * \param[in] priority The proprity of the spawned process. Either 1 for high or

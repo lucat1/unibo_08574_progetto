@@ -11,23 +11,22 @@
 #ifndef PANDOS_SYSCALL_H
 #define PANDOS_SYSCALL_H
 
-#include "os/types.h"
 #include "os/asl.h"
 #include "os/pcb.h"
 #include "os/util.h"
-#include "syscall.h"
 #include "semaphores.h"
 #include "os/scheduler.h"
+#include "syscall.h"
 #include "umps/cp0.h"
 #include "umps/types.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-static inline control_t P(int *sem_addr, pcb_t *p)
+static inline pcb_t *P(int *sem_addr, pcb_t *p)
 {
     if (*sem_addr > 0) {
         *sem_addr = *sem_addr - 1;
-        return control_schedule;
+        return p;
     } else {
         /* TODO: dequeing here is useless if the p is the current_process */
         dequeue_process(p);
@@ -38,20 +37,30 @@ static inline control_t P(int *sem_addr, pcb_t *p)
             PANIC();
         }
 
-        return control_block;
+        return NULL;
     }
 }
 
-static inline control_t V(int *sem_addr)
+static inline pcb_t *V(int *sem_addr)
 {
     pcb_t *p = remove_blocked(sem_addr);
     if (p == NULL) { /* means that sem_proc is empty */
         *sem_addr = *sem_addr + 1;
-        return control_preserve;
     } else {
         enqueue_process(p);
-        return control_schedule;
     }
+
+    return p;
+}
+
+static inline control_t mask_V(pcb_t *p){
+    if(p == NULL) return control_preserve;
+    return control_schedule;
+}
+
+static inline control_t mask_P(pcb_t *p){
+    if(p == NULL) return control_block;
+    return control_schedule;
 }
 
 /* TODO: Maybe optimize this solution */
@@ -113,11 +122,13 @@ static inline control_t syscall_create_process()
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
         return control_preserve;
-    } else{
+    } else {
         c->p_support = p_support_struct;
         c->p_s = *(p_s);
-        /* p_time is already set to 0 from the alloc_pcb call inside spawn_process */
-        /* p_sem_add is already set to NULL from the alloc_pcb call inside spawn_process */
+        /* p_time is already set to 0 from the alloc_pcb call inside
+         * spawn_process */
+        /* p_sem_add is already set to NULL from the alloc_pcb call inside
+         * spawn_process */
 
         /* adds new process as child of caller process */
         insert_child(active_process, c);
@@ -173,13 +184,13 @@ static inline control_t syscall_passeren()
 {
     /* TODO : Update the accumulated CPU time for the Current Process */
     /* TODO : update blocked_count ??? */
-    return P((int *)active_process->p_s.reg_a1, active_process);
+    return mask_P(P((int *)active_process->p_s.reg_a1, active_process));
 }
 
 /* NSYS4 */
 static inline control_t syscall_verhogen()
 {
-    return V((int *)active_process->p_s.reg_a1);
+    return mask_V(V((int *)active_process->p_s.reg_a1));
 }
 
 /* TODO : NSYS5 */
@@ -188,29 +199,44 @@ static inline control_t syscall_do_io()
     int *cmd_addr = (int *)active_process->p_s.reg_a1;
     int cmd_value = (int)active_process->p_s.reg_a2;
 
-    /* TODO: chose the correct index and semaphore */
-    int *sem_kind = termw_semaphores, i = 0;
-    control_t ctrl = P(&sem_kind[i], active_process);
+    /* FIND DEVICE NUMBER BY cmd_addr */
+    int *base = GET_DEVICE_FROM_COMMAND(cmd_addr);
+    int i_n = 0, d_n = 0;
 
-    /* TODO : now is hardcoded (7) */
-    active_process->p_s.status |= STATUS_IM(7);
-
-    /* Finally write the data */
-    *cmd_addr = cmd_value;
-
-    //termreg_t *d = (termreg_t *)cmd_addr-3;
-    //int base = (int)((*cmd_addr - DEV_REG_START));
-   //int status = *(base+2);
-
-    /* TODO : now is hardcoded -1 */
-    int acc = 0;
-    while(acc < 1000){
-        acc++;
+    for (int i = 3; i < 3 + N_EXT_IL; i++) {
+        for (int j = 0; j < N_DEV_PER_IL; j++) {
+            int *a = (int *)DEV_REG_ADDR(i, j);
+            if (a == base) {
+                i_n = i;
+                d_n = j;
+                i = 3 + N_EXT_IL;
+                break;
+            }
+        }
     }
-    /*pandos_kprintf("(::) v0 (%p)\n", *(cmd_addr-1));*/
-    active_process->p_s.reg_v0 = *(cmd_addr-1);
 
-    return ctrl;
+    if (i_n == IL_TERMINAL) {
+        pandos_kprintf(":: addr : (%p)\n", cmd_addr);
+        pandos_kprintf(":: start : (%p)\n", (int *)DEV_REG_START);
+        pandos_kprintf(":: base : (%p)\n", base);
+        pandos_kprintf(":: c : (%p)\n", TERMINAL_GET_COMMAND_TYPE(cmd_addr));
+        pandos_kprintf(":: device : (%p, %p)\n", i_n, d_n);
+
+        int *sem_kind, i = d_n;
+        if(TERMIMANL_CHECK_IS_WRITING(cmd_addr)) sem_kind = termw_semaphores;
+        else sem_kind = termr_semaphores;
+        pcb_t *p = P(&sem_kind[i], active_process);
+        control_t ctrl = mask_P(p);
+
+        active_process->p_s.status |= STATUS_IM(i_n);
+
+        /* Finally write the data */
+        *cmd_addr = cmd_value;
+
+        return ctrl;
+    }
+
+    return control_preserve;
 }
 
 /* TODO: test NSYS6 */
@@ -236,11 +262,11 @@ static inline control_t syscall_get_support_data()
 /* TODO: test NSYS9 */
 static inline control_t syscall_get_process_id()
 {
-    int parent = (int) active_process->p_s.reg_a1;
+    int parent = (int)active_process->p_s.reg_a1;
     /* if parent then return parent pid, else return active process pid */
-    if(!parent){
+    if (!parent) {
         active_process->p_s.reg_v0 = active_process->p_pid;
-    }else{
+    } else {
         active_process->p_s.reg_v0 = active_process->p_parent->p_pid;
     }
     return control_preserve;

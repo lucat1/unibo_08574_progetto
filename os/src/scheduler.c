@@ -18,6 +18,8 @@ int running_count;
 int blocked_count;
 list_head ready_queue_hi, ready_queue_lo;
 pcb_t *active_process;
+pcb_t *last_process;
+
 
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
@@ -46,6 +48,7 @@ pcb_t *spawn_process(bool priority)
 
 inline void enqueue_process(pcb_t *p)
 {
+    last_process = p;
     insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 
