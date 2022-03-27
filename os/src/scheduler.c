@@ -34,11 +34,11 @@ inline pcb_t *P(int *sem_addr, pcb_t *p)
 
         if (r > 0) {
 
-            if(r == 3 && p->p_sem_add == sem_addr) {
+            if (r == 3 && p->p_sem_add == sem_addr) {
                 stderr("PASSEREN same addr %d\n", r);
                 PANIC();
-            }else  {
-            //scheduler_panic("PASSEREN failed %d");
+            } else {
+                // scheduler_panic("PASSEREN failed %d");
                 stderr("PASSEREN failed %d\n", r);
                 PANIC();
             }
@@ -113,8 +113,11 @@ void schedule()
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
-    else
+    else {
+        active_process = NULL;
         scheduler_wait();
+        pandos_kprintf("DONEEEE\n");
+    }
 
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state ) */

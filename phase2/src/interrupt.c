@@ -73,8 +73,8 @@ static inline control_t interrupt_handler()
     }
 
     else if (CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
-        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER, (%d) , %d)\n",
-                       act_pid, (int)getTIMER());
+        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER, (%d) , %d)\n", act_pid,
+                       (int)getTIMER());
 
         reset_plt();
 
@@ -150,23 +150,25 @@ static inline control_t interrupt_handler()
                                            get_terminal_recv_command};
         int *sem[] = {termw_semaphores, termr_semaphores};
 
-        //pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
+        // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
         for (int i = 0; i < 2; i++) {
             int status = *get_status[i](devicenumber);
             if ((status & TERMSTATMASK) != DEV_S_READY) {
                 pcb_t *p = V(&sem[i][devicenumber]);
                 control_t ctrl = mask_V(p);
-                //int pid = 0;
+                // int pid = 0;
                 if (ctrl == control_preserve) {
                     active_process->p_s.reg_v0 = status;
-                    //pid = active_process->p_pid;
+                    // pid = active_process->p_pid;
                 } else {
                     p->p_s.reg_v0 = status;
-                    //pid = p->p_pid;
-                    //pandos_kfprintf(&kverb, "   SIZE (%p)\n", list_size(&ready_queue_lo));
+                    // pid = p->p_pid;
+                    // pandos_kfprintf(&kverb, "   SIZE (%p)\n",
+                    // list_size(&ready_queue_lo));
                 }
 
-                //pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid, status);
+                // pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid,
+                // status);
 
                 *get_cmd[i](devicenumber) = DEV_C_ACK;
                 /* do the first one */
@@ -174,9 +176,9 @@ static inline control_t interrupt_handler()
             }
         }
 
-        pandos_kfprintf(&kverb,"WTF TERMINAL (%d)\n", act_pid);
+        pandos_kfprintf(&kverb, "WTF TERMINAL (%d)\n", act_pid);
 
-        //pandos_kfprintf(&kverb, "--------- TERM INT END -------- (%p)\n");
+        // pandos_kfprintf(&kverb, "--------- TERM INT END -------- (%p)\n");
 
     } else
         pandos_kprintf("<< INTERRUPT(UNKNOWN)\n");
@@ -218,8 +220,10 @@ void exception_handler()
     state_t *p_s;
     control_t ctrl = control_schedule;
 
-    p_s = (state_t *)BIOSDATAPAGE;
-    memcpy(&active_process->p_s, p_s, sizeof(state_t));
+    if (active_process != NULL) {
+        p_s = (state_t *)BIOSDATAPAGE;
+        memcpy(&active_process->p_s, p_s, sizeof(state_t));
+    }
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
@@ -240,6 +244,11 @@ void exception_handler()
             ctrl = trap_handler();
             break;
     }
+    if (active_process == NULL) {
+        /* The process has ben awoken by a timer exception while it was in a
+         * waiting state, control should return to the scheduler. */
+        schedule();
+    }
     /* TODO: maybe rescheduling shouldn't be done all the time */
     /* TODO: increement active_pocess->p_time */
     switch (ctrl) {
@@ -247,7 +256,7 @@ void exception_handler()
             LDST(&active_process->p_s);
             break;
         case control_block:
-            stdout("BLOCK\n");
+            pandos_kprintf("BLOCK\n");
             schedule();
             break;
         case control_schedule:
