@@ -109,14 +109,17 @@ void kill_process(pcb_t *p)
 
 void schedule()
 {
+    int u = 1;
     if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
-    else
+    else {
         scheduler_wait();
+        u = 0;
+    }
 
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state ) */
-    scheduler_takeover();
+    if(u == 1) scheduler_takeover();
 }
