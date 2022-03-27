@@ -15,11 +15,12 @@
 #include "os/util.h"
 #include "semaphores.h"
 #include "syscall.h"
+#include "../test/p2test.h"
 #include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-#define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
+#define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(" n ", (%d))\n", pid)
 
 /* TODO: Maybe optimize this solution */
 static inline void delete_progeny(pcb_t *p)
@@ -83,7 +84,6 @@ static inline control_t syscall_create_process()
         pandos_kfprintf(&kstderr, "!! ERROR: Cannot create new process\n");
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
-        return control_preserve;
     } else {
         c->p_support = p_support_struct;
         memcpy(&c->p_s, p_s, sizeof(state_t));
@@ -96,8 +96,8 @@ static inline control_t syscall_create_process()
         insert_child(active_process, c);
         /* sets caller's v0 to new process pid */
         active_process->p_s.reg_v0 = c->p_pid;
-        return control_schedule;
     }
+    return control_preserve;
 }
 
 /* TODO: finish testing NSYS2 */
@@ -132,7 +132,7 @@ static inline control_t syscall_terminate_process()
     kill_process(p);
 
     /* ??? */
-    active_process->p_s.reg_v0 = pid;
+    p->p_s.reg_v0 = pid;
     return control_block;
 }
 /* NSYS3 */
@@ -140,7 +140,13 @@ static inline control_t syscall_passeren()
 {
     /* TODO : Update the accumulated CPU time for the Current Process */
     /* TODO : update blocked_count ??? */
-    return mask_P(P((int *)active_process->p_s.reg_a1, active_process));
+    int *sem = (int *)active_process->p_s.reg_a1;
+    pcb_t *p = P(sem, active_process);
+    if(sem == &sem_endp3) {
+        stdout("SEM P3 : (%d)\n", mask_P(p));
+        stdout("CONTAINS : %d\n", list_contains(p->p_prio ? &ready_queue_hi : &ready_queue_lo, &active_process->p_list));
+    }
+    return mask_P(p);
 }
 
 /* NSYS4 */
@@ -172,14 +178,13 @@ static inline control_t syscall_do_io()
     }
 
     if (i_n == IL_TERMINAL) {
-        pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
+        /* pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
         pandos_kfprintf(&kverb, "addr: (%p)\n", cmd_addr);
         pandos_kfprintf(&kverb, "start: (%p)\n", (int *)DEV_REG_START);
         pandos_kfprintf(&kverb, "base: (%p)\n", base);
-        pandos_kfprintf(&kverb, "c: (%p)\n",
-                        TERMINAL_GET_COMMAND_TYPE(cmd_addr));
+        pandos_kfprintf(&kverb, "c: (%p)\n", TERMINAL_GET_COMMAND_TYPE(cmd_addr));
         pandos_kfprintf(&kverb, "device: (%p, %p)\n", i_n, d_n);
-        pandos_kfprintf(&kverb, "------ DO_IO_END  -----\n");
+        pandos_kfprintf(&kverb, "------ DO_IO_END  -----\n"); */
 
         int *sem_kind, i = d_n;
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
@@ -210,8 +215,9 @@ static inline control_t syscall_get_cpu_time()
 /* TODO: test NSYS7 */
 static inline control_t syscall_wait_for_clock()
 {
+    pcb_t *p = P(&timer_semaphore, active_process);
 
-    return mask_P(P(&timer_semaphore, active_process));
+    return mask_P(p);
 }
 
 /* TODO: test  NSYS8 */
@@ -244,52 +250,53 @@ static inline control_t syscall_yeld()
 
     /* TODO: Understand if this action should be made by the scheduler or by the
      * syscall itself */
-    enqueue_process(active_process);
+    //enqueue_process(active_process);
     return control_schedule;
 }
 
 inline control_t syscall_handler()
 {
     const int id = (int)active_process->p_s.reg_a0;
+    int pid = active_process->p_pid;
     switch (id) {
         case CREATEPROCESS:
-            pandos_syscall("CREATEPROCESS");
+            pandos_syscall("CREATEPROCESS", pid);
             return syscall_create_process();
             break;
         case TERMPROCESS:
-            pandos_syscall("TERMPROCESS");
+            pandos_syscall("TERMPROCESS", pid);
             return syscall_terminate_process();
             break;
         case PASSEREN:
-            pandos_syscall("PASSEREN");
+            pandos_syscall("PASSEREN", pid);
             return syscall_passeren();
             break;
         case VERHOGEN:
-            pandos_syscall("VERHOGEN");
+            pandos_syscall("VERHOGEN", pid);
             return syscall_verhogen();
             break;
         case DOIO:
-            pandos_syscall("DOIO");
+            pandos_syscall("DOIO", pid);
             return syscall_do_io();
             break;
         case GETTIME:
-            pandos_syscall("GETTIME");
+            pandos_syscall("GETTIME", pid);
             return syscall_get_cpu_time();
             break;
         case CLOCKWAIT:
-            pandos_syscall("CLOCKWAIT");
+            pandos_syscall("CLOCKWAIT", pid);
             return syscall_wait_for_clock();
             break;
         case GETSUPPORTPTR:
-            pandos_syscall("GETSUPPORTPTR");
+            pandos_syscall("GETSUPPORTPTR", pid);
             return syscall_get_support_data();
             break;
         case GETPROCESSID:
-            pandos_syscall("GETPROCESSID");
+            pandos_syscall("GETPROCESSID", pid);
             return syscall_get_process_id();
             break;
         case YIELD:
-            pandos_syscall("YIELD");
+            pandos_syscall("YIELD", pid);
             return syscall_yeld();
             break;
         default:

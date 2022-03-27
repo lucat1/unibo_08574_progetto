@@ -12,12 +12,12 @@
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/util.h"
+#include "umps/libumps.h"
 
 int running_count;
 int blocked_count;
 list_head ready_queue_hi, ready_queue_lo;
 pcb_t *active_process;
-pcb_t *last_process;
 
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
@@ -33,7 +33,15 @@ inline pcb_t *P(int *sem_addr, pcb_t *p)
         int r = insert_blocked(sem_addr, p);
 
         if (r > 0) {
-            scheduler_panic("PASSEREN failed");
+
+            if(r == 3 && p->p_sem_add == sem_addr) {
+                stderr("PASSEREN same addr %d\n", r);
+                PANIC();
+            }else  {
+            //scheduler_panic("PASSEREN failed %d");
+                stderr("PASSEREN failed %d\n", r);
+                PANIC();
+            }
         }
 
         return NULL;
@@ -77,7 +85,6 @@ pcb_t *spawn_process(bool priority)
 
 inline void enqueue_process(pcb_t *p)
 {
-    last_process = p;
     insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 

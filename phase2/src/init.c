@@ -34,10 +34,12 @@ inline void init_puv()
 }
 
 inline void init_process()
-{
-    pcb_t *p = spawn_process(true);
+{   
+    pcb_t *p = spawn_process(false);
     RAMTOP(p->p_s.reg_sp);
     p->p_s.pc_epc = p->p_s.reg_t9 = (memaddr)test;
+    /* all interrupts enabled (STATUS_IM_MASK) and kernel-mode on (KUc) */
+    p->p_s.status |= STATUS_TE | STATUS_IM_MASK | STATUS_KUc;
 }
 
 inline void init()
@@ -53,6 +55,7 @@ inline void init()
     init_asl();
     pandos_kprintf("-- reset_timer\n");
     reset_timer();
+    reset_plt();
     pandos_kprintf("-- init_process\n");
     init_process();
 }

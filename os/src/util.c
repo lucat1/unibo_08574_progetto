@@ -242,6 +242,7 @@ size_t pandos_kfprintf(memory_target_t *mem, const char *fmt, ...)
     return res;
 }
 
+
 void pandos_kclear(memory_target_t *mem)
 {
     for (size_t i = 0; i < MEM_WRITER_LINES; i++)

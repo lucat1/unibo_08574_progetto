@@ -64,6 +64,7 @@ static inline control_t interrupt_handler()
     // pcb_t *unblocked; /* Puntatore a processo sbloccato */
 
     int cause = getCAUSE();
+    int act_pid = active_process->p_pid;
 
     if (CAUSE_IP_GET(cause, IL_IPI)) {
         pandos_kprintf("<< INTERRUPT(IPI)\n");
@@ -72,33 +73,35 @@ static inline control_t interrupt_handler()
     }
 
     else if (CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
-        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER)\n");
-        /* setTIMER(SCHED_TIME_SLICE); */
-        /* TODO */
+        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER, (%d) , %d)\n",
+                       act_pid, (int)getTIMER());
 
-        // int devicenumber =
-        // find_device_number((memaddr*)CDEV_BITMAP_ADDR(IL_LOCAL_TIMER));
+        reset_plt();
 
-        setTIMER(TRANSLATE_TIME(PLT_INTERVAL));
-        //*DEVICE_COMMAND(IL_LOCAL_TIMER, devicenumber) = DEV_C_ACK;
-
+        /* recalls scheduler */
         return control_schedule;
     }
 
     else if (CAUSE_IP_GET(cause, IL_TIMER)) {
         /*Exctract pcb and put them into the ready queue*/
         int tod = *(int *)TODLOADDR;
-        pandos_kprintf("<< INTERRUPT(TIMER, %p)\n", tod);
+        pandos_kprintf("<< INTERRUPT(TIMER, (%d) , %p)\n", act_pid, tod);
         reset_timer();
 
-        /*
-                lock(MUTEX_CLOCK);
-                while ((unblocked = V(&pseudo_clock))){
-                        insertProcQ(&ready_queue[unblocked->numCPU], unblocked);
-                }
-                SET_IT(SCHED_PSEUDO_CLOCK);
-                unlock(MUTEX_CLOCK);
-        */
+        /* temp deactives plt */
+        reset_plt();
+        active_process->p_s.status |= STATUS_TE;
+        active_process->p_s.status ^= STATUS_TE;
+
+        pcb_t *p;
+        while ((p = V(&timer_semaphore)) != NULL) {
+            verbose("REMOVE from clock %d\n", p->p_pid);
+        }
+
+        timer_semaphore = 0;
+
+        /* should be control_preserve */
+        return control_preserve;
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
                CAUSE_IP_GET(cause, IL_PRINTER)) {
@@ -133,7 +136,7 @@ static inline control_t interrupt_handler()
         return ctrl;
 
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        pandos_kprintf("<< INTERRUPT(TERMINAL)\n");
+        pandos_kprintf("<< INTERRUPT(TERMINAL, (%d))\n", act_pid);
 
         /*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha
          * sollevato l'interrupt*/
@@ -147,23 +150,36 @@ static inline control_t interrupt_handler()
                                            get_terminal_recv_command};
         int *sem[] = {termw_semaphores, termr_semaphores};
 
+        //pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
         for (int i = 0; i < 2; i++) {
-            int status = *get_status[i](devicenumber) & TERMSTATMASK;
-            if (status != DEV_S_READY) {
+            int status = *get_status[i](devicenumber);
+            if ((status & TERMSTATMASK) != DEV_S_READY) {
                 pcb_t *p = V(&sem[i][devicenumber]);
                 control_t ctrl = mask_V(p);
-                if (ctrl == control_schedule)
-                    last_process->p_s.reg_v0 = status;
-                else
+                //int pid = 0;
+                if (ctrl == control_preserve) {
                     active_process->p_s.reg_v0 = status;
+                    //pid = active_process->p_pid;
+                } else {
+                    p->p_s.reg_v0 = status;
+                    //pid = p->p_pid;
+                    //pandos_kfprintf(&kverb, "   SIZE (%p)\n", list_size(&ready_queue_lo));
+                }
+
+                //pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid, status);
 
                 *get_cmd[i](devicenumber) = DEV_C_ACK;
                 /* do the first one */
                 return ctrl;
             }
         }
+
+        pandos_kfprintf(&kverb,"WTF TERMINAL (%d)\n", act_pid);
+
+        //pandos_kfprintf(&kverb, "--------- TERM INT END -------- (%p)\n");
+
     } else
-        pandos_kprintf("<< INTERRUPT\n");
+        pandos_kprintf("<< INTERRUPT(UNKNOWN)\n");
 
     /* The
 newly unblocked pcb is enqueued back on the Ready Queue and control
@@ -193,6 +209,7 @@ static inline control_t tbl_handler()
 static inline control_t trap_handler()
 {
     pandos_kprintf("<< TRAP\n");
+    PANIC();
     return control_schedule;
 }
 
@@ -214,10 +231,10 @@ void exception_handler()
             ctrl = tbl_handler();
             break;
         case 8:
-            ctrl = syscall_handler();
             /* ALWAYS increment the PC to prevent system call loops */
             active_process->p_s.pc_epc += WORD_SIZE;
             active_process->p_s.reg_t9 += WORD_SIZE;
+            ctrl = syscall_handler();
             break;
         default: /* 4-7, 9-12 */
             ctrl = trap_handler();
@@ -230,6 +247,7 @@ void exception_handler()
             LDST(&active_process->p_s);
             break;
         case control_block:
+            stdout("BLOCK\n");
             schedule();
             break;
         case control_schedule:

@@ -18,6 +18,7 @@
 #include "os/const.h"
 #include "os/types.h"
 #include "os/util.h"
+#include "p2test.h"
 #include <umps/libumps.h>
 
 typedef unsigned int devregtr;
@@ -117,6 +118,7 @@ void print(char *msg)
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
+            verbose("PRINT PANIC");
             PANIC();
         }
         s++;
@@ -143,10 +145,10 @@ void uTLB_RefillHandler()
 /*                                                                   */
 void test()
 {
-    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    print("xgampx and taken were here :3\n");
-    print("p1 v(sem_testsem)\n");
+    //print("xgampx and taken were here :3\n");
+    //print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
 
@@ -241,26 +243,31 @@ void test()
     p10state.status = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
     /* create process p2 */
-    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
-                    (int)NULL); /* start p2     */
+    //p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
+     //               (int)NULL); /* start p2     */
 
-    print("p2 was started\n");
+    //print("p2 was started\n");
+    //print("p2\n");
 
-    SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
+    //SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
+    //SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
 
     /* make sure we really blocked */
-    if (p1p2synch == 0) {
-        print("error: p1/p2 synchronization bad\n");
-    }
+    //if (p1p2synch == 0) {
+     //   print("error: p1/p2 synchronization bad\n");
+   //}
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
                     (int)NULL); /* start p3     */
 
-    print("p3 is started\n");
+    //print("p3 is started\n");
+    print("p3\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
+    stdout("QUA\n");
+    print("p3 term\n");
+
     SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
 
     SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
@@ -315,6 +322,11 @@ void test()
     /* should not reach this point, since p1 just got a program trap */
     print("error: p1 still alive after progtrap & no trap vector\n");
     PANIC(); /* PANIC !!!     */
+}
+
+void debugTerminate(){
+    print("[x] DEBUG TERMINATE\n");
+    *((memaddr *)BADADDR) = 0; /* terminate p1 */
 }
 
 /* p2 -- semaphore and cputime-SYS test process */
@@ -386,7 +398,7 @@ void p2()
 /* p3 -- clock semaphore test process */
 void p3()
 {
-    print("inside p3\n");
+    print("ip3\n");
     cpu_t time1, time2;
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int i;
