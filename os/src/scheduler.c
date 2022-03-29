@@ -68,7 +68,7 @@ static inline void delete_progeny(pcb_t *p)
         while ((child = remove_child(p)) != NULL) {
             insert_proc_q(myqueue, child);
         }
-        if (p == NULL)
+        if (p != NULL)
             kill_process(p);
     }
 }
@@ -118,16 +118,16 @@ void schedule_mask(control_t ctrl)
     if (active_process != NULL) {
         switch (ctrl) {
             case control_preserve:
-                stdout("PRESERVE\n");
+                stdout("[-] PRESERVE\n");
                 LDST(&active_process->p_s);
                 break;
             case control_block:
-                stdout("BLOCK\n");
+                stdout("[-] BLOCK\n");
                 active_process = NULL;
                 schedule();
                 break;
             case control_schedule:
-                stdout("SCHEDULE\n");
+                stdout("[-] SCHEDULE\n");
                 enqueue_process(active_process);
                 schedule();
                 break;

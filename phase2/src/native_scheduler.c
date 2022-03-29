@@ -25,7 +25,7 @@ int waiting_count = 0;
 
 void scheduler_wait()
 {   
-    stdout("WAITING (%d)\n", ++waiting_count);
+    stdout("[-] WAITING (%d)\n", ++waiting_count);
     active_process = NULL;
     reset_timer();
     setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^ STATUS_TE);

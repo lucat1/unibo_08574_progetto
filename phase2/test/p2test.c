@@ -141,31 +141,55 @@ void uTLB_RefillHandler()
     LDST((state_t *)0x0FFFF000);
 }
 
+
+void debugTerminate()
+{
+    print("[x] DEBUG TERMINATE\n");
+        /* now for a more rigorous check of process termination */
+    for (p8inc = 0; p8inc < 4; p8inc++) {
+        /* Reset semaphores */
+        sem_blkp8 = 0;
+        sem_endp8 = 0;
+        for (int i = 0; i < NOLEAVES; i++) {
+            sem_endcreate[i] = 0;
+        }
+
+        p8pid = SYSCALL(CREATEPROCESS, (int)&p8rootstate, PROCESS_PRIO_LOW,
+                        (int)NULL);
+
+        SYSCALL(PASSEREN, (int)&sem_endp8, 0, 0);
+    }
+
+    print("p1 finishes OK -- TTFN\n");
+    *((memaddr *)BADADDR) = 0; /* terminate p1 */
+
+}
+
 /*********************************************************************/
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test()
 {
-    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    print("xgampx and taken were here :3\n");
-    print("p1 v(sem_testsem)\n");
+    //print("xgampx and taken were here :3\n");
+    //print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
 
-    setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
-              STATUS_TE);
+    //setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
+    //          STATUS_TE);
     /*
-stdout("WAITING\n");
-LDIT(1000000);
-WAIT();
-stdout("END WAITING\n");
-stdout("WAITING\n");
-LDIT(1000000);
-WAIT();
-stdout("END WAITING\n");
-*/
+    stdout("WAITING\n");
+    LDIT(1000000);
+    WAIT();
+    stdout("END WAITING\n");
+    stdout("WAITING\n");
+    LDIT(1000000);
+    WAIT();
+    stdout("END WAITING\n");
+    */
 
     STST(&hp_p1state);
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
@@ -334,15 +358,10 @@ stdout("END WAITING\n");
     print("p1 finishes OK -- TTFN\n");
     *((memaddr *)BADADDR) = 0; /* terminate p1 */
 
+
     /* should not reach this point, since p1 just got a program trap */
     print("error: p1 still alive after progtrap & no trap vector\n");
     PANIC(); /* PANIC !!!     */
-}
-
-void debugTerminate()
-{
-    print("[x] DEBUG TERMINATE\n");
-    *((memaddr *)BADADDR) = 0; /* terminate p1 */
 }
 
 /* p2 -- semaphore and cputime-SYS test process */

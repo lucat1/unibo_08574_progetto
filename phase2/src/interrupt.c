@@ -93,7 +93,7 @@ static inline control_t interrupt_handler()
 
         pcb_t *p;
         while ((p = V(&timer_semaphore)) != NULL) {
-            verbose("REMOVE from clock %d\n", act_pid);
+            //verbose("REMOVE from clock %d\n", act_pid);
         }
 
         timer_semaphore = 0;
@@ -168,7 +168,6 @@ static inline control_t interrupt_handler()
                 // pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid,
                 // status);
 
-                stdout("SENT ACK\n");
                 *get_cmd[i](devicenumber) = DEV_C_ACK;
                 /* do the first one */
                 return ctrl;
@@ -228,9 +227,8 @@ void exception_handler()
 
     if (active_process != NULL) {
         memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
-    } else {
-        stdout("ACTIVE IS NULL (start) (%d)\n", CAUSE_GET_EXCCODE(getCAUSE()));
     }
+
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:

@@ -83,6 +83,9 @@ static inline control_t syscall_create_process()
         /* sets caller's v0 to new process pid */
         active_process->p_s.reg_v0 = c->p_pid;
     }
+
+    int pid = c->p_pid;
+    verbose("CREATED PROCESS (%d)\n", pid);
     return control_preserve;
 }
 
@@ -113,6 +116,7 @@ static inline control_t syscall_terminate_process()
 
     /* ??? */
     p->p_s.reg_v0 = pid;
+    verbose("TERMINATED PROCESS (%d)\n", p->p_pid);
     return control_block;
 }
 /* NSYS3 */
