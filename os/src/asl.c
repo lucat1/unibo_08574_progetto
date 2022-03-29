@@ -117,10 +117,6 @@ pcb_t *out_blocked(pcb_t *pcb)
         !list_contains(&pcb->p_list, &sem->s_procq))
         return NULL;
 
-    /* ULTRA WARNING */
-    sem->s_key--;
-    /* STOP ULTRA WARNING */
-
     list_del(&pcb->p_list);
     pcb->p_sem_add = NULL;
     if (list_empty(&sem->s_procq))

@@ -282,11 +282,9 @@ static inline scheduler_control_t syscall_do_io()
         /* Finally write the data */
         *cmd_addr = cmd_value;
 
-        pandos_kprintf("DONE(1)\n");
         return ctrl;
     }
 
-    pandos_kprintf("DONE\n");
     /* TODO: rly ? */
     return CONTROL_PRESERVE(active_process);
 }

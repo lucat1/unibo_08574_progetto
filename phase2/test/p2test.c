@@ -145,10 +145,10 @@ void uTLB_RefillHandler()
 void test()
 {
 
-    // SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    // print("xgampx and taken were here :3\n");
-    // print("p1 v(sem_testsem)\n");
+    print("xgampx and taken were here :3\n");
+    print("p1 v(sem_testsem)\n");
 
     /*
 stdout("WAITING\n");
@@ -251,32 +251,32 @@ stdout("END WAITING\n");
     p10state.pc_epc = p10state.reg_t9 = (memaddr)p10;
     p10state.status = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-    // /* create process p2 */
-    // p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
-    //                 (int)NULL); /* start p2     */
+    /* create process p2 */
+    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
+                    (int)NULL); /* start p2     */
 
-    // print("p2 was started\n");
-    // print("p2\n");
+    print("p2 was started\n");
+    print("p2\n");
 
-    // SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
+    SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    // SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
+    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
 
-    // /* make sure we really blocked */
-    // if (p1p2synch == 0) {
-    //     print("error: p1/p2 synchronization bad\n");
-    // }
+    /* make sure we really blocked */
+    if (p1p2synch == 0) {
+        print("error: p1/p2 synchronization bad\n");
+    }
 
-    // p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
-    //                 (int)NULL); /* start p3     */
+    p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
+                    (int)NULL); /* start p3     */
 
-    // // print("p3 is started\n");
-    // print("p3\n");
+    // print("p3 is started\n");
+    print("p3\n");
 
-    // SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
+    SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
-    // SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
-    // SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
+    SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
+    SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
 
     p4pid = SYSCALL(CREATEPROCESS, (int)&p4state, PROCESS_PRIO_LOW,
                     (int)NULL); /* start p4     */
@@ -293,23 +293,23 @@ stdout("END WAITING\n");
     SYSCALL(CREATEPROCESS, (int)&p5state, PROCESS_PRIO_LOW,
             (int)&(pFiveSupport)); /* start p5     */
 
-    // SYSCALL(CREATEPROCESS, (int)&p6state, PROCESS_PRIO_LOW,
-    //         (int)NULL); /* start p6		*/
+    SYSCALL(CREATEPROCESS, (int)&p6state, PROCESS_PRIO_LOW,
+            (int)NULL); /* start p6		*/
 
-    // SYSCALL(CREATEPROCESS, (int)&p7state, PROCESS_PRIO_LOW,
-    //         (int)NULL); /* start p7		*/
+    SYSCALL(CREATEPROCESS, (int)&p7state, PROCESS_PRIO_LOW,
+            (int)NULL); /* start p7		*/
 
-    // p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW,
-    //                 (int)NULL); /* start p7		*/
+    p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW,
+                    (int)NULL); /* start p7		*/
 
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
     print("p1 knows p5 ended\n");
-    verbose("HO QUASI FINITO %d\n", sem_blkp4 + 1);
+    //verbose("HO QUASI FINITO %d\n", sem_blkp4 + 1);
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)		*/
 
-    verbose("HO QUASI FINITO 2\n");
+    //verbose("HO QUASI FINITO 2\n");
 
     /* now for a more rigorous check of process termination */
     for (p8inc = 0; p8inc < 4; p8inc++) {
@@ -482,7 +482,7 @@ void p4()
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)     */
 
-    verbose("Incarnazione sbloccata %d\n", p4inc + 1);
+    //verbose("Incarnazione sbloccata %d\n", p4inc + 1);
 
     SYSCALL(PASSEREN, (int)&sem_synp4, 0, 0); /* P(sem_synp4)     */
 
@@ -688,6 +688,9 @@ void p8root()
 
     SYSCALL(CREATEPROCESS, (int)&child2state, PROCESS_PRIO_LOW, (int)NULL);
 
+
+    // verbose("QUA\n");
+
     for (grandchild = 0; grandchild < NOLEAVES; grandchild++) {
         SYSCALL(PASSEREN, (int)&sem_endcreate[grandchild], 0, 0);
     }
@@ -702,6 +705,7 @@ void p8root()
 void child1()
 {
     print("child1 starts\n");
+    //verbose("child1\n");
 
     int ppid = SYSCALL(GETPROCESSID, 1, 0, 0);
     if (ppid != p8pid) {
@@ -709,10 +713,12 @@ void child1()
         PANIC();
     }
 
+
     SYSCALL(CREATEPROCESS, (int)&gchild1state, PROCESS_PRIO_LOW, (int)NULL);
 
     SYSCALL(CREATEPROCESS, (int)&gchild2state, PROCESS_PRIO_LOW, (int)NULL);
 
+    //verbose("QUA child1\n");
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
 }
 
