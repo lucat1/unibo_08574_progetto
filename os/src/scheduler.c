@@ -12,7 +12,6 @@
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/util.h"
-#include "umps/libumps.h"
 
 int running_count;
 int blocked_count;
@@ -33,15 +32,7 @@ inline pcb_t *P(int *sem_addr, pcb_t *p)
         int r = insert_blocked(sem_addr, p);
 
         if (r > 0) {
-
-            if (r == 3 && p->p_sem_add == sem_addr) {
-                stderr("PASSEREN same addr %d\n", r);
-                PANIC();
-            } else {
-                // scheduler_panic("PASSEREN failed %d");
-                stderr("PASSEREN failed %d\n", r);
-                PANIC();
-            }
+            scheduler_panic("PASSEREN failed\n");
         }
 
         return NULL;
@@ -107,19 +98,29 @@ void kill_process(pcb_t *p)
     free_pcb(p);
 }
 
-void schedule()
+void schedule(pcb_t *pcb, bool enqueue)
 {
-    if (!list_empty(&ready_queue_hi))
+    pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
+    if (enqueue && pcb != NULL) {
+        enqueue_process(pcb);
+    }
+    /* Process selection */
+    if (pcb != NULL && !enqueue)
+        active_process = pcb;
+    else if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
     else {
         active_process = NULL;
+        scheduler_unlock();
         scheduler_wait();
-        pandos_kprintf("DONEEEE\n");
     }
 
+    pandos_kprintf("pre-takeover %p\n", active_process);
     /* This point should never be reached unless processes have been
-     * re-scheduled (i.e. when waiting for events in a soft blocked state ) */
-    scheduler_takeover();
+     * re-scheduled (i.e. when waiting for events in a soft blocked state )
+     */
+    if (active_process)
+        scheduler_takeover();
 }

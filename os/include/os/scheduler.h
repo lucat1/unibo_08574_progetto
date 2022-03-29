@@ -29,6 +29,18 @@ extern pcb_t *last_process;
 extern pcb_t *V(int *sem_addr);
 extern pcb_t *P(int *sem_addr, pcb_t *p);
 
+typedef struct scheduler_control {
+    pcb_t *pcb;
+    bool enqueue;
+} scheduler_control_t;
+
+#define CONTROL_BLOCK                                                          \
+    (scheduler_control_t) { NULL, false }
+#define CONTROL_PRESERVE(p)                                                    \
+    (scheduler_control_t) { p, false }
+#define CONTROL_RESCHEDULE                                                     \
+    (scheduler_control_t) { active_process, true }
+
 /**
  * \brief Spawns a process and returns the allocated structure.
  * \param[in] priority The proprity of the spawned process. Either 1 for high or
@@ -43,14 +55,15 @@ extern void dequeue_process(pcb_t *p);
 void kill_process(pcb_t *p);
 
 extern void scheduler_panic(const char *msg);
-
 extern void scheduler_wait();
+extern void scheduler_unlock();
+
 /* Externally implemented function to hand the processor over to a new
  * process
  */
 extern void scheduler_takeover();
 
 void init_scheduler();
-void schedule();
+void schedule(pcb_t *pcb, bool enqueue);
 
 #endif /* PANDOS_SCHEDULER_H */

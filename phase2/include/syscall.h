@@ -11,8 +11,8 @@
 #ifndef PANDOS_SYSCALL_H
 #define PANDOS_SYSCALL_H
 
-#include "interrupt_impl.h"
+#include "os/scheduler.h"
 
-extern control_t syscall_handler();
+extern scheduler_control_t syscall_handler();
 
 #endif /* PANDOS_SYSCALL_H */

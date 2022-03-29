@@ -58,7 +58,7 @@ static inline memaddr *get_terminal_recv_command(int devicenumber)
 }
 
 /* TODO: now is hardcoded */
-static inline control_t interrupt_handler()
+static inline scheduler_control_t interrupt_handler()
 {
 
     // pcb_t *unblocked; /* Puntatore a processo sbloccato */
@@ -79,19 +79,19 @@ static inline control_t interrupt_handler()
         reset_plt();
 
         /* recalls scheduler */
-        return control_schedule;
+        return CONTROL_RESCHEDULE;
     }
 
     else if (CAUSE_IP_GET(cause, IL_TIMER)) {
         /*Exctract pcb and put them into the ready queue*/
-        int tod = *(int *)TODLOADDR;
+        int tod = *((int *)TODLOADDR);
         pandos_kprintf("<< INTERRUPT(TIMER, (%d) , %p)\n", act_pid, tod);
         reset_timer();
 
         /* temp deactives plt */
         reset_plt();
-        active_process->p_s.status |= STATUS_TE;
-        active_process->p_s.status ^= STATUS_TE;
+        // active_process->p_s.status |= STATUS_TE;
+        // active_process->p_s.status ^= STATUS_TE;
 
         pcb_t *p;
         while ((p = V(&timer_semaphore)) != NULL) {
@@ -100,8 +100,7 @@ static inline control_t interrupt_handler()
 
         timer_semaphore = 0;
 
-        /* should be control_preserve */
-        return control_preserve;
+        return CONTROL_PRESERVE(active_process);
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
                CAUSE_IP_GET(cause, IL_PRINTER)) {
@@ -121,7 +120,7 @@ static inline control_t interrupt_handler()
 
         int devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
         pcb_t *p = V(&sem[il - IL_DISK][devicenumber]);
-        control_t ctrl = mask_V(p);
+        scheduler_control_t ctrl = mask_V(p);
         /* 		if( (unblocked = V(&sem_ethernet[devicenumber])) !=
            NULL){
                                         //Se un processo ha chiamato la SYS dei
@@ -155,9 +154,9 @@ static inline control_t interrupt_handler()
             int status = *get_status[i](devicenumber);
             if ((status & TERMSTATMASK) != DEV_S_READY) {
                 pcb_t *p = V(&sem[i][devicenumber]);
-                control_t ctrl = mask_V(p);
+                scheduler_control_t ctrl = mask_V(p);
                 // int pid = 0;
-                if (ctrl == control_preserve) {
+                if (p == NULL) {
                     active_process->p_s.reg_v0 = status;
                     // pid = active_process->p_pid;
                 } else {
@@ -188,10 +187,10 @@ newly unblocked pcb is enqueued back on the Ready Queue and control
 is returned to the Current Process unless the newly unblocked process
 has higher prority of the Current Process. */
 
-    return control_schedule;
+    return CONTROL_RESCHEDULE;
 }
 
-static inline control_t tbl_handler()
+static inline scheduler_control_t tbl_handler()
 {
     if (active_process->p_support == NULL)
         kill_process(active_process);
@@ -204,21 +203,21 @@ static inline control_t tbl_handler()
          */
     }
 
-    return control_schedule;
+    return CONTROL_RESCHEDULE;
 }
 
 /* TODO: fill me */
-static inline control_t trap_handler()
+static inline scheduler_control_t trap_handler()
 {
-    pandos_kprintf("<< TRAP\n");
+    pandos_kprintf("<< TRAP(%d)\n", CAUSE_GET_EXCCODE(getCAUSE()));
     PANIC();
-    return control_schedule;
+    return CONTROL_BLOCK;
 }
 
 void exception_handler()
 {
     state_t *p_s;
-    control_t ctrl = control_schedule;
+    scheduler_control_t ctrl;
 
     if (active_process != NULL) {
         p_s = (state_t *)BIOSDATAPAGE;
@@ -239,29 +238,11 @@ void exception_handler()
             active_process->p_s.pc_epc += WORD_SIZE;
             active_process->p_s.reg_t9 += WORD_SIZE;
             ctrl = syscall_handler();
+            pandos_kprintf("done\n");
             break;
         default: /* 4-7, 9-12 */
             ctrl = trap_handler();
             break;
     }
-    if (active_process == NULL) {
-        /* The process has ben awoken by a timer exception while it was in a
-         * waiting state, control should return to the scheduler. */
-        schedule();
-    }
-    /* TODO: maybe rescheduling shouldn't be done all the time */
-    /* TODO: increement active_pocess->p_time */
-    switch (ctrl) {
-        case control_preserve:
-            LDST(&active_process->p_s);
-            break;
-        case control_block:
-            pandos_kprintf("BLOCK\n");
-            schedule();
-            break;
-        case control_schedule:
-            enqueue_process(active_process);
-            schedule();
-            break;
-    }
+    schedule(ctrl.pcb, ctrl.enqueue);
 }
