@@ -39,7 +39,7 @@ inline void init_process()
     RAMTOP(p->p_s.reg_sp);
     p->p_s.pc_epc = p->p_s.reg_t9 = (memaddr)test;
     /* all interrupts enabled (STATUS_IM_MASK) and kernel-mode on (KUc) */
-    p->p_s.status = (STATUS_TE | STATUS_IM_MASK | STATUS_KUc) ^ STATUS_TE;
+    p->p_s.status |= STATUS_IEc | STATUS_TE | STATUS_IM_MASK | STATUS_KUc;
 }
 
 inline void init()

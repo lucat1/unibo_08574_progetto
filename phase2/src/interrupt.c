@@ -78,6 +78,8 @@ static inline scheduler_control_t interrupt_handler()
 
         reset_plt();
 
+        setSTATUS(0);
+
         /* recalls scheduler */
         return CONTROL_RESCHEDULE;
     }
@@ -90,8 +92,6 @@ static inline scheduler_control_t interrupt_handler()
 
         /* temp deactives plt */
         reset_plt();
-        // active_process->p_s.status |= STATUS_TE;
-        // active_process->p_s.status ^= STATUS_TE;
 
         pcb_t *p;
         while ((p = V(&timer_semaphore)) != NULL) {

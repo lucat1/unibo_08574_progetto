@@ -222,6 +222,7 @@ static inline scheduler_control_t syscall_get_cpu_time()
 /* TODO: test NSYS7 */
 static inline scheduler_control_t syscall_wait_for_clock()
 {
+    stdout("Add to clock wait %d\n", active_process->p_pid);
     pcb_t *p = P(&timer_semaphore, active_process);
 
     return mask_P(p);
