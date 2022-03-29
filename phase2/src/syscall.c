@@ -22,20 +22,6 @@
 
 #define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
-/* TODO: Maybe optimize this solution */
-static inline void delete_progeny(pcb_t *p)
-{
-    list_head *myqueue = NULL;
-    mk_empty_proc_q(myqueue);
-    insert_proc_q(myqueue, p);
-    while ((p = remove_proc_q(myqueue)) != NULL) {
-        pcb_t *child;
-        while ((child = remove_child(p)) != NULL) {
-            insert_proc_q(myqueue, child);
-        }
-        kill_process(p);
-    }
-}
 
 /* TODO: Optimize this implementation and change it when we change how the pid
  * are generated */
@@ -121,12 +107,6 @@ static inline scheduler_control_t syscall_terminate_process()
         pandos_kfprintf(&kstderr, "!! PANIC: Could not find pid:%d\n", pid);
         PANIC();
     }
-
-    /* recursively removes progeny of process that should be terminated */
-    delete_progeny(p);
-
-    /* removes process that should be terminated from parent's children */
-    out_child(p);
 
     /* calls scheduler */
     kill_process(p);

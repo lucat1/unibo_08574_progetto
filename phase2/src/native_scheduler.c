@@ -13,14 +13,20 @@
 #include "umps/cp0.h"
 #include "umps/libumps.h"
 
-#include "interrupt.h"
+state_t *wait_state;
 
 inline void reset_timer() { LDIT(IT_INTERVAL); }
 inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
 
+int waiting_count = 0;
+
 void scheduler_wait()
 {
-    pandos_kprintf("-- WAIT\n");
+    stdout("-- WAIT(%d)\n", ++waiting_count);
+    active_process = NULL;
+    reset_timer();
+    setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
+              STATUS_TE);
     while (1)
         WAIT();
 }
@@ -31,19 +37,12 @@ void scheduler_takeover()
     pandos_kprintf(">> TAKEOVER(%d, %p)\n", active_process->p_pid,
                    active_process->p_s.pc_epc);
     /* Enable interrupts */
-    active_process->p_s.status |= STATUS_IEp;
-    if (active_process->p_prio) {
-        /* Deactives local timer interrupt on hp process */
-        // active_process->p_s.status = STATUS_TE;
-        // active_process->p_s.status ^= STATUS_TE;
-        // ENABLE_PLT(active_process->p_s.status);
-        // active_process->p_s.status =
-        //     (active_process->p_s.status | STATUS_TE) ^ STATUS_TE;
-    } else {
-        // reset_plt();
-        /* Enable the processor Local Timer */
-        // active_process->p_s.status |= STATUS_TE | STATUS_IM_MASK;
-    }
+    active_process->p_s.status |= STATUS_IEp | STATUS_TE | STATUS_IM_MASK;
+    reset_plt();
+    /* Disable the processor Local Timer on hi processes */
+    if (active_process->p_prio)
+        active_process->p_s.status ^= STATUS_TE;
+
     LDST(&active_process->p_s);
 }
 

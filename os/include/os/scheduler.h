@@ -24,6 +24,7 @@ extern list_head ready_queue_lo, ready_queue_hi;
 /* Pointer to the currently running process */
 extern pcb_t *active_process;
 
+/* ???? */
 extern pcb_t *last_process;
 
 extern pcb_t *V(int *sem_addr);
@@ -40,7 +41,6 @@ typedef struct scheduler_control {
     (scheduler_control_t) { p, false }
 #define CONTROL_RESCHEDULE                                                     \
     (scheduler_control_t) { active_process, true }
-
 /**
  * \brief Spawns a process and returns the allocated structure.
  * \param[in] priority The proprity of the spawned process. Either 1 for high or

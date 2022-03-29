@@ -13,7 +13,6 @@
 
 #include "os/scheduler.h"
 #include "os/types.h"
-
 static inline scheduler_control_t mask_V(pcb_t *p)
 {
     if (p == NULL)

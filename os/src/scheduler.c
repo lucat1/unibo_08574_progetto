@@ -84,18 +84,46 @@ inline void dequeue_process(pcb_t *p)
     out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 
+/* TODO: Maybe optimize this solution */
+static inline void delete_progeny(pcb_t *p)
+{
+    if (p == NULL)
+        return;
+    list_head *myqueue = NULL;
+    mk_empty_proc_q(myqueue);
+    insert_proc_q(myqueue, p);
+    while ((p = remove_proc_q(myqueue)) != NULL) {
+        pcb_t *child;
+        while ((child = remove_child(p)) != NULL) {
+            insert_proc_q(myqueue, child);
+        }
+        if (p == NULL)
+            kill_process(p);
+    }
+}
+
 void kill_process(pcb_t *p)
 {
-    --running_count;
+    if (p != NULL) {
+        --running_count;
 
-    /* In case it is blocked by a semaphore*/
-    out_blocked(p);
+        /* recursively removes progeny of process that should be terminated */
+        delete_progeny(p);
 
-    /* In case it is in the ready queue */
-    dequeue_process(p);
+        /* removes process that should be terminated from parent's children */
+        out_child(p);
 
-    /* Set pcb as free */
-    free_pcb(p);
+        /* In case it is blocked by a semaphore*/
+        out_blocked(p);
+
+        /* In case it is in the ready queue */
+        dequeue_process(p);
+
+        /* Set pcb as free */
+        free_pcb(p);
+    } else {
+        stderr("Can't kill NULL process\n");
+    }
 }
 
 void schedule(pcb_t *pcb, bool enqueue)

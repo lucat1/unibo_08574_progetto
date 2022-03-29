@@ -64,7 +64,10 @@ static inline scheduler_control_t interrupt_handler()
     // pcb_t *unblocked; /* Puntatore a processo sbloccato */
 
     int cause = getCAUSE();
-    int act_pid = active_process->p_pid;
+    int act_pid = -1;
+    if (active_process != NULL) {
+        act_pid = active_process->p_pid;
+    }
 
     if (CAUSE_IP_GET(cause, IL_IPI)) {
         pandos_kprintf("<< INTERRUPT(IPI)\n");
@@ -88,14 +91,9 @@ static inline scheduler_control_t interrupt_handler()
         pandos_kprintf("<< INTERRUPT(TIMER, (%d) , %p)\n", act_pid, tod);
         reset_timer();
 
-        /* temp deactives plt */
-        reset_plt();
-        // active_process->p_s.status |= STATUS_TE;
-        // active_process->p_s.status ^= STATUS_TE;
-
         pcb_t *p;
         while ((p = V(&timer_semaphore)) != NULL) {
-            verbose("REMOVE from clock %d\n", p->p_pid);
+            verbose("REMOVE from clock %d\n", act_pid);
         }
 
         timer_semaphore = 0;
@@ -169,6 +167,7 @@ static inline scheduler_control_t interrupt_handler()
                 // pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid,
                 // status);
 
+                stdout("SENT ACK\n");
                 *get_cmd[i](devicenumber) = DEV_C_ACK;
                 /* do the first one */
                 return ctrl;
@@ -209,20 +208,26 @@ static inline scheduler_control_t tbl_handler()
 /* TODO: fill me */
 static inline scheduler_control_t trap_handler()
 {
-    pandos_kprintf("<< TRAP(%d)\n", CAUSE_GET_EXCCODE(getCAUSE()));
-    PANIC();
+    int pid = -1;
+    if (active_process != NULL)
+        pid = active_process->p_pid;
+    pandos_kprintf("<< TRAP (%d)\n", pid);
+
+    if (active_process->p_support == NULL)
+        kill_process(active_process);
+    else
+        PANIC();
     return CONTROL_BLOCK;
 }
 
 void exception_handler()
 {
-    state_t *p_s;
-    scheduler_control_t ctrl;
+    scheduler_control_t ctrl = CONTROL_RESCHEDULE;
 
-    if (active_process != NULL) {
-        p_s = (state_t *)BIOSDATAPAGE;
-        memcpy(&active_process->p_s, p_s, sizeof(state_t));
-    }
+    if (active_process != NULL)
+        memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
+    else
+        stdout("ACTIVE IS NULL (start) (%d)\n", CAUSE_GET_EXCCODE(getCAUSE()));
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
@@ -234,11 +239,13 @@ void exception_handler()
             ctrl = tbl_handler();
             break;
         case 8:
+            if (active_process == NULL)
+                scheduler_panic(
+                    "A syscall happened while active_process was NULL\n");
             /* ALWAYS increment the PC to prevent system call loops */
             active_process->p_s.pc_epc += WORD_SIZE;
             active_process->p_s.reg_t9 += WORD_SIZE;
             ctrl = syscall_handler();
-            pandos_kprintf("done\n");
             break;
         default: /* 4-7, 9-12 */
             ctrl = trap_handler();
