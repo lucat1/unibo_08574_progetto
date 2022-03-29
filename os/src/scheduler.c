@@ -89,16 +89,10 @@ static inline void delete_progeny(pcb_t *p)
 {
     if (p == NULL)
         return;
-    list_head *myqueue = NULL;
-    mk_empty_proc_q(myqueue);
-    insert_proc_q(myqueue, p);
-    while ((p = remove_proc_q(myqueue)) != NULL) {
-        pcb_t *child;
-        while ((child = remove_child(p)) != NULL) {
-            insert_proc_q(myqueue, child);
-        }
-        if (p == NULL)
-            kill_process(p);
+        
+    pcb_t *child;
+    while ((child = remove_child(p)) != NULL) {
+        kill_process(child);
     }
 }
 

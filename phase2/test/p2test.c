@@ -138,7 +138,6 @@ void uTLB_RefillHandler()
     LDST((state_t *)0x0FFFF000);
 }
 
-
 /*********************************************************************/
 /*                                                                   */
 /*                 p1 -- the root process                            */
@@ -292,7 +291,7 @@ stdout("END WAITING\n");
     pFiveSupport.sup_except_context[PGFAULTEXCEPT].pc = (memaddr)p5mm;
 
     SYSCALL(CREATEPROCESS, (int)&p5state, PROCESS_PRIO_LOW,
-           (int)&(pFiveSupport)); /* start p5     */
+            (int)&(pFiveSupport)); /* start p5     */
 
     // SYSCALL(CREATEPROCESS, (int)&p6state, PROCESS_PRIO_LOW,
     //         (int)NULL); /* start p6		*/
@@ -306,7 +305,7 @@ stdout("END WAITING\n");
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
     print("p1 knows p5 ended\n");
-    verbose("HO QUASI FINITO %d\n", sem_blkp4+1);
+    verbose("HO QUASI FINITO %d\n", sem_blkp4 + 1);
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)		*/
 
@@ -482,6 +481,8 @@ void p4()
     SYSCALL(VERHOGEN, (int)&sem_synp4, 0, 0); /* V(sem_synp4)     */
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)     */
+
+    verbose("Incarnazione sbloccata %d\n", p4inc + 1);
 
     SYSCALL(PASSEREN, (int)&sem_synp4, 0, 0); /* P(sem_synp4)     */
 

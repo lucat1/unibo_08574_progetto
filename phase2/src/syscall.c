@@ -44,7 +44,7 @@ void show()
 
 void enqueue(pcb_t *p)
 {
-    //verbose("Queue\n");
+    // verbose("Queue\n");
     if (Rear == MAX_PROC) {
 
     } else {
@@ -58,12 +58,12 @@ void enqueue(pcb_t *p)
         }
     }
 
-    //show();
+    // show();
 }
 
 void dequeue()
 {
-    //verbose("Dequeue\n");
+    // verbose("Dequeue\n");
     if (Front == -1 || Front > Rear) {
         return;
     } else {
@@ -74,7 +74,7 @@ void dequeue()
 void remove(int p)
 {
 
-    //verbose("Remove %d\n", p);
+    // verbose("Remove %d\n", p);
 
     int r = -1;
     for (int i = Front; i < Rear; i++) {
@@ -94,13 +94,13 @@ void remove(int p)
     }
     Rear = Rear - 1;
 
-    //show();
+    // show();
 }
 
 pcb_t *find(int p)
 {
 
-    //verbose("Cerco %d\n", p);
+    // verbose("Cerco %d\n", p);
     for (int i = Front; i < Rear; i++) {
         if (inp_arr[i]->p_pid == p) {
             return inp_arr[i];
@@ -110,7 +110,8 @@ pcb_t *find(int p)
     return NULL;
 }
 
-pcb_t *findAndRemove(int p) {
+pcb_t *findAndRemove(int p)
+{
     pcb_t *t = find(p);
     remove(p);
     return t;
@@ -218,11 +219,8 @@ static inline scheduler_control_t syscall_passeren()
     /* TODO : update blocked_count ??? */
     int *sem = (int *)active_process->p_s.reg_a1;
     pcb_t *p = P(sem, active_process);
-    if (sem == &sem_endp3) {
-        stdout("SEM P3 : (%d)\n", mask_P(p));
-        stdout("CONTAINS : %d\n",
-               list_contains(p->p_prio ? &ready_queue_hi : &ready_queue_lo,
-                             &active_process->p_list));
+    if (sem == &sem_blkp4) {
+        verbose("block p4 : (%d - 1)\n", *sem + 1);
     }
     return mask_P(p);
 }
@@ -230,7 +228,12 @@ static inline scheduler_control_t syscall_passeren()
 /* NSYS4 */
 static inline scheduler_control_t syscall_verhogen()
 {
-    return mask_V(V((int *)active_process->p_s.reg_a1));
+    int *sem = (int *)active_process->p_s.reg_a1;
+    if (sem == &sem_blkp4) {
+        verbose("unlock p4 : (%d - 1)\n", *sem + 1);
+    }
+    pcb_t *p = V(sem);
+    return mask_V(p);
 }
 
 /* TODO : NSYS5 */
@@ -334,15 +337,12 @@ static inline scheduler_control_t syscall_yeld()
     return CONTROL_RESCHEDULE;
 }
 
-
-int checkUserMode(){
-	return ((active_process->p_s.status << 28) >> 31);
-}
+int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
 
 inline scheduler_control_t syscall_handler()
 {
     const int id = (int)active_process->p_s.reg_a0, pid = active_process->p_pid;
-    if(id <= 0 && checkUserMode()) {
+    if (id <= 0 && checkUserMode()) {
         stderr("Negative syscalls cannot be called in user mode!\n");
         return pass_up_or_die(GENERALEXCEPT);
     }
