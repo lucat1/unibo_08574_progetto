@@ -12,14 +12,7 @@
 #define PANDOS_INTERRUPT_IMPL_H
 
 #include "os/types.h"
-
-typedef enum control {
-    control_preserve, /* returns the control to the active_process */
-    control_block,   /* the active_process has been blocked, so the scheduler is
-                        called */
-    control_schedule /* the scheduler will be called including the
-                        active_process */
-} control_t;
+#include "os/scheduler.h"
 
 static inline control_t mask_V(pcb_t *p)
 {

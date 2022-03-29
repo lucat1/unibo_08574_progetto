@@ -15,10 +15,12 @@
  *		Modified by Michael Goldweber on June 19, 2020
  */
 
+#include "p2test.h"
 #include "os/const.h"
 #include "os/types.h"
 #include "os/util.h"
-#include "p2test.h"
+#include "umps/const.h"
+#include "umps/cp0.h"
 #include <umps/libumps.h>
 
 typedef unsigned int devregtr;
@@ -145,12 +147,25 @@ void uTLB_RefillHandler()
 /*                                                                   */
 void test()
 {
-    //SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    //print("xgampx and taken were here :3\n");
-    //print("p1 v(sem_testsem)\n");
+    print("xgampx and taken were here :3\n");
+    print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
+
+    setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
+              STATUS_TE);
+    /*
+stdout("WAITING\n");
+LDIT(1000000);
+WAIT();
+stdout("END WAITING\n");
+stdout("WAITING\n");
+LDIT(1000000);
+WAIT();
+stdout("END WAITING\n");
+*/
 
     STST(&hp_p1state);
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
@@ -243,30 +258,30 @@ void test()
     p10state.status = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
     /* create process p2 */
-    //p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
-     //               (int)NULL); /* start p2     */
+    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
+                    (int)NULL); /* start p2     */
 
-    //print("p2 was started\n");
-    //print("p2\n");
+    print("p2 was started\n");
+    print("p2\n");
 
-    //SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
+    SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    //SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
+    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
 
     /* make sure we really blocked */
-    //if (p1p2synch == 0) {
-     //   print("error: p1/p2 synchronization bad\n");
-   //}
+    if (p1p2synch == 0) {
+        print("error: p1/p2 synchronization bad\n");
+    }
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
                     (int)NULL); /* start p3     */
 
-    //print("p3 is started\n");
+    // print("p3 is started\n");
     print("p3\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
     stdout("QUA\n");
-    print("p3 term\n");
+    print("t\n");
 
     SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
 
@@ -324,7 +339,8 @@ void test()
     PANIC(); /* PANIC !!!     */
 }
 
-void debugTerminate(){
+void debugTerminate()
+{
     print("[x] DEBUG TERMINATE\n");
     *((memaddr *)BADADDR) = 0; /* terminate p1 */
 }
@@ -400,33 +416,35 @@ void p3()
 {
     print("ip3\n");
     cpu_t time1, time2;
-    cpu_t cpu_t1, cpu_t2; /* cpu time used       */
+    // cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int i;
     time1 = 0;
     time2 = 0;
     /* loop until we are delayed at least half of clock V interval */
     while (time2 - time1 < (CLOCKINTERVAL >> 1)) {
         STCK(time1); /* time of day     */
+        verbose("TIME 1 : %d\n", time1);
         SYSCALL(CLOCKWAIT, 0, 0, 0);
         STCK(time2); /* new time of day */
+        verbose("TIME 2 : %d\n", time2);
     }
     print("p3 - CLOCKWAIT OK\n");
 
     /* now let's check to see if we're really charge for CPU
        time correctly */
-    cpu_t1 = SYSCALL(GETTIME, 0, 0, 0);
+    // cpu_t1 = SYSCALL(GETTIME, 0, 0, 0);
 
     for (i = 0; i < CLOCKLOOP; i++) {
         SYSCALL(CLOCKWAIT, 0, 0, 0);
     }
 
-    cpu_t2 = SYSCALL(GETTIME, 0, 0, 0);
+    // cpu_t2 = SYSCALL(GETTIME, 0, 0, 0);
 
-    if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (*((cpu_t *)TIMESCALEADDR)))) {
+    /* if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (*((cpu_t *)TIMESCALEADDR)))) {
         print("error: p3 - CPU time incorrectly maintained\n");
     } else {
         print("p3 - CPU time correctly maintained\n");
-    }
+    } */
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p3pid) {
@@ -434,8 +452,10 @@ void p3()
         PANIC();
     }
 
+    stdout("verhogen\n");
     SYSCALL(VERHOGEN, (int)&sem_endp3, 0, 0); /* V(sem_endp3)        */
 
+    stdout("termprocess\n");
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p3    */
 
     /* just did a SYS2, so should not get to this point */

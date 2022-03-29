@@ -64,7 +64,10 @@ static inline control_t interrupt_handler()
     // pcb_t *unblocked; /* Puntatore a processo sbloccato */
 
     int cause = getCAUSE();
-    int act_pid = active_process->p_pid;
+    int act_pid = -1;
+    if (active_process != NULL) {
+        act_pid = active_process->p_pid;
+    }
 
     if (CAUSE_IP_GET(cause, IL_IPI)) {
         pandos_kprintf("<< INTERRUPT(IPI)\n");
@@ -73,8 +76,8 @@ static inline control_t interrupt_handler()
     }
 
     else if (CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
-        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER, (%d) , %d)\n",
-                       act_pid, (int)getTIMER());
+        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER, (%d) , %d)\n", act_pid,
+                       (int)getTIMER());
 
         reset_plt();
 
@@ -88,14 +91,9 @@ static inline control_t interrupt_handler()
         pandos_kprintf("<< INTERRUPT(TIMER, (%d) , %p)\n", act_pid, tod);
         reset_timer();
 
-        /* temp deactives plt */
-        reset_plt();
-        active_process->p_s.status |= STATUS_TE;
-        active_process->p_s.status ^= STATUS_TE;
-
         pcb_t *p;
         while ((p = V(&timer_semaphore)) != NULL) {
-            verbose("REMOVE from clock %d\n", p->p_pid);
+            verbose("REMOVE from clock %d\n", act_pid);
         }
 
         timer_semaphore = 0;
@@ -150,33 +148,36 @@ static inline control_t interrupt_handler()
                                            get_terminal_recv_command};
         int *sem[] = {termw_semaphores, termr_semaphores};
 
-        //pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
+        // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
         for (int i = 0; i < 2; i++) {
             int status = *get_status[i](devicenumber);
             if ((status & TERMSTATMASK) != DEV_S_READY) {
                 pcb_t *p = V(&sem[i][devicenumber]);
                 control_t ctrl = mask_V(p);
-                //int pid = 0;
+                // int pid = 0;
                 if (ctrl == control_preserve) {
                     active_process->p_s.reg_v0 = status;
-                    //pid = active_process->p_pid;
+                    // pid = active_process->p_pid;
                 } else {
                     p->p_s.reg_v0 = status;
-                    //pid = p->p_pid;
-                    //pandos_kfprintf(&kverb, "   SIZE (%p)\n", list_size(&ready_queue_lo));
+                    // pid = p->p_pid;
+                    // pandos_kfprintf(&kverb, "   SIZE (%p)\n",
+                    // list_size(&ready_queue_lo));
                 }
 
-                //pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid, status);
+                // pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid,
+                // status);
 
+                stdout("SENT ACK\n");
                 *get_cmd[i](devicenumber) = DEV_C_ACK;
                 /* do the first one */
                 return ctrl;
             }
         }
 
-        pandos_kfprintf(&kverb,"WTF TERMINAL (%d)\n", act_pid);
+        pandos_kfprintf(&kverb, "WTF TERMINAL (%d)\n", act_pid);
 
-        //pandos_kfprintf(&kverb, "--------- TERM INT END -------- (%p)\n");
+        // pandos_kfprintf(&kverb, "--------- TERM INT END -------- (%p)\n");
 
     } else
         pandos_kprintf("<< INTERRUPT(UNKNOWN)\n");
@@ -208,18 +209,28 @@ static inline control_t tbl_handler()
 /* TODO: fill me */
 static inline control_t trap_handler()
 {
-    pandos_kprintf("<< TRAP\n");
-    PANIC();
+    int pid = -1;
+    if (active_process != NULL)
+        pid = active_process->p_pid;
+    pandos_kprintf("<< TRAP (%d)\n", pid);
+
+    if (active_process->p_support == NULL) {
+        kill_process(active_process);
+    } else {
+        PANIC();
+    }
     return control_schedule;
 }
 
 void exception_handler()
 {
-    state_t *p_s;
     control_t ctrl = control_schedule;
 
-    p_s = (state_t *)BIOSDATAPAGE;
-    memcpy(&active_process->p_s, p_s, sizeof(state_t));
+    if (active_process != NULL) {
+        memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
+    } else {
+        stdout("ACTIVE IS NULL (start) (%d)\n", CAUSE_GET_EXCCODE(getCAUSE()));
+    }
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
@@ -231,10 +242,15 @@ void exception_handler()
             ctrl = tbl_handler();
             break;
         case 8:
-            /* ALWAYS increment the PC to prevent system call loops */
-            active_process->p_s.pc_epc += WORD_SIZE;
-            active_process->p_s.reg_t9 += WORD_SIZE;
-            ctrl = syscall_handler();
+            if (active_process != NULL) {
+                /* ALWAYS increment the PC to prevent system call loops */
+                active_process->p_s.pc_epc += WORD_SIZE;
+                active_process->p_s.reg_t9 += WORD_SIZE;
+                ctrl = syscall_handler();
+            } else {
+                stderr("Can't call syscall on NULL active process\n");
+                PANIC();
+            }
             break;
         default: /* 4-7, 9-12 */
             ctrl = trap_handler();
@@ -242,17 +258,26 @@ void exception_handler()
     }
     /* TODO: maybe rescheduling shouldn't be done all the time */
     /* TODO: increement active_pocess->p_time */
-    switch (ctrl) {
-        case control_preserve:
-            LDST(&active_process->p_s);
-            break;
-        case control_block:
-            stdout("BLOCK\n");
-            schedule();
-            break;
-        case control_schedule:
-            enqueue_process(active_process);
-            schedule();
-            break;
-    }
+    // if(ctrl == control_block) active_process = NULL;
+    // bool enqueue = ctrl == control_schedule ? true : false;
+    schedule_mask(ctrl);
+    // if (active_process != NULL) {
+    //     switch (ctrl) {
+    //         case control_preserve:
+    //             stdout("PRESERVE\n");
+    //             LDST(&active_process->p_s);
+    //             break;
+    //         case control_block:
+    //             stdout("BLOCK\n");
+    //             schedule();
+    //             break;
+    //         case control_schedule:
+    //             stdout("SCHEDULE\n");
+    //             enqueue_process(active_process);
+    //             schedule();
+    //             break;
+    //     }
+    // } else {
+    //     schedule();
+    // }
 }

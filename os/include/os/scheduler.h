@@ -14,6 +14,14 @@
 #include "os/pcb.h"
 #include "os/types.h"
 
+typedef enum control {
+    control_preserve, /* returns the control to the active_process */
+    control_block,   /* the active_process has been blocked, so the scheduler is
+                        called */
+    control_schedule /* the scheduler will be called including the
+                        active_process */
+} control_t;
+
 /* Number of started but not yet terminated processes. */
 extern int running_count;
 /* Number of processes softly blocked, that is they have been started but have
@@ -23,11 +31,6 @@ extern int blocked_count;
 extern list_head ready_queue_lo, ready_queue_hi;
 /* Pointer to the currently running process */
 extern pcb_t *active_process;
-
-extern pcb_t *last_process;
-
-extern pcb_t *V(int *sem_addr);
-extern pcb_t *P(int *sem_addr, pcb_t *p);
 
 /**
  * \brief Spawns a process and returns the allocated structure.
@@ -52,5 +55,6 @@ extern void scheduler_takeover();
 
 void init_scheduler();
 void schedule();
+void schedule_mask(control_t ctrl);
 
 #endif /* PANDOS_SCHEDULER_H */

@@ -22,44 +22,6 @@ pcb_t *active_process;
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
 
-inline pcb_t *P(int *sem_addr, pcb_t *p)
-{
-    if (*sem_addr > 0) {
-        *sem_addr = *sem_addr - 1;
-        return p;
-    } else {
-        /* TODO: dequeing here is useless if the p is the current_process */
-        dequeue_process(p);
-        int r = insert_blocked(sem_addr, p);
-
-        if (r > 0) {
-
-            if(r == 3 && p->p_sem_add == sem_addr) {
-                stderr("PASSEREN same addr %d\n", r);
-                PANIC();
-            }else  {
-            //scheduler_panic("PASSEREN failed %d");
-                stderr("PASSEREN failed %d\n", r);
-                PANIC();
-            }
-        }
-
-        return NULL;
-    }
-}
-
-inline pcb_t *V(int *sem_addr)
-{
-    pcb_t *p = remove_blocked(sem_addr);
-    if (p == NULL) { /* means that sem_proc is empty */
-        *sem_addr = *sem_addr + 1;
-    } else {
-        enqueue_process(p);
-    }
-
-    return p;
-}
-
 void init_scheduler()
 {
     running_count = 0;
@@ -93,18 +55,46 @@ inline void dequeue_process(pcb_t *p)
     out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 
+/* TODO: Maybe optimize this solution */
+static inline void delete_progeny(pcb_t *p)
+{
+    if (p == NULL)
+        return;
+    list_head *myqueue = NULL;
+    mk_empty_proc_q(myqueue);
+    insert_proc_q(myqueue, p);
+    while ((p = remove_proc_q(myqueue)) != NULL) {
+        pcb_t *child;
+        while ((child = remove_child(p)) != NULL) {
+            insert_proc_q(myqueue, child);
+        }
+        if (p == NULL)
+            kill_process(p);
+    }
+}
+
 void kill_process(pcb_t *p)
 {
-    --running_count;
+    if (p != NULL) {
+        --running_count;
 
-    /* In case it is blocked by a semaphore*/
-    out_blocked(p);
+        /* recursively removes progeny of process that should be terminated */
+        delete_progeny(p);
 
-    /* In case it is in the ready queue */
-    dequeue_process(p);
+        /* removes process that should be terminated from parent's children */
+        out_child(p);
 
-    /* Set pcb as free */
-    free_pcb(p);
+        /* In case it is blocked by a semaphore*/
+        out_blocked(p);
+
+        /* In case it is in the ready queue */
+        dequeue_process(p);
+
+        /* Set pcb as free */
+        free_pcb(p);
+    } else {
+        stderr("Can't kill NULL process\n");
+    }
 }
 
 void schedule()
@@ -113,10 +103,36 @@ void schedule()
         active_process = remove_proc_q(&ready_queue_hi);
     else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
-    else
+    else {
         scheduler_wait();
+    }
 
     /* This point should never be reached unless processes have been
-     * re-scheduled (i.e. when waiting for events in a soft blocked state ) */
+     * re-scheduled (i.e. when waiting for events in a soft blocked state )
+     */
     scheduler_takeover();
+}
+
+void schedule_mask(control_t ctrl)
+{
+    if (active_process != NULL) {
+        switch (ctrl) {
+            case control_preserve:
+                stdout("PRESERVE\n");
+                LDST(&active_process->p_s);
+                break;
+            case control_block:
+                stdout("BLOCK\n");
+                active_process = NULL;
+                schedule();
+                break;
+            case control_schedule:
+                stdout("SCHEDULE\n");
+                enqueue_process(active_process);
+                schedule();
+                break;
+        }
+    } else {
+        schedule();
+    }
 }
