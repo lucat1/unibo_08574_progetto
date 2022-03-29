@@ -138,21 +138,19 @@ void uTLB_RefillHandler()
     LDST((state_t *)0x0FFFF000);
 }
 
+
 /*********************************************************************/
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test()
 {
-    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    print("xgampx and taken were here :3\n");
-    print("p1 v(sem_testsem)\n");
+    // SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    /* set up states of the other processes */
+    // print("xgampx and taken were here :3\n");
+    // print("p1 v(sem_testsem)\n");
 
-    setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
-              STATUS_TE);
     /*
 stdout("WAITING\n");
 LDIT(1000000);
@@ -254,34 +252,32 @@ stdout("END WAITING\n");
     p10state.pc_epc = p10state.reg_t9 = (memaddr)p10;
     p10state.status = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-    /* create process p2 */
-    p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
-                    (int)NULL); /* start p2     */
+    // /* create process p2 */
+    // p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW,
+    //                 (int)NULL); /* start p2     */
 
-    print("p2 was started\n");
-    print("p2\n");
+    // print("p2 was started\n");
+    // print("p2\n");
 
-    SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
+    // SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
+    // SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
 
-    /* make sure we really blocked */
-    if (p1p2synch == 0) {
-        print("error: p1/p2 synchronization bad\n");
-    }
+    // /* make sure we really blocked */
+    // if (p1p2synch == 0) {
+    //     print("error: p1/p2 synchronization bad\n");
+    // }
 
-    p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
-                    (int)NULL); /* start p3     */
+    // p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
+    //                 (int)NULL); /* start p3     */
 
-    // print("p3 is started\n");
-    print("p3\n");
+    // // print("p3 is started\n");
+    // print("p3\n");
 
-    SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
-    stdout("QUA\n");
-    print("t\n");
+    // SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
-    SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
-    SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
+    // SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
+    // SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
 
     p4pid = SYSCALL(CREATEPROCESS, (int)&p4state, PROCESS_PRIO_LOW,
                     (int)NULL); /* start p4     */
@@ -296,22 +292,25 @@ stdout("END WAITING\n");
     pFiveSupport.sup_except_context[PGFAULTEXCEPT].pc = (memaddr)p5mm;
 
     SYSCALL(CREATEPROCESS, (int)&p5state, PROCESS_PRIO_LOW,
-            (int)&(pFiveSupport)); /* start p5     */
+           (int)&(pFiveSupport)); /* start p5     */
 
-    SYSCALL(CREATEPROCESS, (int)&p6state, PROCESS_PRIO_LOW,
-            (int)NULL); /* start p6		*/
+    // SYSCALL(CREATEPROCESS, (int)&p6state, PROCESS_PRIO_LOW,
+    //         (int)NULL); /* start p6		*/
 
-    SYSCALL(CREATEPROCESS, (int)&p7state, PROCESS_PRIO_LOW,
-            (int)NULL); /* start p7		*/
+    // SYSCALL(CREATEPROCESS, (int)&p7state, PROCESS_PRIO_LOW,
+    //         (int)NULL); /* start p7		*/
 
-    p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW,
-                    (int)NULL); /* start p7		*/
+    // p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW,
+    //                 (int)NULL); /* start p7		*/
 
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
     print("p1 knows p5 ended\n");
+    verbose("HO QUASI FINITO %d\n", sem_blkp4+1);
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)		*/
+
+    verbose("HO QUASI FINITO 2\n");
 
     /* now for a more rigorous check of process termination */
     for (p8inc = 0; p8inc < 4; p8inc++) {
@@ -421,10 +420,8 @@ void p3()
     /* loop until we are delayed at least half of clock V interval */
     while (time2 - time1 < (CLOCKINTERVAL >> 1)) {
         STCK(time1); /* time of day     */
-        verbose("TIME 1 : %d\n", time1);
         SYSCALL(CLOCKWAIT, 0, 0, 0);
         STCK(time2); /* new time of day */
-        verbose("TIME 2 : %d\n", time2);
     }
 
     print("p3 - CLOCKWAIT OK\n");
@@ -598,6 +595,7 @@ void p5sys()
     pFiveSupport.sup_except_state[GENERALEXCEPT].pc_epc =
         pFiveSupport.sup_except_state[GENERALEXCEPT].pc_epc +
         4; /*	 to avoid SYS looping */
+
     LDST(&(pFiveSupport.sup_except_state[GENERALEXCEPT]));
 }
 

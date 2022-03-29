@@ -93,7 +93,7 @@ static inline scheduler_control_t interrupt_handler()
 
         pcb_t *p;
         while ((p = V(&timer_semaphore)) != NULL) {
-            verbose("REMOVE from clock %d\n", act_pid);
+            //verbose("REMOVE from clock %d\n", act_pid);
         }
 
         timer_semaphore = 0;
@@ -167,7 +167,6 @@ static inline scheduler_control_t interrupt_handler()
                 // pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid,
                 // status);
 
-                stdout("SENT ACK\n");
                 *get_cmd[i](devicenumber) = DEV_C_ACK;
                 /* do the first one */
                 return ctrl;
@@ -191,18 +190,8 @@ has higher prority of the Current Process. */
 
 static inline scheduler_control_t tbl_handler()
 {
-    if (active_process->p_support == NULL)
-        kill_process(active_process);
-    else {
-        support_t *s = active_process->p_support;
-        pandos_kprintf(">> SUPPORT(%d)\n", s->sup_asid);
-        /* TODO: tell the scheduler to handoff the control to s->sup_asid;
-         * with the appropriate state found in s->sup_except_state ??????
-         * read the docs i guess
-         */
-    }
-
-    return CONTROL_RESCHEDULE;
+    return pass_up_or_die(PGFAULTEXCEPT);
+    //return CONTROL_RESCHEDULE;
 }
 
 /* TODO: fill me */
@@ -213,10 +202,25 @@ static inline scheduler_control_t trap_handler()
         pid = active_process->p_pid;
     pandos_kprintf("<< TRAP (%d)\n", pid);
 
+    return pass_up_or_die(GENERALEXCEPT);
+}
+
+inline scheduler_control_t pass_up_or_die(int type) {
     if (active_process->p_support == NULL)
         kill_process(active_process);
-    else
+    else {
+        memcpy(&active_process->p_support->sup_except_state[type],
+               (state_t *)BIOSDATAPAGE, sizeof(state_t));
+        context_t c;
+        c.stack_ptr = active_process->p_support->sup_except_context[type].stack_ptr;
+        c.status = active_process->p_support->sup_except_context[type].status;
+        c.pc = active_process->p_support->sup_except_context[type].pc;
+
+        LDCXT(c.stack_ptr, c.status, c.pc);
+
+        stderr("SHOULD BE PASSED UP\n");
         PANIC();
+    }
     return CONTROL_BLOCK;
 }
 
@@ -226,8 +230,7 @@ void exception_handler()
 
     if (active_process != NULL)
         memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
-    else
-        stdout("ACTIVE IS NULL (start) (%d)\n", CAUSE_GET_EXCCODE(getCAUSE()));
+
     /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:

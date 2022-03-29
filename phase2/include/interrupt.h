@@ -9,6 +9,9 @@
 #ifndef PANDOS_INTERRUPT_H
 #define PANDOS_INTERRUPT_H
 
+#include "os/scheduler.h"
+
 void exception_handler();
+scheduler_control_t pass_up_or_die(int type);
 
 #endif /* PANDOS_INTERRUPT_H */

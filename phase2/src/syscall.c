@@ -10,6 +10,7 @@
 
 #include "syscall.h"
 #include "../test/p2test.h"
+#include "interrupt.h"
 #include "interrupt_impl.h"
 #include "os/asl.h"
 #include "os/scheduler.h"
@@ -22,6 +23,98 @@
 
 #define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
+void enqueue();
+void dequeue();
+void show();
+pcb_t *inp_arr[MAX_PROC];
+int Rear = -1;
+int Front = -1;
+
+void show()
+{
+
+    if (Front == -1)
+        verbose("Empty queue\n");
+    else {
+        for (int i = Front; i <= Rear; i++)
+            verbose("%d ", inp_arr[i]->p_pid);
+        verbose("\n");
+    }
+}
+
+void enqueue(pcb_t *p)
+{
+    //verbose("Queue\n");
+    if (Rear == MAX_PROC) {
+
+    } else {
+        if (Front <= 0) {
+            Front = 0;
+            Rear = Rear + 1;
+            inp_arr[Rear] = p;
+        } else if (Front > 0) {
+            Front = Front - 1;
+            inp_arr[Front] = p;
+        }
+    }
+
+    //show();
+}
+
+void dequeue()
+{
+    //verbose("Dequeue\n");
+    if (Front == -1 || Front > Rear) {
+        return;
+    } else {
+        Front = Front + 1;
+    }
+}
+
+void remove(int p)
+{
+
+    //verbose("Remove %d\n", p);
+
+    int r = -1;
+    for (int i = Front; i < Rear; i++) {
+        if (inp_arr[i]->p_pid == p) {
+            r = i;
+            break;
+        }
+    }
+
+    if (r == -1) {
+        stderr("Elemeto non trovato %d\n", p);
+        return;
+    }
+
+    for (int i = r; i < Rear; i++) {
+        inp_arr[i] = inp_arr[i + 1];
+    }
+    Rear = Rear - 1;
+
+    //show();
+}
+
+pcb_t *find(int p)
+{
+
+    //verbose("Cerco %d\n", p);
+    for (int i = Front; i < Rear; i++) {
+        if (inp_arr[i]->p_pid == p) {
+            return inp_arr[i];
+        }
+    }
+
+    return NULL;
+}
+
+pcb_t *findAndRemove(int p) {
+    pcb_t *t = find(p);
+    remove(p);
+    return t;
+}
 
 /* TODO: Optimize this implementation and change it when we change how the pid
  * are generated */
@@ -71,6 +164,9 @@ static inline scheduler_control_t syscall_create_process()
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
     } else {
+
+        enqueue(c);
+
         c->p_support = p_support_struct;
         memcpy(&c->p_s, p_s, sizeof(state_t));
         /* p_time is already set to 0 from the alloc_pcb call inside
@@ -100,11 +196,11 @@ static inline scheduler_control_t syscall_terminate_process()
     if (pid == 0)
         p = active_process;
     else
-        p = search_all_lists(pid);
+        p = findAndRemove(pid);
 
     /* checks that process with requested pid exists */
     if (p == NULL) {
-        pandos_kfprintf(&kstderr, "!! PANIC: Could not find pid:%d\n", pid);
+        pandos_kfprintf(&kstderr, "!! PANIC: Could not find pid : %d\n", pid);
         PANIC();
     }
 
@@ -161,14 +257,14 @@ static inline scheduler_control_t syscall_do_io()
     }
 
     if (i_n == IL_TERMINAL) {
-        pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
-        pandos_kfprintf(&kverb, "addr: (%p)\n", cmd_addr);
-        pandos_kfprintf(&kverb, "start: (%p)\n", (int *)DEV_REG_START);
-        pandos_kfprintf(&kverb, "base: (%p)\n", base);
-        pandos_kfprintf(&kverb, "c: (%p)\n",
-                        TERMINAL_GET_COMMAND_TYPE(cmd_addr));
-        pandos_kfprintf(&kverb, "device: (%p, %p)\n", i_n, d_n);
-        pandos_kfprintf(&kverb, "------ DO_IO_END -----\n");
+        // pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
+        // pandos_kfprintf(&kverb, "addr: (%p)\n", cmd_addr);
+        // pandos_kfprintf(&kverb, "start: (%p)\n", (int *)DEV_REG_START);
+        // pandos_kfprintf(&kverb, "base: (%p)\n", base);
+        // pandos_kfprintf(&kverb, "c: (%p)\n",
+        //                 TERMINAL_GET_COMMAND_TYPE(cmd_addr));
+        // pandos_kfprintf(&kverb, "device: (%p, %p)\n", i_n, d_n);
+        // pandos_kfprintf(&kverb, "------ DO_IO_END -----\n");
 
         int *sem_kind, i = d_n;
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
@@ -210,7 +306,7 @@ static inline scheduler_control_t syscall_wait_for_clock()
 /* TODO: test  NSYS8 */
 static inline scheduler_control_t syscall_get_support_data()
 {
-    // active_process->p_s.reg_v0 = active_process->p_support;
+    active_process->p_s.reg_v0 = (int)active_process->p_support;
     return CONTROL_RESCHEDULE;
 }
 
@@ -238,9 +334,18 @@ static inline scheduler_control_t syscall_yeld()
     return CONTROL_RESCHEDULE;
 }
 
+
+int checkUserMode(){
+	return ((active_process->p_s.status << 28) >> 31);
+}
+
 inline scheduler_control_t syscall_handler()
 {
     const int id = (int)active_process->p_s.reg_a0, pid = active_process->p_pid;
+    if(id <= 0 && checkUserMode()) {
+        stderr("Negative syscalls cannot be called in user mode!\n");
+        return pass_up_or_die(GENERALEXCEPT);
+    }
     switch (id) {
         case CREATEPROCESS:
             pandos_syscall("CREATEPROCESS", pid);
@@ -283,6 +388,7 @@ inline scheduler_control_t syscall_handler()
             return syscall_yeld();
             break;
         default:
+            return pass_up_or_die(GENERALEXCEPT);
             pandos_kfprintf(&kstderr, "!! PANIC: Invalid syscall value %d", id);
             PANIC();
             break;
