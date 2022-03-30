@@ -13,7 +13,14 @@
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/types.h"
-#include "os/globals.h"
+
+extern int running_count;
+extern int blocked_count;
+extern list_head ready_queue_lo, ready_queue_hi;
+extern pcb_t *active_process;
+extern pcb_t *last_process;
+extern cpu_t start_tod;
+extern state_t *wait_state;
 
 /**
  * \brief Spawns a process and returns the allocated structure.
@@ -28,7 +35,6 @@ void kill_process(pcb_t *p);
  * That is up to the caller */
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
-
 
 extern void scheduler_panic(const char *msg);
 extern void scheduler_wait();

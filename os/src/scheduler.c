@@ -10,12 +10,19 @@
 
 #include <umps/libumps.h>
 
-#include "os/scheduler.h"
 #include "os/asl.h"
 #include "os/list.h"
 #include "os/pcb.h"
+#include "os/scheduler.h"
 #include "os/util.h"
-#include "os/globals.h"
+
+int running_count;
+int blocked_count;
+list_head ready_queue_lo, ready_queue_hi;
+pcb_t *active_process;
+pcb_t *last_process;
+cpu_t start_tod;
+state_t *wait_state;
 
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
@@ -36,7 +43,8 @@ pcb_t *spawn_process(bool priority)
     if (p == NULL) {
         return NULL;
     }
-    p->p_pid = ++pid_count; /* TODO: Change this with the actual implementation */
+    p->p_pid =
+        ++pid_count; /* TODO: Change this with the actual implementation */
     p->p_prio = priority;
     ++running_count;
     enqueue_process(p);
@@ -58,7 +66,7 @@ static inline void delete_progeny(pcb_t *p)
 {
     if (p == NULL)
         return;
-        
+
     pcb_t *child;
     while ((child = remove_child(p)) != NULL) {
         kill_process(child);
@@ -93,23 +101,23 @@ void schedule(pcb_t *pcb, bool enqueue)
 {
     int now_tod;
     STCK(now_tod);
-    if(active_process != NULL)
+    if (active_process != NULL)
         active_process->p_time += (now_tod - start_tod);
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
     }
     /* Process selection */
-    if (active_process == NULL && running_count == 0){
+    if (active_process == NULL && running_count == 0) {
         pandos_kprintf("Nothing left, HALT()!");
         HALT();
-    }else if (pcb != NULL && !enqueue){
+    } else if (pcb != NULL && !enqueue) {
         active_process = pcb;
-    }else if (!list_empty(&ready_queue_hi)){
+    } else if (!list_empty(&ready_queue_hi)) {
         active_process = remove_proc_q(&ready_queue_hi);
-    }else if (!list_empty(&ready_queue_lo)){
+    } else if (!list_empty(&ready_queue_lo)) {
         active_process = remove_proc_q(&ready_queue_lo);
-    }else {
+    } else {
         active_process = NULL;
         scheduler_unlock();
         scheduler_wait();

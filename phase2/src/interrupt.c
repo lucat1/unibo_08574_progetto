@@ -7,15 +7,14 @@
  * \author Luca Tagliavini
  * \date 20-03-2022
  */
-#include <umps/arch.h>
-#include <umps/libumps.h>
-
-#include "os/const.h"
-#include "os/globals.h"
-
 #include "interrupt.h"
 #include "native_scheduler.h"
+#include "os/const.h"
+#include "os/scheduler.h"
 #include "os/semaphores.h"
+#include "os/util.h"
+#include <umps/arch.h>
+#include <umps/libumps.h>
 
 static inline memaddr *get_terminal_transm_status(int devicenumber)
 {

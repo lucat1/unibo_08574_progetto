@@ -6,14 +6,11 @@
  * \date 22-03-2022
  */
 
-#include <umps/cp0.h>
-#include <umps/libumps.h>
-
-#include "os/globals.h"
-#include "os/util.h"
-
 #include "native_scheduler.h"
 #include "os/scheduler.h"
+#include "os/util.h"
+#include <umps/cp0.h>
+#include <umps/libumps.h>
 
 inline void reset_timer() { LDIT(IT_INTERVAL); }
 inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }

@@ -15,7 +15,11 @@
 #include "init.h"
 #include "init_impl.h"
 #include "native_scheduler.h"
+#include "os/asl.h"
+#include "os/pcb.h"
+#include "os/scheduler.h"
 #include "os/semaphores.h"
+#include "os/util.h"
 #include "p2test.h"
 
 /* Initialize the Pass Up Vector handlers to the given procedures until the
