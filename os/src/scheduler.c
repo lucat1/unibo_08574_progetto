@@ -18,6 +18,8 @@ int blocked_count;
 list_head ready_queue_hi, ready_queue_lo;
 pcb_t *active_process;
 
+int start_tod;
+
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
 
@@ -58,6 +60,7 @@ void init_scheduler()
     mk_empty_proc_q(&ready_queue_hi);
     mk_empty_proc_q(&ready_queue_lo);
     active_process = NULL;
+    STCK(start_tod);
 }
 
 pcb_t *spawn_process(bool priority)
@@ -122,6 +125,12 @@ void kill_process(pcb_t *p)
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
+    int now_tod;
+    STCK(now_tod);
+    if(active_process != NULL)
+        active_process->p_time += (now_tod - start_tod);
+
+    start_tod = now_tod;
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
