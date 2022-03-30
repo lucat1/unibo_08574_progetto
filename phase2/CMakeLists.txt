@@ -1,9 +1,10 @@
 project(phase2)
 add_executable(${PROJECT_NAME}
-    src/native_scheduler.c
     src/semaphores.c
+    src/native_scheduler.c
     src/syscall.c
     src/interrupt.c
+    src/exception.c
     test/p2test.c
     src/init.c
     src/main.c

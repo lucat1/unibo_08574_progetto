@@ -13,36 +13,8 @@
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/types.h"
+#include "os/globals.h"
 
-/* Number of started but not yet terminated processes. */
-extern int running_count;
-/* Number of processes softly blocked, that is they have been started but have
- * been blocked by either an I/O operation or a timer request. */
-extern int blocked_count;
-/* Tail pointer to a queue of processes that are in the ready state. */
-extern list_head ready_queue_lo, ready_queue_hi;
-/* Pointer to the currently running process */
-extern pcb_t *active_process;
-
-extern cpu_t start_tod;
-
-/* ???? */
-extern pcb_t *last_process;
-
-extern pcb_t *V(int *sem_addr);
-extern pcb_t *P(int *sem_addr, pcb_t *p);
-
-typedef struct scheduler_control {
-    pcb_t *pcb;
-    bool enqueue;
-} scheduler_control_t;
-
-#define CONTROL_BLOCK                                                          \
-    (scheduler_control_t) { NULL, false }
-#define CONTROL_PRESERVE(p)                                                    \
-    (scheduler_control_t) { p, false }
-#define CONTROL_RESCHEDULE                                                     \
-    (scheduler_control_t) { active_process, true }
 /**
  * \brief Spawns a process and returns the allocated structure.
  * \param[in] priority The proprity of the spawned process. Either 1 for high or
@@ -50,11 +22,13 @@ typedef struct scheduler_control {
  * \return The allocated process descriptor.
  */
 pcb_t *spawn_process(bool priority);
+void kill_process(pcb_t *p);
+
 /* adds a process to the appropriate queue, does not change the running_count.
  * That is up to the caller */
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
-void kill_process(pcb_t *p);
+
 
 extern void scheduler_panic(const char *msg);
 extern void scheduler_wait();
@@ -65,7 +39,7 @@ extern void scheduler_unlock();
  */
 extern void scheduler_takeover();
 
-void init_scheduler();
-void schedule(pcb_t *pcb, bool enqueue);
+extern void init_scheduler();
+extern void schedule(pcb_t *pcb, bool enqueue);
 
 #endif /* PANDOS_SCHEDULER_H */

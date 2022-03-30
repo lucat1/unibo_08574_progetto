@@ -13,6 +13,5 @@
 
 extern void init_puv();
 extern void init_process();
-extern void init_timer();
 
 #endif /* PANDOS_INIT_IMPL_H */

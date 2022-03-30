@@ -8,27 +8,30 @@
  * \date 26-03-2022
  */
 
-#include "syscall.h"
-#include "../test/p2test.h"
-#include "interrupt.h"
-#include "interrupt_impl.h"
-#include "os/asl.h"
-#include "os/scheduler.h"
-#include "os/util.h"
-#include "semaphores.h"
-#include "syscall.h"
-#include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
+#include "umps/cp0.h"
+
+#include "os/asl.h"
+#include "os/util.h"
+#include "os/scheduler.h"
+
+#include "../test/p2test.h"
+
+#include "semaphores.h"
+#include "syscall.h"
+#include "interrupt.h"
+#include "exception_impl.h"
 
 #define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
+/* TODO: Change this stuff */
 void enqueue();
 void dequeue();
 void show();
-pcb_t *inp_arr[MAX_PROC];
-int Rear = -1;
-int Front = -1;
+static pcb_t *inp_arr[MAX_PROC];
+static int Rear = -1;
+static int Front = -1;
 
 void show()
 {
@@ -116,6 +119,8 @@ pcb_t *findAndRemove(int p)
     remove(p);
     return t;
 }
+
+int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
 
 /* TODO: Optimize this implementation and change it when we change how the pid
  * are generated */
@@ -211,6 +216,7 @@ static inline scheduler_control_t syscall_terminate_process()
     p->p_s.reg_v0 = pid;
     return CONTROL_BLOCK;
 }
+
 /* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
@@ -320,7 +326,6 @@ static inline scheduler_control_t syscall_yeld()
     return CONTROL_RESCHEDULE;
 }
 
-int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
 
 inline scheduler_control_t syscall_handler()
 {

@@ -2,6 +2,7 @@
  * \file
  * \brief Schedule awating processes.
  *
+ * \author Alessandro Frau
  * \author Luca Tagliavini
  * \author Stefano Volpe
  * \date 20-03-2022
@@ -12,46 +13,10 @@
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/util.h"
-
-int running_count;
-int blocked_count;
-list_head ready_queue_hi, ready_queue_lo;
-pcb_t *active_process;
-
-int start_tod;
+#include "os/globals.h"
 
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
-
-inline pcb_t *P(int *sem_addr, pcb_t *p)
-{
-    if (*sem_addr > 0) {
-        *sem_addr = *sem_addr - 1;
-        return p;
-    } else {
-        /* TODO: dequeing here is useless if the p is the current_process */
-        dequeue_process(p);
-        int r = insert_blocked(sem_addr, p);
-
-        if (r > 0) {
-            scheduler_panic("PASSEREN failed\n");
-        }
-
-        return NULL;
-    }
-}
-
-inline pcb_t *V(int *sem_addr)
-{
-    pcb_t *p = remove_blocked(sem_addr);
-    if (p == NULL) { /* means that sem_proc is empty */
-        *sem_addr = *sem_addr + 1;
-    } else {
-        enqueue_process(p);
-    }
-
-    return p;
-}
 
 void init_scheduler()
 {

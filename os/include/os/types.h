@@ -85,4 +85,16 @@ typedef struct semd_t {
     list_head s_link;
 } semd_t;
 
+typedef struct scheduler_control {
+    pcb_t *pcb;
+    bool enqueue;
+} scheduler_control_t;
+
+#define CONTROL_BLOCK                                                          \
+    (scheduler_control_t) { NULL, false }
+#define CONTROL_PRESERVE(p)                                                    \
+    (scheduler_control_t) { p, false }
+#define CONTROL_RESCHEDULE                                                     \
+    (scheduler_control_t) { active_process, true }
+
 #endif /* PANDOS_TYPES_H */

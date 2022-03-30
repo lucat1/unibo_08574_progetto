@@ -6,19 +6,19 @@
  * \date 22-03-2022
  */
 
-#include "native_scheduler.h"
-#include "os/scheduler.h"
-#include "os/util.h"
-#include "umps/const.h"
-#include "umps/cp0.h"
-#include "umps/libumps.h"
+#include <umps/cp0.h>
+#include <umps/libumps.h>
 
-state_t *wait_state;
+#include "os/globals.h"
+#include "os/util.h"
+
+#include "native_scheduler.h"
 
 inline void reset_timer() { LDIT(IT_INTERVAL); }
 inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
 
-int waiting_count = 0;
+/* TODO: Do we need this? */
+static int waiting_count = 0;
 
 void scheduler_wait()
 {
