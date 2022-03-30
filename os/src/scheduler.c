@@ -8,6 +8,8 @@
  * \date 20-03-2022
  */
 
+#include <umps/libumps.h>
+
 #include "os/scheduler.h"
 #include "os/asl.h"
 #include "os/list.h"
@@ -98,13 +100,16 @@ void schedule(pcb_t *pcb, bool enqueue)
         enqueue_process(pcb);
     }
     /* Process selection */
-    if (pcb != NULL && !enqueue)
+    if (active_process == NULL && running_count == 0){
+        pandos_kprintf("Nothing left, HALT()!");
+        HALT();
+    }else if (pcb != NULL && !enqueue){
         active_process = pcb;
-    else if (!list_empty(&ready_queue_hi))
+    }else if (!list_empty(&ready_queue_hi)){
         active_process = remove_proc_q(&ready_queue_hi);
-    else if (!list_empty(&ready_queue_lo))
+    }else if (!list_empty(&ready_queue_lo)){
         active_process = remove_proc_q(&ready_queue_lo);
-    else {
+    }else {
         active_process = NULL;
         scheduler_unlock();
         scheduler_wait();
