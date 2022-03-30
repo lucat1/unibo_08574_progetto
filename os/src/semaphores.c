@@ -6,10 +6,9 @@
  * \author Stefano Volpe
  * \date 17-03-2022
  */
+
+#include "os/semaphores.h"
 #include "os/globals.h"
-#include "semaphores.h"
-
-
 
 inline void init_semaphores()
 {

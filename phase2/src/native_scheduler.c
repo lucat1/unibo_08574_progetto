@@ -13,6 +13,7 @@
 #include "os/util.h"
 
 #include "native_scheduler.h"
+#include "os/scheduler.h"
 
 inline void reset_timer() { LDIT(IT_INTERVAL); }
 inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
@@ -27,8 +28,9 @@ void scheduler_wait()
     reset_timer();
     setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
               STATUS_TE);
-    while (1)
-        WAIT();
+    // while (1)
+    WAIT();
+    schedule(NULL, false);
 }
 
 void scheduler_takeover()

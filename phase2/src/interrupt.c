@@ -10,15 +10,12 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-#include "os/globals.h"
 #include "os/const.h"
+#include "os/globals.h"
 
 #include "interrupt.h"
 #include "native_scheduler.h"
-#include "semaphores.h"
-
-
-
+#include "os/semaphores.h"
 
 static inline memaddr *get_terminal_transm_status(int devicenumber)
 {
@@ -73,7 +70,7 @@ static inline scheduler_control_t interrupt_timer()
     reset_timer();
     pcb_t *p;
     while ((p = V(&timer_semaphore)) != NULL) {
-        //verbose("REMOVE from clock %d\n", act_pid);
+        // verbose("REMOVE from clock %d\n", act_pid);
     }
     timer_semaphore = 0;
     return CONTROL_PRESERVE(active_process);
@@ -85,7 +82,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
     /* TODO */
     int il = IL_DISK;
     int *sem[] = {disk_semaphores, tape_semaphores, ethernet_semaphores,
-                    printer_semaphores};
+                  printer_semaphores};
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
         if (CAUSE_IP_GET(cause, i)) {
@@ -115,15 +112,15 @@ static inline scheduler_control_t interrupt_terminal()
 {
 
     /*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha
-        * sollevato l'interrupt*/
+     * sollevato l'interrupt*/
     int devicenumber =
         find_device_number((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
     /* TODO : order is important, check */
     memaddr *(*get_status[2])(int dev) = {get_terminal_transm_status,
-                                            get_terminal_recv_status};
+                                          get_terminal_recv_status};
     memaddr *(*get_cmd[2])(int dev) = {get_terminal_transm_command,
-                                        get_terminal_recv_command};
+                                       get_terminal_recv_command};
     int *sem[] = {termw_semaphores, termr_semaphores};
 
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
@@ -158,7 +155,6 @@ static inline scheduler_control_t interrupt_terminal()
     return CONTROL_BLOCK;
 }
 
-
 scheduler_control_t interrupt_handler()
 {
     int cause = getCAUSE();
@@ -170,11 +166,11 @@ scheduler_control_t interrupt_handler()
     if (CAUSE_IP_GET(cause, IL_IPI)) {
         pandos_kprintf(">> INTERRUPT: IL_IPI");
         return interrupt_ipi();
-    }else if (CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
+    } else if (CAUSE_IP_GET(cause, IL_LOCAL_TIMER)) {
         pandos_kprintf("<< INTERRUPT(LOCAL_TIMER, (%d) , %d)\n", act_pid,
                        (int)getTIMER());
         return interrupt_local_timer();
-    }else if (CAUSE_IP_GET(cause, IL_TIMER)) {
+    } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
         pandos_kprintf("<< INTERRUPT(TIMER, (%d))\n", act_pid);
         return interrupt_timer();
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
@@ -187,15 +183,14 @@ scheduler_control_t interrupt_handler()
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
         pandos_kprintf("<< INTERRUPT(TERMINAL, (%d))\n", act_pid);
         return interrupt_terminal();
-    } else{
+    } else {
         pandos_kprintf("<< INTERRUPT(UNKNOWN)\n");
     }
 
     /* The newly unblocked pcb is enqueued back on the Ready Queue and control
      * is returned to the Current Process unless the newly unblocked process
-     * has higher prority of the Current Process. 
+     * has higher prority of the Current Process.
      * */
 
     return CONTROL_RESCHEDULE;
 }
-

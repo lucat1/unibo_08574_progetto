@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME}
     src/pcb.c
     src/globals.c
     src/scheduler.c
+    src/semaphores.c
     src/util.c
 )
 add_library(sub::${PROJECT_NAME} ALIAS ${PROJECT_NAME})

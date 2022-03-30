@@ -8,20 +8,20 @@
  * \date 26-03-2022
  */
 
+#include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
-#include "umps/cp0.h"
 
 #include "os/asl.h"
-#include "os/util.h"
 #include "os/scheduler.h"
+#include "os/util.h"
 
 #include "../test/p2test.h"
 
-#include "semaphores.h"
-#include "syscall.h"
-#include "interrupt.h"
 #include "exception_impl.h"
+#include "interrupt.h"
+#include "os/semaphores.h"
+#include "syscall.h"
 
 #define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
@@ -321,11 +321,7 @@ static inline scheduler_control_t syscall_get_process_id()
 }
 
 /* NSYS10 */
-static inline scheduler_control_t syscall_yeld()
-{
-    return CONTROL_RESCHEDULE;
-}
-
+static inline scheduler_control_t syscall_yeld() { return CONTROL_RESCHEDULE; }
 
 inline scheduler_control_t syscall_handler()
 {

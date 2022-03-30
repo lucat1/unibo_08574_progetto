@@ -8,14 +8,14 @@
  * \date 17-03-2022
  */
 
-#include <umps/libumps.h>
 #include <umps/cp0.h>
+#include <umps/libumps.h>
 
+#include "exception.h"
 #include "init.h"
 #include "init_impl.h"
 #include "native_scheduler.h"
-#include "semaphores.h"
-#include "exception.h"
+#include "os/semaphores.h"
 #include "p2test.h"
 
 /* Initialize the Pass Up Vector handlers to the given procedures until the

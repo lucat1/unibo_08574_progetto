@@ -1,6 +1,5 @@
 project(phase2)
 add_executable(${PROJECT_NAME}
-    src/semaphores.c
     src/native_scheduler.c
     src/syscall.c
     src/interrupt.c
