@@ -204,10 +204,8 @@ static inline scheduler_control_t syscall_terminate_process()
         p = findAndRemove(pid);
 
     /* checks that process with requested pid exists */
-    if (p == NULL) {
-        pandos_kfprintf(&kstderr, "!! PANIC: Could not find pid : %d\n", pid);
-        PANIC();
-    }
+    if (p == NULL)
+        scheduler_panic("Could not find pid : %d", pid);
 
     /* calls scheduler */
     kill_process(p);
@@ -373,8 +371,6 @@ inline scheduler_control_t syscall_handler()
             break;
         default:
             return pass_up_or_die(GENERALEXCEPT);
-            pandos_kfprintf(&kstderr, "!! PANIC: Invalid syscall value %d", id);
-            PANIC();
             break;
     }
 

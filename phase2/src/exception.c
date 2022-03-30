@@ -8,21 +8,42 @@
  * \date 30-03-2022
  */
 
-#include <umps/cp0.h>
-#include <umps/arch.h>
-
+#include "exception.h"
+#include "exception_impl.h"
+#include "interrupt.h"
 #include "os/const.h"
 #include "os/types.h"
-
-#include "exception_impl.h"
-#include "exception.h"
-#include "interrupt.h"
+#include "os/util.h"
 #include "syscall.h"
+#include <umps/arch.h>
+#include <umps/cp0.h>
+#include <umps/libumps.h>
+
+inline scheduler_control_t pass_up_or_die(int type)
+{
+    if (active_process->p_support == NULL)
+        kill_process(active_process);
+    else {
+        memcpy(&active_process->p_support->sup_except_state[type],
+               (state_t *)BIOSDATAPAGE, sizeof(state_t));
+        context_t c;
+        c.stack_ptr =
+            active_process->p_support->sup_except_context[type].stack_ptr;
+        c.status = active_process->p_support->sup_except_context[type].status;
+        c.pc = active_process->p_support->sup_except_context[type].pc;
+
+        LDCXT(c.stack_ptr, c.status, c.pc);
+
+        scheduler_panic("Control should have been handed off to the support "
+                        "layer by now\n");
+    }
+    return CONTROL_BLOCK;
+}
 
 scheduler_control_t tbl_handler()
 {
     return pass_up_or_die(PGFAULTEXCEPT);
-    //return CONTROL_RESCHEDULE;
+    // return CONTROL_RESCHEDULE;
 }
 
 /* TODO: fill me */
@@ -35,7 +56,6 @@ scheduler_control_t trap_handler()
 
     return pass_up_or_die(GENERALEXCEPT);
 }
-
 
 void exception_handler()
 {

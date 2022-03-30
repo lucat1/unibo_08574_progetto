@@ -36,7 +36,7 @@ void kill_process(pcb_t *p);
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
 
-extern void scheduler_panic(const char *msg);
+extern void scheduler_panic(const char *fmt, ...);
 extern void scheduler_wait();
 extern void scheduler_unlock();
 

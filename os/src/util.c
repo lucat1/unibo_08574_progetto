@@ -138,7 +138,7 @@ size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
 }
 
 #ifndef __x86_64__
-static int term_putchar(termreg_t *term, char c)
+int term_putchar(termreg_t *term, char c)
 {
     devreg stat;
 
@@ -154,7 +154,7 @@ static int term_putchar(termreg_t *term, char c)
     return (stat == ST_TRANSMITTED) ? 0 : 2;
 }
 
-static size_t serial_writer(void *dest, const char *data, size_t len)
+size_t serial_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     termreg_t *term;
@@ -200,7 +200,7 @@ static void kputchar(memory_target_t *mem, char ch)
     }
 }
 
-static size_t memory_writer(void *dest, const char *data, size_t len)
+size_t memory_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     memory_target_t *mem;
@@ -241,7 +241,6 @@ size_t pandos_kfprintf(memory_target_t *mem, const char *fmt, ...)
     va_end(varg);
     return res;
 }
-
 
 void pandos_kclear(memory_target_t *mem)
 {

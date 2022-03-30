@@ -14,13 +14,11 @@
 
 #include "init.h"
 
-
 int main(int argc)
 {
     init();
     schedule(NULL, false);
 
-    pandos_kfprintf(&kstderr, "!! PANIC: Scheduler quit\n");
-    PANIC();
+    scheduler_panic("Scheduler quit\n");
     return -1;
 }

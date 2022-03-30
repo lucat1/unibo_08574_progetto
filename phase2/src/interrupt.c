@@ -123,7 +123,7 @@ static inline scheduler_control_t interrupt_terminal()
     int *sem[] = {termw_semaphores, termr_semaphores};
 
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; ++i) {
         int status = *get_status[i](devicenumber);
         if ((status & TERMSTATMASK) != DEV_S_READY) {
             pcb_t *p = V(&sem[i][devicenumber]);
@@ -147,10 +147,9 @@ static inline scheduler_control_t interrupt_terminal()
             return ctrl;
         }
     }
+    /* TODO: pretty print please, don't think it should panic */
     pandos_kfprintf(&kverb, "WTF TERMINAL DID NOT RETURN\n");
-    /* PANIC()?*/
-    PANIC();
-    /* Just to return something */
+    // PANIC();
     return CONTROL_BLOCK;
 }
 

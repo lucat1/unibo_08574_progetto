@@ -9,6 +9,7 @@
 #include "native_scheduler.h"
 #include "os/scheduler.h"
 #include "os/util.h"
+#include "os/util_impl.h"
 #include <umps/cp0.h>
 #include <umps/libumps.h>
 
@@ -45,9 +46,13 @@ void scheduler_takeover()
     LDST(&active_process->p_s);
 }
 
-void scheduler_panic(const char *msg)
+void scheduler_panic(const char *fmt, ...)
 {
-    pandos_kfprintf(&kstderr, "!! PANIC: %s", msg);
+    pandos_kfprintf(&kstderr, "!! PANIC: ");
+    va_list varg;
+    va_start(varg, fmt);
+    __printf(&kstderr, memory_writer, fmt, varg);
+    va_end();
     PANIC();
 }
 

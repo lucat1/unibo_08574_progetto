@@ -31,9 +31,8 @@ inline pcb_t *P(int *sem_addr, pcb_t *p)
         dequeue_process(p);
         int r = insert_blocked(sem_addr, p);
 
-        if (r > 0) {
+        if (r > 0)
             scheduler_panic("PASSEREN failed\n");
-        }
 
         return NULL;
     }
@@ -42,11 +41,10 @@ inline pcb_t *P(int *sem_addr, pcb_t *p)
 inline pcb_t *V(int *sem_addr)
 {
     pcb_t *p = remove_blocked(sem_addr);
-    if (p == NULL) { /* means that sem_proc is empty */
+    if (p == NULL) /* means that sem_proc is empty */
         *sem_addr = *sem_addr + 1;
-    } else {
+    else
         enqueue_process(p);
-    }
 
     return p;
 }
