@@ -24,6 +24,8 @@ extern list_head ready_queue_lo, ready_queue_hi;
 /* Pointer to the currently running process */
 extern pcb_t *active_process;
 
+extern cpu_t start_tod;
+
 /* ???? */
 extern pcb_t *last_process;
 

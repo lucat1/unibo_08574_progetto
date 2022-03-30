@@ -2,7 +2,6 @@
  * \file interrupt.c
  * \brief Interrupt and trap handler
  *
- * TODO: Implement all the syscalls.
  * \author Alessandro Frau
  * \author Gianmaria Rovelli
  * \author Luca Tagliavini

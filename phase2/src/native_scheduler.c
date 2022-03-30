@@ -42,7 +42,7 @@ void scheduler_takeover()
     /* Disable the processor Local Timer on hi processes */
     if (active_process->p_prio)
         active_process->p_s.status ^= STATUS_TE;
-
+    STCK(start_tod);
     LDST(&active_process->p_s);
 }
 

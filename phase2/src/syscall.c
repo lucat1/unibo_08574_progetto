@@ -148,7 +148,7 @@ static inline pcb_t *search_all_lists(int pid)
     return NULL;
 }
 
-/* TODO: NSYS1 */
+/* NSYS1 */
 static inline scheduler_control_t syscall_create_process()
 {
     /* parameters of syscall */
@@ -183,8 +183,7 @@ static inline scheduler_control_t syscall_create_process()
     return CONTROL_PRESERVE(active_process);
 }
 
-/* TODO: finish testing NSYS2 */
-/* TODO : generate interrupt to stop time slice */
+/* NSYS2 */
 static inline scheduler_control_t syscall_terminate_process()
 {
     /* Generate an interrupt to signal the end of Current Process’s time q
@@ -215,7 +214,6 @@ static inline scheduler_control_t syscall_terminate_process()
 /* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
-    /* TODO : Update the accumulated CPU time for the Current Process */
     /* TODO : update blocked_count ??? */
     int *sem = (int *)active_process->p_s.reg_a1;
     pcb_t *p = P(sem, active_process);
@@ -236,7 +234,7 @@ static inline scheduler_control_t syscall_verhogen()
     return mask_V(p);
 }
 
-/* TODO : NSYS5 */
+/* NSYS5 */
 static inline scheduler_control_t syscall_do_io()
 {
     pandos_kprintf("active_process %p\n", active_process);
@@ -260,14 +258,6 @@ static inline scheduler_control_t syscall_do_io()
     }
 
     if (i_n == IL_TERMINAL) {
-        // pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
-        // pandos_kfprintf(&kverb, "addr: (%p)\n", cmd_addr);
-        // pandos_kfprintf(&kverb, "start: (%p)\n", (int *)DEV_REG_START);
-        // pandos_kfprintf(&kverb, "base: (%p)\n", base);
-        // pandos_kfprintf(&kverb, "c: (%p)\n",
-        //                 TERMINAL_GET_COMMAND_TYPE(cmd_addr));
-        // pandos_kfprintf(&kverb, "device: (%p, %p)\n", i_n, d_n);
-        // pandos_kfprintf(&kverb, "------ DO_IO_END -----\n");
 
         int *sem_kind, i = d_n;
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
@@ -289,14 +279,14 @@ static inline scheduler_control_t syscall_do_io()
     return CONTROL_PRESERVE(active_process);
 }
 
-/* TODO: test NSYS6 */
+/* NSYS6 */
 static inline scheduler_control_t syscall_get_cpu_time()
 {
     active_process->p_s.reg_v0 = active_process->p_time;
     return CONTROL_RESCHEDULE;
 }
 
-/* TODO: test NSYS7 */
+/* NSYS7 */
 static inline scheduler_control_t syscall_wait_for_clock()
 {
     pcb_t *p = P(&timer_semaphore, active_process);
@@ -304,14 +294,14 @@ static inline scheduler_control_t syscall_wait_for_clock()
     return mask_P(p);
 }
 
-/* TODO: test  NSYS8 */
+/* NSYS8 */
 static inline scheduler_control_t syscall_get_support_data()
 {
     active_process->p_s.reg_v0 = (int)active_process->p_support;
     return CONTROL_RESCHEDULE;
 }
 
-/* TODO: test NSYS9 */
+/* NSYS9 */
 static inline scheduler_control_t syscall_get_process_id()
 {
     int parent = (int)active_process->p_s.reg_a1;
@@ -324,14 +314,9 @@ static inline scheduler_control_t syscall_get_process_id()
     return CONTROL_PRESERVE(active_process);
 }
 
-/* TODO: test NSYS10 */
+/* NSYS10 */
 static inline scheduler_control_t syscall_yeld()
 {
-    /* TODO: The active process should note be in any queue so this action is
-     * useless I'm leaving it just in case I'm wrong.
-     */
-    // dequeue_process(active_process);
-
     return CONTROL_RESCHEDULE;
 }
 

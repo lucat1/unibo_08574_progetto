@@ -69,8 +69,7 @@ pcb_t *spawn_process(bool priority)
     if (p == NULL) {
         return NULL;
     }
-    p->p_pid =
-        ++pid_count; /* TODO: Change this with the actual implementation */
+    p->p_pid = ++pid_count; /* TODO: Change this with the actual implementation */
     p->p_prio = priority;
     ++running_count;
     enqueue_process(p);
@@ -129,8 +128,6 @@ void schedule(pcb_t *pcb, bool enqueue)
     STCK(now_tod);
     if(active_process != NULL)
         active_process->p_time += (now_tod - start_tod);
-
-    start_tod = now_tod;
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
