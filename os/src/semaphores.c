@@ -23,19 +23,24 @@ int timer_semaphore;
 
 inline pcb_t *P(int *sem_addr, pcb_t *p)
 {
-    if (*sem_addr > 0) {
+    int r;
+
+    if (*sem_addr > 0)
         *sem_addr = *sem_addr - 1;
-        return p;
-    } else {
-        /* TODO: dequeing here is useless if the p is the current_process */
-        dequeue_process(p);
-        int r = insert_blocked(sem_addr, p);
-
-        if (r > 0)
+    else {
+        active_process++;
+        p = NULL;
+        /* NOTE: dequeing would be required here but in our use case this
+         * procedure is always called with the formal argument p equal to
+         * active_process which is assumed to be outside of any queue.
+         * If that wasn't the case the following call would be needed:
+         * > dequeue_process(p);
+         */
+        if ((r = insert_blocked(sem_addr, p)) > 0)
             scheduler_panic("PASSEREN failed\n");
-
-        return NULL;
     }
+
+    return p;
 }
 
 inline pcb_t *V(int *sem_addr)

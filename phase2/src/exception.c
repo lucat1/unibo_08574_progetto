@@ -11,8 +11,6 @@
 #include "exception.h"
 #include "exception_impl.h"
 #include "interrupt.h"
-#include "os/const.h"
-#include "os/types.h"
 #include "os/util.h"
 #include "syscall.h"
 #include <umps/arch.h>
@@ -40,18 +38,11 @@ inline scheduler_control_t pass_up_or_die(int type)
     return CONTROL_BLOCK;
 }
 
-scheduler_control_t tbl_handler()
-{
-    return pass_up_or_die(PGFAULTEXCEPT);
-    // return CONTROL_RESCHEDULE;
-}
+scheduler_control_t tbl_handler() { return pass_up_or_die(PGFAULTEXCEPT); }
 
-/* TODO: fill me */
-scheduler_control_t trap_handler()
+static scheduler_control_t trap_handler()
 {
-    int pid = -1;
-    if (active_process != NULL)
-        pid = active_process->p_pid;
+    int pid = active_process != NULL ? active_process->p_pid : 0;
     pandos_kprintf("<< TRAP (%d)\n", pid);
 
     return pass_up_or_die(GENERALEXCEPT);
@@ -59,12 +50,11 @@ scheduler_control_t trap_handler()
 
 void exception_handler()
 {
-    scheduler_control_t ctrl = CONTROL_RESCHEDULE;
+    scheduler_control_t ctrl;
 
     if (active_process != NULL)
         memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
 
-    /* p_s.cause could have been used instead of getCAUSE() */
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
             ctrl = interrupt_handler();

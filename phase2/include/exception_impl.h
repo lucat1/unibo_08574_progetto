@@ -1,6 +1,6 @@
 /**
  * \file exception_impl.h
- * \brief Exception handlers implementations.
+ * \brief Implementation details for the exception handler.
  *
  * \author Alessandro Frau
  * \author Luca Tagliavini
@@ -11,10 +11,6 @@
 #define PANDOS_EXCEPTION_IMPL_H
 
 #include "os/scheduler.h"
-
-extern scheduler_control_t tbl_handler();
-
-extern scheduler_control_t trap_handler();
 
 extern scheduler_control_t pass_up_or_die(int type);
 

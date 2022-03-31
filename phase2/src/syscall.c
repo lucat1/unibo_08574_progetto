@@ -8,42 +8,22 @@
  * \date 26-03-2022
  */
 
+#include "syscall.h"
+#include "exception_impl.h"
+#include "interrupt.h"
+#include "os/asl.h"
+#include "os/scheduler.h"
+#include "os/semaphores.h"
+#include "os/util.h"
 #include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-#include "os/asl.h"
-#include "os/scheduler.h"
-#include "os/util.h"
-
-#include "../test/p2test.h"
-
-#include "exception_impl.h"
-#include "interrupt.h"
-#include "os/semaphores.h"
-#include "syscall.h"
-
 #define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
-/* TODO: Change this stuff */
-void enqueue();
-void dequeue();
-void show();
 static pcb_t *inp_arr[MAX_PROC];
 static int Rear = -1;
 static int Front = -1;
-
-void show()
-{
-
-    if (Front == -1)
-        verbose("Empty queue\n");
-    else {
-        for (int i = Front; i <= Rear; i++)
-            verbose("%d ", inp_arr[i]->p_pid);
-        verbose("\n");
-    }
-}
 
 void enqueue(pcb_t *p)
 {
@@ -60,8 +40,6 @@ void enqueue(pcb_t *p)
             inp_arr[Front] = p;
         }
     }
-
-    // show();
 }
 
 void dequeue()
@@ -96,8 +74,6 @@ void remove(int p)
         inp_arr[i] = inp_arr[i + 1];
     }
     Rear = Rear - 1;
-
-    // show();
 }
 
 pcb_t *find(int p)
@@ -218,24 +194,13 @@ static inline scheduler_control_t syscall_terminate_process()
 /* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
-    /* TODO : update blocked_count ??? */
-    int *sem = (int *)active_process->p_s.reg_a1;
-    pcb_t *p = P(sem, active_process);
-    if (sem == &sem_blkp4) {
-        verbose("block p4 : (%d - 1)\n", *sem + 1);
-    }
-    return mask_P(p);
+    return mask_P(P((int *)active_process->p_s.reg_a1, active_process));
 }
 
 /* NSYS4 */
 static inline scheduler_control_t syscall_verhogen()
 {
-    int *sem = (int *)active_process->p_s.reg_a1;
-    if (sem == &sem_blkp4) {
-        verbose("unlock p4 : (%d - 1)\n", *sem + 1);
-    }
-    pcb_t *p = V(sem);
-    return mask_V(p);
+    return mask_V(V((int *)active_process->p_s.reg_a1));
 }
 
 /* NSYS5 */
