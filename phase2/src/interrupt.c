@@ -149,13 +149,13 @@ scheduler_control_t interrupt_handler()
     int cause = getCAUSE();
 
     if (CAUSE_IP_GET(cause, IL_IPI)) {
-        pandos_kprintf("IL_IPI");
+        pandos_interrupt("IL_IPI");
         return interrupt_ipi();
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-        pandos_kprintf("LOCAL_TIMER\n");
+        pandos_interrupt("LOCAL_TIMER\n");
         return interrupt_local_timer();
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
-        pandos_kprintf("TIMER\n");
+        pandos_interrupt("TIMER\n");
         return interrupt_timer();
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
