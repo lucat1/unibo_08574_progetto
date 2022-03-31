@@ -17,8 +17,6 @@
 #include <umps/libumps.h>
 
 #define pandos_interrupt(str) pandos_kprintf("<< SYSCALL(" str ")\n")
-#define control_from_pcb(p)                                                    \
-    p != NULL ? CONTROL_PRESERVE(active_process) : CONTROL_RESCHEDULE
 
 static inline memaddr *get_terminal_transm_status(int devicenumber)
 {
@@ -94,12 +92,11 @@ static inline scheduler_control_t interrupt_generic(int cause)
     }
 
     int devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
-    scheduler_control_t ctrl =
-        control_from_pcb(V(&sem[il - IL_DISK][devicenumber]));
-
     /* ACK al device */
     *DEVICE_COMMAND(il, devicenumber) = DEV_C_ACK;
-    return ctrl;
+    return V(&sem[il - IL_DISK][devicenumber]) != NULL
+               ? CONTROL_PRESERVE(active_process)
+               : CONTROL_RESCHEDULE;
 }
 
 static inline scheduler_control_t interrupt_terminal()
@@ -122,7 +119,6 @@ static inline scheduler_control_t interrupt_terminal()
         int status = *get_status[i](devicenumber);
         if ((status & TERMSTATMASK) != DEV_S_READY) {
             pcb_t *p = V(&sem[i][devicenumber]);
-            scheduler_control_t ctrl = control_from_pcb(p);
             // int pid = 0;
             if (p == NULL) {
                 active_process->p_s.reg_v0 = status;
@@ -139,7 +135,8 @@ static inline scheduler_control_t interrupt_terminal()
 
             *get_cmd[i](devicenumber) = DEV_C_ACK;
             /* do the first one */
-            return ctrl;
+            return p != NULL ? CONTROL_PRESERVE(active_process)
+                             : CONTROL_RESCHEDULE;
         }
     }
     scheduler_panic("Terminal did not ACK\n");
