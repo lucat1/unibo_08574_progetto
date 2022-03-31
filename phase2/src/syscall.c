@@ -200,7 +200,9 @@ static inline scheduler_control_t syscall_passeren()
 /* NSYS4 */
 static inline scheduler_control_t syscall_verhogen()
 {
-    return mask_V(V((int *)active_process->p_s.reg_a1));
+    return V((int *)active_process->p_s.reg_a1) != NULL
+               ? CONTROL_PRESERVE(active_process)
+               : CONTROL_RESCHEDULE;
 }
 
 /* NSYS5 */

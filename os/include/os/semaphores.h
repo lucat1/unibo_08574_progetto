@@ -24,13 +24,6 @@ extern int timer_semaphore;
 
 extern scheduler_control_t P(int *const sem_addr, pcb_t *const p);
 extern pcb_t *V(int *const sem_addr);
-#include "os/scheduler.h"
-static inline scheduler_control_t mask_V(pcb_t *p)
-{
-    if (p == NULL)
-        return CONTROL_PRESERVE(active_process);
-    return CONTROL_RESCHEDULE;
-}
 extern void init_semaphores();
 
 #endif /* PANDOS_SEMAPHORE_H */
