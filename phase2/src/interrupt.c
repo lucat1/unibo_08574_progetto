@@ -16,7 +16,7 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-#define pandos_interrupt(str) pandos_kprintf("<< SYSCALL(" str ")\n")
+#define pandos_interrupt(str) pandos_kprintf("<< INTERRUPT(" str ")\n")
 
 static inline memaddr *get_terminal_transm_status(int devicenumber)
 {
@@ -149,24 +149,24 @@ scheduler_control_t interrupt_handler()
     int cause = getCAUSE();
 
     if (CAUSE_IP_GET(cause, IL_IPI)) {
-        pandos_kprintf(">> INTERRUPT(IL_IPI)");
+        pandos_kprintf("IL_IPI");
         return interrupt_ipi();
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-        pandos_kprintf("<< INTERRUPT(LOCAL_TIMER)\n");
+        pandos_kprintf("LOCAL_TIMER\n");
         return interrupt_local_timer();
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
-        pandos_kprintf("<< INTERRUPT(TIMER)\n");
+        pandos_kprintf("TIMER\n");
         return interrupt_timer();
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
                CAUSE_IP_GET(cause, IL_PRINTER)) {
-        pandos_interrupt("<< INTERRUPT(GENERIC)\n");
+        pandos_interrupt("GENERIC\n");
         return interrupt_generic(cause);
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        pandos_interrupt("<< INTERRUPT(TERMINAL)\n");
+        pandos_interrupt("TERMINAL\n");
         return interrupt_terminal();
     } else
-        pandos_interrupt("<< INTERRUPT(UNKNOWN)\n");
+        pandos_interrupt("UNKNOWN\n");
 
     /* The newly unblocked pcb is enqueued back on the Ready Queue and control
      * is returned to the Current Process unless the newly unblocked process

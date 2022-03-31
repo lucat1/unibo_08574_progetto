@@ -99,14 +99,10 @@ void kill_process(pcb_t *p)
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
-    int now_tod;
-    STCK(now_tod);
-    if (active_process != NULL)
-        active_process->p_time += (now_tod - start_tod);
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
-    if (enqueue && pcb != NULL) {
+    if (enqueue && pcb != NULL)
         enqueue_process(pcb);
-    }
+
     /* Process selection */
     if (active_process == NULL && running_count == 0) {
         pandos_kprintf("Nothing left, HALT()!");
@@ -123,7 +119,6 @@ void schedule(pcb_t *pcb, bool enqueue)
         scheduler_wait();
     }
 
-    pandos_kprintf("pre-takeover %p\n", active_process);
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )
      */

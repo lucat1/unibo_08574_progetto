@@ -40,6 +40,7 @@ inline scheduler_control_t pass_up_or_die(memaddr type)
 
 scheduler_control_t tbl_handler()
 {
+    pandos_kprintf("<< TBL\n");
     return pass_up_or_die((memaddr)PGFAULTEXCEPT);
 }
 
@@ -54,9 +55,13 @@ static scheduler_control_t trap_handler()
 void exception_handler()
 {
     scheduler_control_t ctrl;
+    int now_tod;
 
-    if (active_process != NULL)
+    STCK(now_tod);
+    if (active_process != NULL) {
+        active_process->p_time += (now_tod - start_tod);
         memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
+    }
 
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
         case 0:
