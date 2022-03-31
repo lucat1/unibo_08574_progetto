@@ -194,7 +194,7 @@ static inline scheduler_control_t syscall_terminate_process()
 /* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
-    return mask_P(P((int *)active_process->p_s.reg_a1, active_process));
+    return P((int *)active_process->p_s.reg_a1, active_process);
 }
 
 /* NSYS4 */
@@ -233,8 +233,7 @@ static inline scheduler_control_t syscall_do_io()
             sem_kind = termw_semaphores;
         else
             sem_kind = termr_semaphores;
-        pcb_t *p = P(&sem_kind[i], active_process);
-        scheduler_control_t ctrl = mask_P(p);
+        scheduler_control_t ctrl = P(&sem_kind[i], active_process);
 
         active_process->p_s.status |= STATUS_IM(i_n);
 
@@ -258,9 +257,7 @@ static inline scheduler_control_t syscall_get_cpu_time()
 /* NSYS7 */
 static inline scheduler_control_t syscall_wait_for_clock()
 {
-    pcb_t *p = P(&timer_semaphore, active_process);
-
-    return mask_P(p);
+    return P(&timer_semaphore, active_process);
 }
 
 /* NSYS8 */
@@ -288,10 +285,12 @@ static inline scheduler_control_t syscall_yeld() { return CONTROL_RESCHEDULE; }
 
 inline scheduler_control_t syscall_handler()
 {
+    if (active_process == NULL)
+        scheduler_panic("Syscall recieved while active_process was NULL");
     const int id = (int)active_process->p_s.reg_a0, pid = active_process->p_pid;
     if (id <= 0 && checkUserMode()) {
         stderr("Negative syscalls cannot be called in user mode!\n");
-        return pass_up_or_die(GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     switch (id) {
         case CREATEPROCESS:
@@ -335,7 +334,7 @@ inline scheduler_control_t syscall_handler()
             return syscall_yeld();
             break;
         default:
-            return pass_up_or_die(GENERALEXCEPT);
+            return pass_up_or_die((memaddr)GENERALEXCEPT);
             break;
     }
 

@@ -12,6 +12,6 @@
 
 #include "os/scheduler.h"
 
-extern scheduler_control_t pass_up_or_die(int type);
+extern scheduler_control_t pass_up_or_die(memaddr type);
 
 #endif /* PANDOS_EXCEPTION_IMPL_H */

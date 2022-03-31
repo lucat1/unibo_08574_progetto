@@ -21,15 +21,15 @@ int termr_semaphores[DEVPERINT];
 int termw_semaphores[DEVPERINT];
 int timer_semaphore;
 
-inline pcb_t *P(int *sem_addr, pcb_t *p)
+inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
 {
     int r;
 
-    if (*sem_addr > 0)
+    if (*sem_addr > 0) {
         *sem_addr = *sem_addr - 1;
-    else {
+        return CONTROL_RESCHEDULE;
+    } else {
         active_process++;
-        p = NULL;
         /* NOTE: dequeing would be required here but in our use case this
          * procedure is always called with the formal argument p equal to
          * active_process which is assumed to be outside of any queue.
@@ -38,12 +38,11 @@ inline pcb_t *P(int *sem_addr, pcb_t *p)
          */
         if ((r = insert_blocked(sem_addr, p)) > 0)
             scheduler_panic("PASSEREN failed\n");
+        return CONTROL_BLOCK;
     }
-
-    return p;
 }
 
-inline pcb_t *V(int *sem_addr)
+inline pcb_t *V(int *const sem_addr)
 {
     pcb_t *p = remove_blocked(sem_addr);
     if (p == NULL) /* means that sem_proc is empty */
@@ -52,20 +51,6 @@ inline pcb_t *V(int *sem_addr)
         enqueue_process(p);
 
     return p;
-}
-
-inline scheduler_control_t mask_V(pcb_t *p)
-{
-    if (p == NULL)
-        return CONTROL_PRESERVE(active_process);
-    return CONTROL_RESCHEDULE;
-}
-
-inline scheduler_control_t mask_P(pcb_t *p)
-{
-    if (p == NULL)
-        return CONTROL_BLOCK;
-    return CONTROL_RESCHEDULE;
 }
 
 inline void init_semaphores()

@@ -22,10 +22,15 @@ extern int termr_semaphores[DEVPERINT];
 extern int termw_semaphores[DEVPERINT];
 extern int timer_semaphore;
 
-extern pcb_t *P(int *sem_addr, pcb_t *p);
-extern pcb_t *V(int *sem_addr);
-extern scheduler_control_t mask_V(pcb_t *p);
-extern scheduler_control_t mask_P(pcb_t *p);
+extern scheduler_control_t P(int *const sem_addr, pcb_t *const p);
+extern pcb_t *V(int *const sem_addr);
+#include "os/scheduler.h"
+static inline scheduler_control_t mask_V(pcb_t *p)
+{
+    if (p == NULL)
+        return CONTROL_PRESERVE(active_process);
+    return CONTROL_RESCHEDULE;
+}
 extern void init_semaphores();
 
 #endif /* PANDOS_SEMAPHORE_H */

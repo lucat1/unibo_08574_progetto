@@ -53,6 +53,7 @@ void scheduler_panic(const char *fmt, ...)
     va_start(varg, fmt);
     __printf(&kstderr, memory_writer, fmt, varg);
     va_end();
+    __printf(&kstderr, memory_writer, "\n", NULL);
     PANIC();
 }
 

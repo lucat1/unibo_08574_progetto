@@ -17,7 +17,7 @@
 #include <umps/cp0.h>
 #include <umps/libumps.h>
 
-inline scheduler_control_t pass_up_or_die(int type)
+inline scheduler_control_t pass_up_or_die(memaddr type)
 {
     if (active_process->p_support == NULL)
         kill_process(active_process);
@@ -38,14 +38,17 @@ inline scheduler_control_t pass_up_or_die(int type)
     return CONTROL_BLOCK;
 }
 
-scheduler_control_t tbl_handler() { return pass_up_or_die(PGFAULTEXCEPT); }
+scheduler_control_t tbl_handler()
+{
+    return pass_up_or_die((memaddr)PGFAULTEXCEPT);
+}
 
 static scheduler_control_t trap_handler()
 {
     int pid = active_process != NULL ? active_process->p_pid : 0;
     pandos_kprintf("<< TRAP (%d)\n", pid);
 
-    return pass_up_or_die(GENERALEXCEPT);
+    return pass_up_or_die((memaddr)GENERALEXCEPT);
 }
 
 void exception_handler()
