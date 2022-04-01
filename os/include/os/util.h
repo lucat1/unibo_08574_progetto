@@ -151,6 +151,7 @@ typedef struct memory_target {
 extern memory_target_t kstdout, kstderr, kverb, kdebug;
 
 size_t pandos_kfprintf(memory_target_t *, const char *fmt, ...);
+/* TODO: remove */
 #define verbose(fmt, ...) pandos_kfprintf(&kverb, fmt, ##__VA_ARGS__)
 #define stdout(fmt, ...) pandos_kfprintf(&kstdout, fmt, ##__VA_ARGS__)
 #define stderr(fmt, ...) pandos_kfprintf(&kstderr, fmt, ##__VA_ARGS__)

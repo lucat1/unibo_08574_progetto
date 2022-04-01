@@ -2,24 +2,25 @@
  * \file init.c
  * \brief Implementation \ref init.h
  *
+ * \author Alessandro Frau
  * \author Luca Tagliavini
  * \author Stefano Volpe
  * \date 17-03-2022
  */
 
+#include <umps/cp0.h>
+#include <umps/libumps.h>
+
+#include "exception.h"
 #include "init.h"
 #include "init_impl.h"
-#include "interrupt.h"
 #include "native_scheduler.h"
 #include "os/asl.h"
-#include "os/const.h"
 #include "os/pcb.h"
 #include "os/scheduler.h"
+#include "os/semaphores.h"
 #include "os/util.h"
 #include "p2test.h"
-#include "semaphores.h"
-#include "umps/cp0.h"
-#include "umps/libumps.h"
 
 /* Initialize the Pass Up Vector handlers to the given procedures until the
  * support level is implemented.
@@ -34,7 +35,7 @@ inline void init_puv()
 }
 
 inline void init_process()
-{   
+{
     pcb_t *p = spawn_process(false);
     RAMTOP(p->p_s.reg_sp);
     p->p_s.pc_epc = p->p_s.reg_t9 = (memaddr)test;

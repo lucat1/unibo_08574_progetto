@@ -9,10 +9,6 @@
 #ifndef PANDOS_NATIVE_SCHEDULER_H
 #define PANDOS_NATIVE_SCHEDULER_H
 
-#include "os/types.h"
-
-extern state_t *wait_state;
-
 extern void reset_timer();
 extern void reset_plt();
 

@@ -2,22 +2,27 @@
  * \file
  * \brief Schedule awating processes.
  *
+ * \author Alessandro Frau
  * \author Luca Tagliavini
  * \author Stefano Volpe
  * \date 20-03-2022
  */
 
-#include "os/scheduler.h"
+#include <umps/libumps.h>
+
 #include "os/asl.h"
 #include "os/list.h"
 #include "os/pcb.h"
+#include "os/scheduler.h"
 #include "os/util.h"
-#include "umps/libumps.h"
 
 int running_count;
 int blocked_count;
-list_head ready_queue_hi, ready_queue_lo;
+list_head ready_queue_lo, ready_queue_hi;
 pcb_t *active_process;
+pcb_t *last_process;
+cpu_t start_tod;
+state_t *wait_state;
 
 /* Always points to the pid of the most recently created process */
 static int pid_count = 0;
@@ -29,6 +34,7 @@ void init_scheduler()
     mk_empty_proc_q(&ready_queue_hi);
     mk_empty_proc_q(&ready_queue_lo);
     active_process = NULL;
+    STCK(start_tod);
 }
 
 pcb_t *spawn_process(bool priority)
@@ -58,19 +64,12 @@ inline void dequeue_process(pcb_t *p)
 /* TODO: Maybe optimize this solution */
 static inline void delete_progeny(pcb_t *p)
 {
+    pcb_t *child;
+
     if (p == NULL)
         return;
-    list_head *myqueue = NULL;
-    mk_empty_proc_q(myqueue);
-    insert_proc_q(myqueue, p);
-    while ((p = remove_proc_q(myqueue)) != NULL) {
-        pcb_t *child;
-        while ((child = remove_child(p)) != NULL) {
-            insert_proc_q(myqueue, child);
-        }
-        if (p != NULL)
-            kill_process(p);
-    }
+    while ((child = remove_child(p)) != NULL)
+        kill_process(child);
 }
 
 void kill_process(pcb_t *p)
@@ -97,42 +96,31 @@ void kill_process(pcb_t *p)
     }
 }
 
-void schedule()
+void schedule(pcb_t *pcb, bool enqueue)
 {
-    if (!list_empty(&ready_queue_hi))
+    pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
+    if (enqueue && pcb != NULL)
+        enqueue_process(pcb);
+
+    /* Process selection */
+    if (active_process == NULL && running_count == 0) {
+        pandos_kprintf("Nothing left, HALT()!");
+        HALT();
+    } else if (pcb != NULL && !enqueue) {
+        active_process = pcb;
+    } else if (!list_empty(&ready_queue_hi)) {
         active_process = remove_proc_q(&ready_queue_hi);
-    else if (!list_empty(&ready_queue_lo))
+    } else if (!list_empty(&ready_queue_lo)) {
         active_process = remove_proc_q(&ready_queue_lo);
-    else {
+    } else {
+        active_process = NULL;
+        scheduler_unlock();
         scheduler_wait();
     }
 
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )
      */
-    scheduler_takeover();
-}
-
-void schedule_mask(control_t ctrl)
-{
-    if (active_process != NULL) {
-        switch (ctrl) {
-            case control_preserve:
-                stdout("[-] PRESERVE\n");
-                LDST(&active_process->p_s);
-                break;
-            case control_block:
-                stdout("[-] BLOCK\n");
-                active_process = NULL;
-                schedule();
-                break;
-            case control_schedule:
-                stdout("[-] SCHEDULE\n");
-                enqueue_process(active_process);
-                schedule();
-                break;
-        }
-    } else {
-        schedule();
-    }
+    if (active_process)
+        scheduler_takeover();
 }
