@@ -77,7 +77,7 @@ static inline bool list_contains(const list_head *element,
     return list_search(element, head, exact_cmp) != NULL;
 }
 
-static inline void memcpy(void *dest, void *src, size_t len)
+static inline void pandos_memcpy(void *dest, void *src, size_t len)
 {
     char *s = (char *)src;
     char *d = (char *)dest;
@@ -92,7 +92,7 @@ static inline void memcpy(void *dest, void *src, size_t len)
  * \param[in] exp The exponent of the power.
  * \return Returns the result of the exponentiation.
  */
-int pow(int base, unsigned int exp);
+int pandos_pow(int base, unsigned int exp);
 
 /**
  * \brief Computes a string representation of a given integer.
@@ -151,36 +151,36 @@ typedef struct memory_target {
 extern memory_target_t kstdout, kstderr, kverb, kdebug;
 
 size_t pandos_kfprintf(memory_target_t *, const char *fmt, ...);
-/* TODO: remove */
-#define verbose(fmt, ...) pandos_kfprintf(&kverb, fmt, ##__VA_ARGS__)
-#define stdout(fmt, ...) pandos_kfprintf(&kstdout, fmt, ##__VA_ARGS__)
-#define stderr(fmt, ...) pandos_kfprintf(&kstderr, fmt, ##__VA_ARGS__)
 #define pandos_kprintf(fmt, ...) pandos_kfprintf(&kstdout, fmt, ##__VA_ARGS__)
-
 void pandos_kclear(memory_target_t *mem);
+#else
+#define pandos_kfprintf(...) ;
+#define pandos_kprintf(...) ;
 #endif
 
+#ifndef __x86_64__
+#define p pandos_kprintf
+#else
+#include <stdio.h>
+#define p printf
+#endif
 /**
  * \brief Prints the given list on standard output.
  * \param[in] head The list to be printed.
  */
 static inline void list_print(const list_head *head)
 {
-#ifdef __x86_64__
-#include <stdio.h>
-#define __print printf
-#else
-#define __print pandos_kprintf
-#endif
     const list_head *iter;
     if (head) {
         if (list_empty(head))
-            __print("empty list\n");
+            p("empty list\n");
         else
             for (iter = head->next; iter != head; iter = iter->next)
-                __print("%p = {%p, %p}\n", iter, iter->prev, iter->next);
+                p("%p = {%p, %p}\n", (void *)iter, (void *)iter->prev,
+                  (void *)iter->next);
     } else
-        __print("NULL list\n");
+        p("NULL list\n");
 }
+#undef p
 
 #endif /* PANDOS_OS_UTIL_H */

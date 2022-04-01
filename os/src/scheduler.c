@@ -72,6 +72,7 @@ static inline void delete_progeny(pcb_t *p)
         kill_process(child);
 }
 
+/* TODO return int, change if */
 void kill_process(pcb_t *p)
 {
     if (p != NULL) {
@@ -92,7 +93,7 @@ void kill_process(pcb_t *p)
         /* Set pcb as free */
         free_pcb(p);
     } else {
-        stderr("Can't kill NULL process\n");
+        pandos_kfprintf(&kstderr, "Can't kill NULL process\n");
     }
 }
 

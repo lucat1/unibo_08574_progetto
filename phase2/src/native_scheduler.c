@@ -16,12 +16,9 @@
 inline void reset_timer() { LDIT(IT_INTERVAL); }
 inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
 
-/* TODO: Do we need this? */
-static int waiting_count = 0;
-
 void scheduler_wait()
 {
-    stdout("-- WAIT(%d)\n", ++waiting_count);
+    pandos_kprintf("-- WAIT(%d)\n");
     active_process = NULL;
     reset_timer();
     setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
@@ -51,9 +48,9 @@ void scheduler_panic(const char *fmt, ...)
     pandos_kfprintf(&kstderr, "!! PANIC: ");
     va_list varg;
     va_start(varg, fmt);
-    __printf(&kstderr, memory_writer, fmt, varg);
+    __pandos_printf(&kstderr, memory_writer, fmt, varg);
     va_end();
-    __printf(&kstderr, memory_writer, "\n", NULL);
+    __pandos_printf(&kstderr, memory_writer, "\n", NULL);
     PANIC();
 }
 

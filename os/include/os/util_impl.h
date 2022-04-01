@@ -52,9 +52,9 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
  * \param[in] varg Additional parameters for the format string.
  * \return The number of characters actually printed.
  */
-size_t __printf(void *target,
-                size_t (*writer)(void *, const char *, size_t len),
-                const char *fmt, va_list varg);
+size_t __pandos_printf(void *target,
+                       size_t (*writer)(void *, const char *, size_t len),
+                       const char *fmt, va_list varg);
 
 /**
  * \brief Utility structure for streaming data to a string target and keeping

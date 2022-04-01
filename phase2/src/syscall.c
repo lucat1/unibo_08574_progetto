@@ -66,7 +66,7 @@ void remove(int p)
     }
 
     if (r == -1) {
-        stderr("Elemeto non trovato %d\n", p);
+        pandos_kfprintf(&kstderr, "Elemeto non trovato %d\n", p);
         return;
     }
 
@@ -150,7 +150,7 @@ static inline scheduler_control_t syscall_create_process()
         enqueue(c);
 
         c->p_support = p_support_struct;
-        memcpy(&c->p_s, p_s, sizeof(state_t));
+        pandos_memcpy(&c->p_s, p_s, sizeof(state_t));
         /* p_time is already set to 0 from the alloc_pcb call inside
          * spawn_process */
         /* p_sem_add is already set to NULL from the alloc_pcb call inside
@@ -291,7 +291,8 @@ inline scheduler_control_t syscall_handler()
         scheduler_panic("Syscall recieved while active_process was NULL");
     const int id = (int)active_process->p_s.reg_a0, pid = active_process->p_pid;
     if (id <= 0 && checkUserMode()) {
-        stderr("Negative syscalls cannot be called in user mode!\n");
+        pandos_kfprintf(&kstderr,
+                        "Negative syscalls cannot be called in user mode!\n");
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     switch (id) {

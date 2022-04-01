@@ -20,7 +20,7 @@ if(NOT DEFINED UMPS3_DIR_PREFIX)
     endif()
 endif()
 
-set(CFLAGS_LANG -pedantic -Werror -Wall -ffreestanding -ansi -std=gnu99)
+set(CFLAGS_LANG -pedantic -ffreestanding -Werror -Wall -ansi -std=gnu99)
 if(CROSS_COMPILE)
     # Compile the kernel binary to a bare metal executable with these flags
     set(CFLAGS_MIPS -mips1 -mabi=32 -mno-gpopt -EL -G0 -O0 -mno-abicalls -fno-pic -mfp32)

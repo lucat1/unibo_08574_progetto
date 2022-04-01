@@ -22,8 +22,8 @@ inline scheduler_control_t pass_up_or_die(memaddr type)
     if (active_process->p_support == NULL)
         kill_process(active_process);
     else {
-        memcpy(&active_process->p_support->sup_except_state[type],
-               (state_t *)BIOSDATAPAGE, sizeof(state_t));
+        pandos_memcpy(&active_process->p_support->sup_except_state[type],
+                      (state_t *)BIOSDATAPAGE, sizeof(state_t));
         context_t c;
         c.stack_ptr =
             active_process->p_support->sup_except_context[type].stack_ptr;
@@ -60,7 +60,8 @@ void exception_handler()
     STCK(now_tod);
     if (active_process != NULL) {
         active_process->p_time += (now_tod - start_tod);
-        memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE, sizeof(state_t));
+        pandos_memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE,
+                      sizeof(state_t));
     }
 
     switch (CAUSE_GET_EXCCODE(getCAUSE())) {
