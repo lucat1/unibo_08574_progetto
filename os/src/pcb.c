@@ -16,9 +16,9 @@ static pcb_t pcb_table[MAX_PROC];
 static list_head pcb_free;
 
 #ifdef PANDOS_TESTING
-pcb_t *get_pcb_table() { return pcb_table; }
-list_head *get_pcb_free() { return &pcb_free; }
+const list_head *get_pcb_free() { return &pcb_free; }
 #endif
+const pcb_t *get_pcb_table() { return pcb_table; }
 
 void init_pcbs()
 {
@@ -61,7 +61,7 @@ static inline pcb_t *null_pcb(pcb_t *t)
     /* New fields (phase2) */
     t->p_support = NULL;
     t->p_prio = 0;
-    t->p_pid = 0;
+    t->p_pid = -1;
     return t;
 }
 

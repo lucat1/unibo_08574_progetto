@@ -14,6 +14,7 @@
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/scheduler.h"
+#include "os/scheduler_impl.h"
 #include "os/util.h"
 
 int running_count;
@@ -25,26 +26,18 @@ cpu_t start_tod;
 state_t *wait_state;
 
 /* Always points to the pid of the most recently created process */
-static int pid_count = 0;
+static unsigned int recycle_count;
 
-void init_scheduler()
-{
-    running_count = 0;
-    blocked_count = 0;
-    mk_empty_proc_q(&ready_queue_hi);
-    mk_empty_proc_q(&ready_queue_lo);
-    active_process = NULL;
-    STCK(start_tod);
-}
+/* TODO: test that max_proc_bits is >= log_2(max_proc) */
 
-pcb_t *spawn_process(bool priority)
+inline pcb_t *spawn_process(bool priority)
 {
     pcb_t *p = alloc_pcb();
     if (p == NULL) {
         return NULL;
     }
-    p->p_pid =
-        ++pid_count; /* TODO: Change this with the actual implementation */
+    p->p_pid = (get_pcb_table() - p) | (recycle_count++ << MAX_PROC_BITS);
+    pandos_kprintf("spawned: %b\n", p->p_pid);
     p->p_prio = priority;
     ++running_count;
     enqueue_process(p);
@@ -72,8 +65,16 @@ static inline void delete_progeny(pcb_t *p)
         kill_process(child);
 }
 
+inline const pcb_t *find_process(pid_t pid)
+{
+    size_t i = mask_pid_id(pid);
+    if (i < 0 || i >= MAX_PROC || get_pcb_table()[i].p_pid != pid)
+        return NULL;
+    return get_pcb_table() + i;
+}
+
 /* TODO return int, change if */
-void kill_process(pcb_t *p)
+inline void kill_process(pcb_t *p)
 {
     if (p != NULL) {
         --running_count;
@@ -92,9 +93,21 @@ void kill_process(pcb_t *p)
 
         /* Set pcb as free */
         free_pcb(p);
+        p->p_pid = -1;
     } else {
         pandos_kfprintf(&kstderr, "Can't kill NULL process\n");
     }
+}
+
+extern void init_scheduler()
+{
+    running_count = 0;
+    blocked_count = 0;
+    mk_empty_proc_q(&ready_queue_hi);
+    mk_empty_proc_q(&ready_queue_lo);
+    active_process = NULL;
+    STCK(start_tod);
+    recycle_count = 0;
 }
 
 void schedule(pcb_t *pcb, bool enqueue)

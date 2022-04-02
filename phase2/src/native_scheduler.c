@@ -18,19 +18,17 @@ inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
 
 void scheduler_wait()
 {
-    pandos_kprintf("-- WAIT(%d)\n");
+    pandos_kprintf("-- WAIT\n");
     active_process = NULL;
     reset_timer();
     setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
               STATUS_TE);
-    // while (1)
     WAIT();
     schedule(NULL, false);
 }
 
 void scheduler_takeover()
 {
-    pandos_kprintf("entering takeover\n");
     pandos_kprintf(">> TAKEOVER(%d, %p)\n", active_process->p_pid,
                    active_process->p_s.pc_epc);
     /* Enable interrupts */

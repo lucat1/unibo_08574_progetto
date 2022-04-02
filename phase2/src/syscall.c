@@ -21,113 +21,7 @@
 
 #define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
-static pcb_t *inp_arr[MAX_PROC];
-static int Rear = -1;
-static int Front = -1;
-
-void enqueue(pcb_t *p)
-{
-    // verbose("Queue\n");
-    if (Rear == MAX_PROC) {
-
-    } else {
-        if (Front <= 0) {
-            Front = 0;
-            Rear = Rear + 1;
-            inp_arr[Rear] = p;
-        } else if (Front > 0) {
-            Front = Front - 1;
-            inp_arr[Front] = p;
-        }
-    }
-}
-
-void dequeue()
-{
-    // verbose("Dequeue\n");
-    if (Front == -1 || Front > Rear) {
-        return;
-    } else {
-        Front = Front + 1;
-    }
-}
-
-void remove(int p)
-{
-
-    // verbose("Remove %d\n", p);
-
-    int r = -1;
-    for (int i = Front; i < Rear; i++) {
-        if (inp_arr[i]->p_pid == p) {
-            r = i;
-            break;
-        }
-    }
-
-    if (r == -1) {
-        pandos_kfprintf(&kstderr, "Elemeto non trovato %d\n", p);
-        return;
-    }
-
-    for (int i = r; i < Rear; i++) {
-        inp_arr[i] = inp_arr[i + 1];
-    }
-    Rear = Rear - 1;
-}
-
-pcb_t *find(int p)
-{
-
-    // verbose("Cerco %d\n", p);
-    for (int i = Front; i < Rear; i++) {
-        if (inp_arr[i]->p_pid == p) {
-            return inp_arr[i];
-        }
-    }
-
-    return NULL;
-}
-
-pcb_t *findAndRemove(int p)
-{
-    pcb_t *t = find(p);
-    remove(p);
-    return t;
-}
-
 int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
-
-/* TODO: Optimize this implementation and change it when we change how the pid
- * are generated */
-static inline pcb_t *find_pcb_by_pid(list_head *list, int pid)
-{
-    pcb_t *pos;
-    list_for_each_entry(pos, list, p_list)
-    {
-        if (pos->p_pid == pid) {
-            return pos;
-        }
-    }
-    return NULL;
-}
-
-static inline pcb_t *search_all_lists(int pid)
-{
-    pcb_t *param;
-    if ((param = find_pcb_by_pid(&ready_queue_lo, pid)) != NULL) {
-        return param;
-    }
-    if ((param = find_pcb_by_pid(&ready_queue_hi, pid)) != NULL) {
-        return param;
-    }
-    if (pid == active_process->p_pid) {
-        return active_process;
-    }
-
-    /* TODO: Search on the semaphores !!!!!!!!!!!!!*/
-    return NULL;
-}
 
 /* NSYS1 */
 static inline scheduler_control_t syscall_create_process()
@@ -146,9 +40,6 @@ static inline scheduler_control_t syscall_create_process()
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
     } else {
-
-        enqueue(c);
-
         c->p_support = p_support_struct;
         pandos_memcpy(&c->p_s, p_s, sizeof(state_t));
         /* p_time is already set to 0 from the alloc_pcb call inside
@@ -170,18 +61,13 @@ static inline scheduler_control_t syscall_terminate_process()
     /* Generate an interrupt to signal the end of Current Process’s time q
        antum/slice. The PLT is reserved for this purpose. */
 
-    int pid = active_process->p_s.reg_a1;
-    pcb_t *p = NULL;
+    pid_t pid = (pid_t)active_process->p_s.reg_a1;
+    pcb_t *p = active_process;
 
-    /* if pid is 0 then the target is the caller's process */
-    if (pid == 0)
-        p = active_process;
-    else
-        p = findAndRemove(pid);
-
-    /* checks that process with requested pid exists */
-    if (p == NULL)
-        scheduler_panic("Could not find pid : %d", pid);
+    /* If pid is not 0 then the target must be searched */
+    if ((pid == 0 && active_process == NULL) ||
+        (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL))
+        scheduler_panic("Could not find process by pid: %p\n%b", pid, pid);
 
     /* calls scheduler */
     kill_process(p);
@@ -272,13 +158,12 @@ static inline scheduler_control_t syscall_get_support_data()
 /* NSYS9 */
 static inline scheduler_control_t syscall_get_process_id()
 {
-    int parent = (int)active_process->p_s.reg_a1;
+    bool parent = (bool)active_process->p_s.reg_a1;
     /* if parent then return parent pid, else return active process pid */
-    if (!parent) {
+    if (!parent)
         active_process->p_s.reg_v0 = active_process->p_pid;
-    } else {
+    else
         active_process->p_s.reg_v0 = active_process->p_parent->p_pid;
-    }
     return CONTROL_PRESERVE(active_process);
 }
 

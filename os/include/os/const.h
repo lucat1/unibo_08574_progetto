@@ -36,6 +36,7 @@
 /* Mikeyg Added constants */
 
 #define MAX_PROC 20
+#define MAX_PROC_BITS 5
 
 #define CREATEPROCESS -1
 #define TERMPROCESS -2

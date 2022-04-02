@@ -15,18 +15,19 @@
 #include "types.h"
 
 #ifdef PANDOS_TESTING
-/**
- * \brief Returns a pointer to the pcb table.
- * \return A pointer to the local static variable `pcb_table`.
- */
-pcb_t *get_pcb_table();
 
 /**
  * \brief Returns the list head for the list of free pcbs.
  * \return A pointer to the local static variable `pcb_free`.
  */
-list_head *get_pcb_free();
+const list_head *get_pcb_free();
 #endif
+
+/**
+ * \brief Returns a pointer to the pcb table.
+ * \return A pointer to the local static variable `pcb_table`.
+ */
+const pcb_t *get_pcb_table();
 
 /**
  * \brief Initializes the table of pcb, namely `pcb_table`, and adds each entry

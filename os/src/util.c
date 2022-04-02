@@ -3,6 +3,8 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
+#define LEN 32
+
 static char *end = "", *neg = "-";
 
 int pandos_pow(int base, unsigned int exp)
@@ -44,6 +46,17 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
     return wrote;
 }
 
+size_t __bin(void *target, size_t (*writer)(void *, const char *, size_t len),
+             int i)
+{
+    char buffer[LEN + 1];
+    for (int p = 0; p < LEN; ++p)
+        buffer[p] = i >> (LEN - p - 1) & ~(~0 << 1) ? '1' : '0';
+    buffer[LEN] = '0';
+    writer(target, buffer, LEN);
+    return LEN;
+}
+
 size_t __pandos_printf(void *target,
                        size_t (*writer)(void *, const char *, size_t len),
                        const char *fmt, va_list varg)
@@ -74,6 +87,9 @@ size_t __pandos_printf(void *target,
                         last_wrote = writer(target, "(nil)", 5);
                     break;
                 }
+                case 'b':
+                    last_wrote = __bin(target, writer, va_arg(varg, int));
+                    break;
                 case '%': {
                     char *str = "%";
                     last_wrote = writer(target, str, 1);

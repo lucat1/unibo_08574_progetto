@@ -152,21 +152,21 @@ scheduler_control_t interrupt_handler()
         pandos_interrupt("IL_IPI");
         return interrupt_ipi();
     } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
-        pandos_interrupt("LOCAL_TIMER\n");
+        pandos_interrupt("LOCAL_TIMER");
         return interrupt_local_timer();
     } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
-        pandos_interrupt("TIMER\n");
+        pandos_interrupt("TIMER");
         return interrupt_timer();
     } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
                CAUSE_IP_GET(cause, IL_ETHERNET) ||
                CAUSE_IP_GET(cause, IL_PRINTER)) {
-        pandos_interrupt("GENERIC\n");
+        pandos_interrupt("GENERIC");
         return interrupt_generic(cause);
     } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
-        pandos_interrupt("TERMINAL\n");
+        pandos_interrupt("TERMINAL");
         return interrupt_terminal();
     } else
-        pandos_interrupt("UNKNOWN\n");
+        pandos_interrupt("UNKNOWN");
 
     /* The newly unblocked pcb is enqueued back on the Ready Queue and control
      * is returned to the Current Process unless the newly unblocked process
