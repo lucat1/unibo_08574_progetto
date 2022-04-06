@@ -18,8 +18,7 @@
 
 #define pandos_interrupt(str) pandos_kprintf("<< INTERRUPT(" str ")\n")
 
-/*find_device_number() viene utilizzato per identificare il numero del device
- * che ha sollevato l'interrupt */
+/* finds device number of device that generates interrupt */
 int find_device_number(memaddr *bitmap)
 {
     int device_n = 0;
@@ -84,8 +83,12 @@ static inline scheduler_control_t interrupt_generic(int cause)
 
         pcb_t *p = V(&sem[i][devicenumber]);
         if (p == NULL) {
-            active_process->p_s.reg_v0 = status;
-            ctrl = CONTROL_RESCHEDULE;
+            if (active_process != NULL) {
+                    active_process->p_s.reg_v0 = status;
+                    ctrl = CONTROL_RESCHEDULE;
+                } else {
+                    scheduler_panic("No active process (Interrupt Generic)\n");
+                }
         } else {
             p->p_s.reg_v0 = status;
             ctrl = CONTROL_PRESERVE(active_process);
@@ -122,8 +125,12 @@ static inline scheduler_control_t interrupt_terminal()
             pcb_t *p = V(&sem[i][devicenumber]);
             scheduler_control_t ctrl;
             if (p == NULL) {
-                active_process->p_s.reg_v0 = status;
-                ctrl = CONTROL_RESCHEDULE;
+                if (active_process != NULL) {
+                    active_process->p_s.reg_v0 = status;
+                    ctrl = CONTROL_RESCHEDULE;
+                } else {
+                    scheduler_panic("No active process (Interrupt Terminal)\n");
+                }
             } else {
                 p->p_s.reg_v0 = status;
                 ctrl = CONTROL_PRESERVE(active_process);
