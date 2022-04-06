@@ -29,7 +29,7 @@ static inline scheduler_control_t syscall_create_process()
     /* parameters of syscall */
     if (active_process->p_s.reg_a1 == (int)NULL ||
         active_process->p_s.reg_a2 == (int)NULL) {
-        pass_up_or_die((memaddr)GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
@@ -66,7 +66,7 @@ static inline scheduler_control_t syscall_terminate_process()
        antum/slice. The PLT is reserved for this purpose. */
 
     if (active_process->p_s.reg_a1 == (int)NULL) {
-        pass_up_or_die((memaddr)GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     pid_t pid = (pid_t)active_process->p_s.reg_a1;
     pcb_t *p = active_process;
@@ -88,7 +88,7 @@ static inline scheduler_control_t syscall_terminate_process()
 static inline scheduler_control_t syscall_passeren()
 {
     if (active_process->p_s.reg_a1 == (int)NULL) {
-        pass_up_or_die((memaddr)GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     return P((int *)active_process->p_s.reg_a1, active_process);
 }
@@ -97,7 +97,7 @@ static inline scheduler_control_t syscall_passeren()
 static inline scheduler_control_t syscall_verhogen()
 {
     if (active_process->p_s.reg_a1 == (int)NULL) {
-        pass_up_or_die((memaddr)GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     return V((int *)active_process->p_s.reg_a1) != NULL
                ? CONTROL_PRESERVE(active_process)
@@ -110,7 +110,7 @@ static inline scheduler_control_t syscall_do_io()
 
     if (active_process->p_s.reg_a1 == (int)NULL ||
         active_process->p_s.reg_a2 == (int)NULL) {
-        pass_up_or_die((memaddr)GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
     pandos_kprintf("active_process %p\n", active_process);
@@ -121,7 +121,7 @@ static inline scheduler_control_t syscall_do_io()
     int *base = GET_DEVICE_FROM_COMMAND(cmd_addr);
     int i_n = 0, d_n = 0;
 
-    for (int i = 3; i < 3 + N_EXT_IL; i++) {
+    for (int i = IL_DISK; i < 3 + N_EXT_IL; i++) {
         for (int j = 0; j < N_DEV_PER_IL; j++) {
             int *a = (int *)DEV_REG_ADDR(i, j);
             if (a == base) {
@@ -193,7 +193,7 @@ static inline scheduler_control_t syscall_get_support_data()
 static inline scheduler_control_t syscall_get_process_id()
 {
     if (active_process->p_s.reg_a1 == (int)NULL) {
-        pass_up_or_die((memaddr)GENERALEXCEPT);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     bool parent = (bool)active_process->p_s.reg_a1;
     /* if parent then return parent pid, else return active process pid */
