@@ -3,15 +3,17 @@
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
+#define LEN 32
+
 static char *end = "", *neg = "-";
 
-int pow(int base, unsigned int exp)
+int pandos_pow(int base, unsigned int exp)
 {
     int tmp;
     if (exp == 0)
         return 1;
 
-    tmp = pow(base, exp / 2);
+    tmp = pandos_pow(base, exp / 2);
     return (exp % 2 == 0 ? 1 : base) * tmp * tmp;
 }
 
@@ -31,7 +33,7 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
     }
 
     int wr = 1;
-    for (exp = pow(base, digits - 1); digits && wr;
+    for (exp = pandos_pow(base, digits - 1); digits && wr;
          --digits, i %= exp, exp /= base, wrote += wr) {
         int r = (i / exp); /* remainder */
         char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
@@ -44,9 +46,20 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
     return wrote;
 }
 
-size_t __printf(void *target,
-                size_t (*writer)(void *, const char *, size_t len),
-                const char *fmt, va_list varg)
+size_t __bin(void *target, size_t (*writer)(void *, const char *, size_t len),
+             int i)
+{
+    char buffer[LEN + 1];
+    for (int p = 0; p < LEN; ++p)
+        buffer[p] = i >> (LEN - p - 1) & ~(~0 << 1) ? '1' : '0';
+    buffer[LEN] = '0';
+    writer(target, buffer, LEN);
+    return LEN;
+}
+
+size_t __pandos_printf(void *target,
+                       size_t (*writer)(void *, const char *, size_t len),
+                       const char *fmt, va_list varg)
 {
     size_t wr, last_wrote;
 
@@ -74,6 +87,9 @@ size_t __printf(void *target,
                         last_wrote = writer(target, "(nil)", 5);
                     break;
                 }
+                case 'b':
+                    last_wrote = __bin(target, writer, va_arg(varg, int));
+                    break;
                 case '%': {
                     char *str = "%";
                     last_wrote = writer(target, str, 1);
@@ -132,13 +148,13 @@ size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...)
     str_target_t w = {dest, len, 0};
     va_list varg;
     va_start(varg, fmt);
-    size_t res = __printf((void *)&w, str_writer, fmt, varg);
+    size_t res = __pandos_printf((void *)&w, str_writer, fmt, varg);
     va_end(varg);
     return res;
 }
 
 #ifndef __x86_64__
-static int term_putchar(termreg_t *term, char c)
+int term_putchar(termreg_t *term, char c)
 {
     devreg stat;
 
@@ -154,7 +170,7 @@ static int term_putchar(termreg_t *term, char c)
     return (stat == ST_TRANSMITTED) ? 0 : 2;
 }
 
-static size_t serial_writer(void *dest, const char *data, size_t len)
+size_t serial_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     termreg_t *term;
@@ -200,7 +216,7 @@ static void kputchar(memory_target_t *mem, char ch)
     }
 }
 
-static size_t memory_writer(void *dest, const char *data, size_t len)
+size_t memory_writer(void *dest, const char *data, size_t len)
 {
     char *it;
     memory_target_t *mem;
@@ -225,7 +241,7 @@ size_t pandos_fprintf(int fd, const char *fmt, ...)
     termreg_t *term = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, fd);
     va_list varg;
     va_start(varg, fmt);
-    size_t res = __printf(term, serial_writer, fmt, varg);
+    size_t res = __pandos_printf(term, serial_writer, fmt, varg);
     va_end(varg);
     return res;
 }
@@ -237,11 +253,10 @@ size_t pandos_kfprintf(memory_target_t *mem, const char *fmt, ...)
 {
     va_list varg;
     va_start(varg, fmt);
-    size_t res = __printf(mem, memory_writer, fmt, varg);
+    size_t res = __pandos_printf(mem, memory_writer, fmt, varg);
     va_end(varg);
     return res;
 }
-
 
 void pandos_kclear(memory_target_t *mem)
 {

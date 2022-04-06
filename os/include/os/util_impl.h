@@ -52,9 +52,9 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
  * \param[in] varg Additional parameters for the format string.
  * \return The number of characters actually printed.
  */
-size_t __printf(void *target,
-                size_t (*writer)(void *, const char *, size_t len),
-                const char *fmt, va_list varg);
+size_t __pandos_printf(void *target,
+                       size_t (*writer)(void *, const char *, size_t len),
+                       const char *fmt, va_list varg);
 
 /**
  * \brief Utility structure for streaming data to a string target and keeping
@@ -88,7 +88,7 @@ size_t str_writer(void *dest, const char *data, size_t len);
  * operation failed because the terminal was in an incorrect state, 2 if any
  * other kind of failure happened during the operation.
  */
-static int term_putchar(termreg_t *term, char c);
+extern int term_putchar(termreg_t *term, char c);
 
 /**
  * \brief Prints a string to the given serial terminal.
@@ -99,9 +99,9 @@ static int term_putchar(termreg_t *term, char c);
  * length of the string to be printed. \return Returns the number of written
  * characters.
  */
-static size_t serial_writer(void *dest, const char *data, size_t len);
+extern size_t serial_writer(void *dest, const char *data, size_t len);
 
-static size_t memory_writer(void *dest, const char *data, size_t len);
+extern size_t memory_writer(void *dest, const char *data, size_t len);
 #endif
 
 #endif /* PANDOS_UTIL_IMPL_H */

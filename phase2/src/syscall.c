@@ -9,53 +9,22 @@
  */
 
 #include "syscall.h"
-#include "interrupt_impl.h"
+#include "exception_impl.h"
+#include "interrupt.h"
 #include "os/asl.h"
 #include "os/scheduler.h"
+#include "os/semaphores.h"
 #include "os/util.h"
-#include "semaphores.h"
-#include "syscall.h"
-#include "../test/p2test.h"
 #include "umps/cp0.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 
-#define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(" n ", (%d))\n", pid)
+#define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
 
+int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
 
-/* TODO: Optimize this implementation and change it when we change how the pid
- * are generated */
-static inline pcb_t *find_pcb_by_pid(list_head *list, int pid)
-{
-    pcb_t *pos;
-    list_for_each_entry(pos, list, p_list)
-    {
-        if (pos->p_pid == pid) {
-            return pos;
-        }
-    }
-    return NULL;
-}
-
-static inline pcb_t *search_all_lists(int pid)
-{
-    pcb_t *param;
-    if ((param = find_pcb_by_pid(&ready_queue_lo, pid)) != NULL) {
-        return param;
-    }
-    if ((param = find_pcb_by_pid(&ready_queue_hi, pid)) != NULL) {
-        return param;
-    }
-    if (pid == active_process->p_pid) {
-        return active_process;
-    }
-
-    /* TODO: Search on the semaphores !!!!!!!!!!!!!*/
-    return NULL;
-}
-
-/* TODO: NSYS1 */
-static inline control_t syscall_create_process()
+/* NSYS1 */
+static inline scheduler_control_t syscall_create_process()
 {
     /* parameters of syscall */
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
@@ -72,7 +41,7 @@ static inline control_t syscall_create_process()
         active_process->p_s.reg_v0 = -1;
     } else {
         c->p_support = p_support_struct;
-        memcpy(&c->p_s, p_s, sizeof(state_t));
+        pandos_memcpy(&c->p_s, p_s, sizeof(state_t));
         /* p_time is already set to 0 from the alloc_pcb call inside
          * spawn_process */
         /* p_sem_add is already set to NULL from the alloc_pcb call inside
@@ -83,65 +52,49 @@ static inline control_t syscall_create_process()
         /* sets caller's v0 to new process pid */
         active_process->p_s.reg_v0 = c->p_pid;
     }
-
-    int pid = c->p_pid;
-    verbose("CREATED PROCESS (%d)\n", pid);
-    return control_preserve;
+    return CONTROL_PRESERVE(active_process);
 }
 
-/* TODO: finish testing NSYS2 */
-/* TODO : generate interrupt to stop time slice */
-static inline control_t syscall_terminate_process()
+/* NSYS2 */
+static inline scheduler_control_t syscall_terminate_process()
 {
     /* Generate an interrupt to signal the end of Current Process’s time q
        antum/slice. The PLT is reserved for this purpose. */
 
-    int pid = active_process->p_s.reg_a1;
-    pcb_t *p = NULL;
+    pid_t pid = (pid_t)active_process->p_s.reg_a1;
+    pcb_t *p = active_process;
 
-    /* if pid is 0 then the target is the caller's process */
-    if (pid == 0)
-        p = active_process;
-    else
-        p = search_all_lists(pid);
-
-    /* checks that process with requested pid exists */
-    if (p == NULL) {
-        pandos_kfprintf(&kstderr, "!! PANIC: Could not find pid:%d\n", pid);
-        PANIC();
-    }
+    /* If pid is not 0 then the target must be searched */
+    if ((pid == 0 && active_process == NULL) ||
+        (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL))
+        scheduler_panic("Could not find process by pid: %p\n%b", pid, pid);
 
     /* calls scheduler */
     kill_process(p);
 
     /* ??? */
     p->p_s.reg_v0 = pid;
-    verbose("TERMINATED PROCESS (%d)\n", p->p_pid);
-    return control_block;
+    return CONTROL_BLOCK;
 }
+
 /* NSYS3 */
-static inline control_t syscall_passeren()
+static inline scheduler_control_t syscall_passeren()
 {
-    /* TODO : Update the accumulated CPU time for the Current Process */
-    /* TODO : update blocked_count ??? */
-    int *sem = (int *)active_process->p_s.reg_a1;
-    pcb_t *p = P(sem, active_process);
-    if(sem == &sem_endp3) {
-        stdout("SEM P3 : (%d)\n", mask_P(p));
-        stdout("CONTAINS : %d\n", list_contains(p->p_prio ? &ready_queue_hi : &ready_queue_lo, &active_process->p_list));
-    }
-    return mask_P(p);
+    return P((int *)active_process->p_s.reg_a1, active_process);
 }
 
 /* NSYS4 */
-static inline control_t syscall_verhogen()
+static inline scheduler_control_t syscall_verhogen()
 {
-    return mask_V(V((int *)active_process->p_s.reg_a1));
+    return V((int *)active_process->p_s.reg_a1) != NULL
+               ? CONTROL_PRESERVE(active_process)
+               : CONTROL_RESCHEDULE;
 }
 
-/* TODO : NSYS5 */
-static inline control_t syscall_do_io()
+/* NSYS5 */
+static inline scheduler_control_t syscall_do_io()
 {
+    pandos_kprintf("active_process %p\n", active_process);
     int *cmd_addr = (int *)active_process->p_s.reg_a1;
     int cmd_value = (int)active_process->p_s.reg_a2;
 
@@ -162,21 +115,13 @@ static inline control_t syscall_do_io()
     }
 
     if (i_n == IL_TERMINAL) {
-        /* pandos_kfprintf(&kverb, "------ DO_IO_START -----\n");
-        pandos_kfprintf(&kverb, "addr: (%p)\n", cmd_addr);
-        pandos_kfprintf(&kverb, "start: (%p)\n", (int *)DEV_REG_START);
-        pandos_kfprintf(&kverb, "base: (%p)\n", base);
-        pandos_kfprintf(&kverb, "c: (%p)\n", TERMINAL_GET_COMMAND_TYPE(cmd_addr));
-        pandos_kfprintf(&kverb, "device: (%p, %p)\n", i_n, d_n);
-        pandos_kfprintf(&kverb, "------ DO_IO_END  -----\n"); */
 
         int *sem_kind, i = d_n;
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
             sem_kind = termw_semaphores;
         else
             sem_kind = termr_semaphores;
-        pcb_t *p = P(&sem_kind[i], active_process);
-        control_t ctrl = mask_P(p);
+        scheduler_control_t ctrl = P(&sem_kind[i], active_process);
 
         active_process->p_s.status |= STATUS_IM(i_n);
 
@@ -186,62 +131,55 @@ static inline control_t syscall_do_io()
         return ctrl;
     }
 
-    return control_preserve;
+    /* TODO: rly ? */
+    return CONTROL_PRESERVE(active_process);
 }
 
-/* TODO: test NSYS6 */
-static inline control_t syscall_get_cpu_time()
+/* NSYS6 */
+static inline scheduler_control_t syscall_get_cpu_time()
 {
     active_process->p_s.reg_v0 = active_process->p_time;
-    return control_schedule;
+    return CONTROL_RESCHEDULE;
 }
 
-/* TODO: test NSYS7 */
-static inline control_t syscall_wait_for_clock()
+/* NSYS7 */
+static inline scheduler_control_t syscall_wait_for_clock()
 {
-    pcb_t *p = P(&timer_semaphore, active_process);
-
-    return mask_P(p);
+    return P(&timer_semaphore, active_process);
 }
 
-/* TODO: test  NSYS8 */
-static inline control_t syscall_get_support_data()
+/* NSYS8 */
+static inline scheduler_control_t syscall_get_support_data()
 {
-    // active_process->p_s.reg_v0 = active_process->p_support;
-    return control_schedule;
+    active_process->p_s.reg_v0 = (int)active_process->p_support;
+    return CONTROL_RESCHEDULE;
 }
 
-/* TODO: test NSYS9 */
-static inline control_t syscall_get_process_id()
+/* NSYS9 */
+static inline scheduler_control_t syscall_get_process_id()
 {
-    int parent = (int)active_process->p_s.reg_a1;
+    bool parent = (bool)active_process->p_s.reg_a1;
     /* if parent then return parent pid, else return active process pid */
-    if (!parent) {
+    if (!parent)
         active_process->p_s.reg_v0 = active_process->p_pid;
-    } else {
+    else
         active_process->p_s.reg_v0 = active_process->p_parent->p_pid;
+    return CONTROL_PRESERVE(active_process);
+}
+
+/* NSYS10 */
+static inline scheduler_control_t syscall_yeld() { return CONTROL_RESCHEDULE; }
+
+inline scheduler_control_t syscall_handler()
+{
+    if (active_process == NULL)
+        scheduler_panic("Syscall recieved while active_process was NULL");
+    const int id = (int)active_process->p_s.reg_a0, pid = active_process->p_pid;
+    if (id <= 0 && checkUserMode()) {
+        pandos_kfprintf(&kstderr,
+                        "Negative syscalls cannot be called in user mode!\n");
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    return control_preserve;
-}
-
-/* TODO: test NSYS10 */
-static inline control_t syscall_yeld()
-{
-    /* TODO: The active process should note be in any queue so this action is
-     * useless I'm leaving it just in case I'm wrong.
-     */
-    dequeue_process(active_process);
-
-    /* TODO: Understand if this action should be made by the scheduler or by the
-     * syscall itself */
-    //enqueue_process(active_process);
-    return control_schedule;
-}
-
-inline control_t syscall_handler()
-{
-    const int id = (int)active_process->p_s.reg_a0;
-    int pid = active_process->p_pid;
     switch (id) {
         case CREATEPROCESS:
             pandos_syscall("CREATEPROCESS", pid);
@@ -284,10 +222,9 @@ inline control_t syscall_handler()
             return syscall_yeld();
             break;
         default:
-            pandos_kfprintf(&kstderr, "!! PANIC: Invalid syscall value %d", id);
-            PANIC();
+            return pass_up_or_die((memaddr)GENERALEXCEPT);
             break;
     }
 
-    return control_schedule;
+    return CONTROL_RESCHEDULE;
 }

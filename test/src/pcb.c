@@ -45,6 +45,8 @@ int main()
             for (int i = 0; i < STATE_GPR_LEN; i++) {
                 assert(pcb1->p_s.gpr[i] == 0);
             }
+            assert(pcb1->p_pid == -1);
+            assert(pcb1->p_prio == 0);
 
             /* useful for next testing */
             if (i == 4)

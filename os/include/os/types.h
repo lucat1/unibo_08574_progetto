@@ -47,6 +47,8 @@ typedef struct support_t {
     pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
 } support_t;
 
+typedef unsigned int pid_t;
+
 /* process table entry type */
 typedef struct pcb_t {
     /* process queue  */
@@ -71,7 +73,7 @@ typedef struct pcb_t {
     bool p_prio; /* NOTE: the type has been changed to bool */
 
     /* process id */
-    int p_pid;
+    pid_t p_pid; /* NOTE: the type has been changed to bool */
 } pcb_t;
 
 /* semaphore descriptor (SEMD) data structure */
@@ -84,5 +86,17 @@ typedef struct semd_t {
     /* Semaphore list */
     list_head s_link;
 } semd_t;
+
+typedef struct scheduler_control {
+    pcb_t *pcb;
+    bool enqueue;
+} scheduler_control_t;
+
+#define CONTROL_BLOCK                                                          \
+    (scheduler_control_t) { NULL, false }
+#define CONTROL_PRESERVE(p)                                                    \
+    (scheduler_control_t) { p, false }
+#define CONTROL_RESCHEDULE                                                     \
+    (scheduler_control_t) { active_process, true }
 
 #endif /* PANDOS_TYPES_H */

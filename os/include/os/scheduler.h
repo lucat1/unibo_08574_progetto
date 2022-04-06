@@ -1,5 +1,5 @@
 /**
- * \file schedule.h
+ * \file scheduler.h
  * \brief Interfaces for the process scheduler.
  *
  * \author Luca Tagliavini
@@ -14,23 +14,13 @@
 #include "os/pcb.h"
 #include "os/types.h"
 
-typedef enum control {
-    control_preserve, /* returns the control to the active_process */
-    control_block,   /* the active_process has been blocked, so the scheduler is
-                        called */
-    control_schedule /* the scheduler will be called including the
-                        active_process */
-} control_t;
-
-/* Number of started but not yet terminated processes. */
 extern int running_count;
-/* Number of processes softly blocked, that is they have been started but have
- * been blocked by either an I/O operation or a timer request. */
 extern int blocked_count;
-/* Tail pointer to a queue of processes that are in the ready state. */
 extern list_head ready_queue_lo, ready_queue_hi;
-/* Pointer to the currently running process */
 extern pcb_t *active_process;
+extern pcb_t *last_process;
+extern cpu_t start_tod;
+extern state_t *wait_state;
 
 /**
  * \brief Spawns a process and returns the allocated structure.
@@ -38,23 +28,25 @@ extern pcb_t *active_process;
  * 0 for low.
  * \return The allocated process descriptor.
  */
-pcb_t *spawn_process(bool priority);
+extern pcb_t *spawn_process(bool priority);
+extern void kill_process(pcb_t *p);
+
 /* adds a process to the appropriate queue, does not change the running_count.
  * That is up to the caller */
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
-void kill_process(pcb_t *p);
+extern const pcb_t *find_process(pid_t pid);
 
-extern void scheduler_panic(const char *msg);
-
+extern void scheduler_panic(const char *fmt, ...);
 extern void scheduler_wait();
+extern void scheduler_unlock();
+
 /* Externally implemented function to hand the processor over to a new
  * process
  */
 extern void scheduler_takeover();
 
-void init_scheduler();
-void schedule();
-void schedule_mask(control_t ctrl);
+extern void init_scheduler();
+void schedule(pcb_t *pcb, bool enqueue);
 
 #endif /* PANDOS_SCHEDULER_H */

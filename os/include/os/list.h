@@ -2,9 +2,8 @@
 #ifndef PANDOS_LIST_H
 #define PANDOS_LIST_H
 
-#ifndef NULL
-#define NULL ((void *)0xFFFFFFFF)
-#endif
+#include <umps/const.h>
+
 /* Define size_tt with the proper length on different architectures */
 #ifdef __x86_64__
 typedef unsigned long size_tt;
