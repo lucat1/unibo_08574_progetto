@@ -114,25 +114,39 @@ static inline scheduler_control_t syscall_do_io()
         }
     }
 
-    if (i_n == IL_TERMINAL) {
+    int *sem;
 
-        int *sem_kind, i = d_n;
+    if (i_n == IL_DISK) {
+        sem = disk_semaphores;
+    } else if (i_n == IL_FLASH) {
+        sem = tape_semaphores;
+    } 
+    else if (i_n == IL_ETHERNET) {
+        sem = ethernet_semaphores;
+    } 
+    else if (i_n == IL_PRINTER) {
+        sem = printer_semaphores;
+    } 
+    else if (i_n == IL_TERMINAL) {
+
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
-            sem_kind = termw_semaphores;
+            sem = termw_semaphores;
         else
-            sem_kind = termr_semaphores;
-        scheduler_control_t ctrl = P(&sem_kind[i], active_process);
-
-        active_process->p_s.status |= STATUS_IM(i_n);
-
-        /* Finally write the data */
-        *cmd_addr = cmd_value;
-
-        return ctrl;
+            sem = termr_semaphores;
     }
 
-    /* TODO: rly ? */
-    return CONTROL_PRESERVE(active_process);
+    if (sem[d_n] > 0) {
+        scheduler_panic("Device is already in use\n");
+    }
+
+    scheduler_control_t ctrl = P(&sem[d_n], active_process);
+
+    active_process->p_s.status |= STATUS_IM(i_n);
+
+    /* Finally write the data */
+    *cmd_addr = cmd_value;
+
+    return ctrl;
 }
 
 /* NSYS6 */

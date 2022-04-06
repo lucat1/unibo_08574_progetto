@@ -18,26 +18,6 @@
 
 #define pandos_interrupt(str) pandos_kprintf("<< INTERRUPT(" str ")\n")
 
-static inline memaddr *get_terminal_transm_status(int devicenumber)
-{
-    return (memaddr *)TERMINAL_TRANSM_STATUS(devicenumber);
-}
-
-static inline memaddr *get_terminal_recv_status(int devicenumber)
-{
-    return (memaddr *)TERMINAL_RECV_STATUS(devicenumber);
-}
-
-static inline memaddr *get_terminal_transm_command(int devicenumber)
-{
-    return (memaddr *)TERMINAL_TRANSM_COMMAND(devicenumber);
-}
-
-static inline memaddr *get_terminal_recv_command(int devicenumber)
-{
-    return (memaddr *)TERMINAL_RECV_COMMAND(devicenumber);
-}
-
 /*find_device_number() viene utilizzato per identificare il numero del device
  * che ha sollevato l'interrupt */
 int find_device_number(memaddr *bitmap)
@@ -53,10 +33,8 @@ int find_device_number(memaddr *bitmap)
 
 static inline scheduler_control_t interrupt_ipi()
 {
-    /* ACK_IPI; */
-    /* TODO */
+    /* Could be safetly ignored */
 
-    /* TODO: Change this return, I just guessed */
     return CONTROL_PRESERVE(active_process);
 }
 
@@ -92,51 +70,70 @@ static inline scheduler_control_t interrupt_generic(int cause)
     }
 
     int devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
+
+    int i = il - IL_DISK;
+
+    devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
+    dtpreg_t *dtp_reg = &device_regs->devreg[i][devicenumber].dtp;
+
+    int status = dtp_reg->status;
+
+    scheduler_control_t ctrl = CONTROL_BLOCK;
+
+    if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
+
+        pcb_t *p = V(&sem[i][devicenumber]);
+        if (p == NULL) {
+            active_process->p_s.reg_v0 = status;
+            ctrl = CONTROL_RESCHEDULE;
+        } else {
+            p->p_s.reg_v0 = status;
+            ctrl = CONTROL_PRESERVE(active_process);
+        }
+    } else {
+        scheduler_panic("Device is not installed!\n");
+    }
+
     /* ACK al device */
-    *DEVICE_COMMAND(il, devicenumber) = DEV_C_ACK;
-    return V(&sem[il - IL_DISK][devicenumber]) != NULL
-               ? CONTROL_PRESERVE(active_process)
-               : CONTROL_RESCHEDULE;
+    dtp_reg->command = DEV_C_ACK;
+    return ctrl;
 }
 
 static inline scheduler_control_t interrupt_terminal()
 {
 
-    /*Scandiamo la BITMAP_TERMINALDEVICE per identificare quale terminale ha
-     * sollevato l'interrupt*/
     int devicenumber =
         find_device_number((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
+    devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
+    termreg_t *term_reg =
+        &device_regs->devreg[IL_TERMINAL - IL_DISK][devicenumber].term;
+
     /* TODO : order is important, check */
-    memaddr *(*get_status[2])(int dev) = {get_terminal_transm_status,
-                                          get_terminal_recv_status};
-    memaddr *(*get_cmd[2])(int dev) = {get_terminal_transm_command,
-                                       get_terminal_recv_command};
+    memaddr(statuses[2]) = {term_reg->transm_status, term_reg->recv_status};
+    memaddr(*commands[2]) = {&term_reg->transm_command,
+                             &term_reg->recv_command};
     int *sem[] = {termw_semaphores, termr_semaphores};
 
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
     for (int i = 0; i < 2; ++i) {
-        int status = *get_status[i](devicenumber);
-        if ((status & TERMSTATMASK) != DEV_S_READY) {
+        int status = statuses[i];
+        if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
             pcb_t *p = V(&sem[i][devicenumber]);
-            // int pid = 0;
+            scheduler_control_t ctrl;
             if (p == NULL) {
                 active_process->p_s.reg_v0 = status;
-                // pid = active_process->p_pid;
+                ctrl = CONTROL_RESCHEDULE;
             } else {
                 p->p_s.reg_v0 = status;
-                // pid = p->p_pid;
-                // pandos_kfprintf(&kverb, "   SIZE (%p)\n",
-                // list_size(&ready_queue_lo));
+                ctrl = CONTROL_PRESERVE(active_process);
             }
 
-            // pandos_kfprintf(&kverb, "   STATUS of (%d) (%p)\n", pid,
-            // status);
-
-            *get_cmd[i](devicenumber) = DEV_C_ACK;
+            *commands[i] = DEV_C_ACK;
             /* do the first one */
-            return p != NULL ? CONTROL_PRESERVE(active_process)
-                             : CONTROL_RESCHEDULE;
+            return ctrl;
+        } else {
+            scheduler_panic("Device is not installed!\n");
         }
     }
     scheduler_panic("Terminal did not ACK\n");

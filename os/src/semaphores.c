@@ -29,7 +29,6 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
         *sem_addr = *sem_addr - 1;
         return CONTROL_RESCHEDULE;
     } else {
-        active_process++;
         /* NOTE: dequeing would be required here but in our use case this
          * procedure is always called with the formal argument p equal to
          * active_process which is assumed to be outside of any queue.

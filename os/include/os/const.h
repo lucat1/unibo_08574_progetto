@@ -61,7 +61,13 @@
 #define DEV_C_ACK 1 /* command common to all devices */
 
 #define TERMSTATMASK 0xFF
-#define DEV_S_READY 1 /* status common to all devices */
+#define DEV_STATUS_NOTINSTALLED 0
+#define DEV_STATUS_READY 1 /* status common to all devices */
+#define DEV_STATUS_ILLEGAL 2
+#define DEV_STATUS_BUSY 3
+#define DEV_STATUS_RERROR 4
+#define DEV_STATUS_WERROR 5
+#define DEV_STATUS_DMAERROR 6
 
 #define RECV_STATUS 0x0
 #define RECV_COMMAND 0x4
@@ -80,14 +86,6 @@
 #define DEVICE_COMMAND(il_n, dev_n)                                            \
     (memaddr *)(DEV_REG_ADDR(il_n, dev_n) + RECV_COMMAND)
 
-#define TERMINAL_RECV_STATUS(dev_n)                                            \
-    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + RECV_STATUS)
-#define TERMINAL_RECV_COMMAND(dev_n)                                           \
-    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + RECV_COMMAND)
-#define TERMINAL_TRANSM_STATUS(dev_n)                                          \
-    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + TRANSM_STATUS)
-#define TERMINAL_TRANSM_COMMAND(dev_n)                                         \
-    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + TRANSM_COMMAND)
 
 /* Returns 1 if the interrupt il_no is pending */
 #define CAUSE_IP_GET(cause, il_no) ((cause) & (1 << ((il_no) + 8)))
