@@ -13,7 +13,7 @@
 #include "os/const.h"
 #include "umps/arch.h"
 
-#define PID_ID_MASK (-1 >> (WORD_SIZE * 8 - MAX_PROC_BITS))
+#define PID_ID_MASK ((1 << MAX_PROC_BITS) - 1)
 #define RECYCLE_MASK (-1 << MAX_PROC_BITS)
 
 #define mask_pid_id(p) (p & PID_ID_MASK)

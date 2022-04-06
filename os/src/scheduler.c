@@ -36,8 +36,7 @@ inline pcb_t *spawn_process(bool priority)
     if (p == NULL) {
         return NULL;
     }
-    p->p_pid = (get_pcb_table() - p) | (recycle_count++ << MAX_PROC_BITS);
-    pandos_kprintf("spawned: %b\n", p->p_pid);
+    p->p_pid = (p - get_pcb_table()) | (recycle_count++ << MAX_PROC_BITS);
     p->p_prio = priority;
     ++running_count;
     enqueue_process(p);
