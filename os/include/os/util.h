@@ -12,9 +12,6 @@
 
 #include "os/list.h"
 #include "os/types.h"
-#ifdef PANDOS_TESTING
-#include <stdio.h>
-#endif
 
 /**
  * \brief Computes the size of a given list.
@@ -80,7 +77,7 @@ static inline bool list_contains(const list_head *element,
     return list_search(element, head, exact_cmp) != NULL;
 }
 
-static inline void memcpy(void *dest, void *src, size_t len)
+static inline void pandos_memcpy(void *dest, void *src, size_t len)
 {
     char *s = (char *)src;
     char *d = (char *)dest;
@@ -88,34 +85,14 @@ static inline void memcpy(void *dest, void *src, size_t len)
         d[i] = s[i];
 }
 
-#ifdef PANDOS_TESTING
 /**
- * \brief Prints the given list on standard output.
- * \param[in] head The list to be printed.
- */
-static inline void list_print(const list_head *head)
-{
-    const list_head *iter;
-    if (head) {
-        if (list_empty(head))
-            printf("empty list\n");
-        else
-            for (iter = head->next; iter != head; iter = iter->next)
-                printf("%p = {%p, %p}\n", iter, iter->prev, iter->next);
-    } else
-        printf("NULL list\n");
-}
-#endif
-
-/**
- * \brief Computes the mathematical power of an integer base with a non-negative
- * integer as the exponent. The time cost of a single call to this procedure is
- * log(exp).
- * \param[in] base The base of the power.
+ * \brief Computes the mathematical power of an integer base with a
+ * non-negative integer as the exponent. The time cost of a single call
+ * to this procedure is log(exp). \param[in] base The base of the power.
  * \param[in] exp The exponent of the power.
  * \return Returns the result of the exponentiation.
  */
-int pow(int base, unsigned int exp);
+int pandos_pow(int base, unsigned int exp);
 
 /**
  * \brief Computes a string representation of a given integer.
@@ -128,12 +105,11 @@ int pow(int base, unsigned int exp);
 size_t nitoa(int i, int base, char *dest, size_t len);
 
 /**
- * \brief Prints formatted text on a string buffer up to a certain number of
- * characters.
- * \param[out] dest The string buffer on which the formatted text is to be
- * printed. \param[in] len The maximum number of characters to be printed.
- * \param[in] fmt The format string to be printed.
- * \param[in] ... Additional parameters for the format string.
+ * \brief Prints formatted text on a string buffer up to a certain
+ * number of characters. \param[out] dest The string buffer on which the
+ * formatted text is to be printed. \param[in] len The maximum number of
+ * characters to be printed. \param[in] fmt The format string to be
+ * printed. \param[in] ... Additional parameters for the format string.
  * \return The number of characters actually printed.
  */
 size_t pandos_snprintf(char *dest, size_t len, const char *fmt, ...);
@@ -157,7 +133,54 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
  */
 #define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
 
-size_t pandos_kprintf(const char *fmt, ...);
+/* Number of lines in the memory print buffer */
+#define MEM_WRITER_LINES 64
+/* Length of a single line in characters */
+#define MEM_WRITER_LINE_LENGTH 40
+
+/**
+ * \brief Utility structure for streaming data to raw memory.
+ */
+typedef struct memory_target {
+    char buffer[MEM_WRITER_LINES][MEM_WRITER_LINE_LENGTH];
+    size_t line; /** Index of the next to write */
+    size_t ch;   /** Index of the current character in the current line */
+} memory_target_t;
+
+/* The variable to look for when debugging to check out the log */
+extern memory_target_t kstdout, kstderr, kverb, kdebug;
+
+size_t pandos_kfprintf(memory_target_t *, const char *fmt, ...);
+#define pandos_kprintf(fmt, ...) pandos_kfprintf(&kstdout, fmt, ##__VA_ARGS__)
+void pandos_kclear(memory_target_t *mem);
+#else
+#define pandos_kfprintf(...) ;
+#define pandos_kprintf(...) ;
 #endif
+
+#ifndef __x86_64__
+#define p pandos_kprintf
+#else
+#include <stdio.h>
+#define p printf
+#endif
+/**
+ * \brief Prints the given list on standard output.
+ * \param[in] head The list to be printed.
+ */
+static inline void list_print(const list_head *head)
+{
+    const list_head *iter;
+    if (head) {
+        if (list_empty(head))
+            p("empty list\n");
+        else
+            for (iter = head->next; iter != head; iter = iter->next)
+                p("%p = {%p, %p}\n", (void *)iter, (void *)iter->prev,
+                  (void *)iter->next);
+    } else
+        p("NULL list\n");
+}
+#undef p
 
 #endif /* PANDOS_OS_UTIL_H */

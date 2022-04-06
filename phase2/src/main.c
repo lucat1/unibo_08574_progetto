@@ -7,17 +7,18 @@
  * \date 17-03-2022
  */
 
-#include "init.h"
+#include <umps/libumps.h>
+
 #include "os/scheduler.h"
 #include "os/util.h"
-#include "umps/libumps.h"
+
+#include "init.h"
 
 int main(int argc)
 {
     init();
-    schedule();
+    schedule(NULL, false);
 
-    pandos_kprintf(":: scheduler quit. fatal\n");
-    PANIC();
+    scheduler_panic("Scheduler quit\n");
     return -1;
 }

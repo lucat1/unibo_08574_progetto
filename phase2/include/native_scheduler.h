@@ -10,5 +10,6 @@
 #define PANDOS_NATIVE_SCHEDULER_H
 
 extern void reset_timer();
+extern void reset_plt();
 
 #endif /* PANDOS_NATIVE_SCHEDULER_H */

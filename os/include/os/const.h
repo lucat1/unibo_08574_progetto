@@ -36,6 +36,7 @@
 /* Mikeyg Added constants */
 
 #define MAX_PROC 20
+#define MAX_PROC_BITS 5
 
 #define CREATEPROCESS -1
 #define TERMPROCESS -2
@@ -50,6 +51,46 @@
 
 #define PROCESS_PRIO_LOW 0
 #define PROCESS_PRIO_HIGH 1
+
+#define PLT_INTERVAL 5000
+#define IT_INTERVAL 100000
+#define TRANSLATE_TIME(t) t **(int *)(TIMESCALEADDR)
+
+/* TODO : palese rubati */
+/*Offset of register terminal */
+#define DEV_C_ACK 1 /* command common to all devices */
+
+#define TERMSTATMASK 0xFF
+#define DEV_S_READY 1 /* status common to all devices */
+
+#define RECV_STATUS 0x0
+#define RECV_COMMAND 0x4
+#define TRANSM_STATUS 0x8
+#define TRANSM_COMMAND 0xC
+
+#define GET_DEVICE_FROM_COMMAND(cmd)                                           \
+    (int *)(DEV_REG_SIZE * (((int)cmd - DEV_REG_START) / DEV_REG_SIZE) +       \
+            DEV_REG_START)
+#define TERMINAL_GET_COMMAND_TYPE(cmd) cmd - GET_DEVICE_FROM_COMMAND(cmd)
+#define TERMIMANL_CHECK_IS_WRITING(cmd) TERMINAL_GET_COMMAND_TYPE(cmd) == 3
+
+/*Devices registers addresses */
+#define DEVICE_STATUS(il_n, dev_n)                                             \
+    (memaddr *)(DEV_REG_ADDR(il_n, dev_n) + RECV_STATUS)
+#define DEVICE_COMMAND(il_n, dev_n)                                            \
+    (memaddr *)(DEV_REG_ADDR(il_n, dev_n) + RECV_COMMAND)
+
+#define TERMINAL_RECV_STATUS(dev_n)                                            \
+    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + RECV_STATUS)
+#define TERMINAL_RECV_COMMAND(dev_n)                                           \
+    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + RECV_COMMAND)
+#define TERMINAL_TRANSM_STATUS(dev_n)                                          \
+    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + TRANSM_STATUS)
+#define TERMINAL_TRANSM_COMMAND(dev_n)                                         \
+    (memaddr *)(DEV_REG_ADDR(IL_TERMINAL, dev_n) + TRANSM_COMMAND)
+
+/* Returns 1 if the interrupt il_no is pending */
+#define CAUSE_IP_GET(cause, il_no) ((cause) & (1 << ((il_no) + 8)))
 
 /* Status register constants */
 #define ALLOFF 0x00000000
