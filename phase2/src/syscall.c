@@ -202,7 +202,9 @@ static inline scheduler_control_t syscall_get_process_id()
     if (!parent)
         active_process->p_s.reg_v0 = active_process->p_pid;
     else
-        active_process->p_s.reg_v0 = active_process->p_parent->p_pid;
+        active_process->p_s.reg_v0 = (active_process->p_parent == NULL
+                                          ? 0
+                                          : active_process->p_parent->p_pid);
     return CONTROL_PRESERVE(active_process);
 }
 
