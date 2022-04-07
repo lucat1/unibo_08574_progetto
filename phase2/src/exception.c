@@ -19,21 +19,25 @@
 
 inline scheduler_control_t pass_up_or_die(memaddr type)
 {
-    if (active_process->p_support == NULL)
-        kill_process(active_process);
-    else {
-        pandos_memcpy(&active_process->p_support->sup_except_state[type],
-                      (state_t *)BIOSDATAPAGE, sizeof(state_t));
-        context_t c;
-        c.stack_ptr =
-            active_process->p_support->sup_except_context[type].stack_ptr;
-        c.status = active_process->p_support->sup_except_context[type].status;
-        c.pc = active_process->p_support->sup_except_context[type].pc;
+    if (active_process != NULL) {
+        if (active_process->p_support == NULL)
+            kill_process(active_process);
+        else {
+            pandos_memcpy(&active_process->p_support->sup_except_state[type],
+                          (state_t *)BIOSDATAPAGE, sizeof(state_t));
+            context_t c;
+            c.stack_ptr =
+                active_process->p_support->sup_except_context[type].stack_ptr;
+            c.status =
+                active_process->p_support->sup_except_context[type].status;
+            c.pc = active_process->p_support->sup_except_context[type].pc;
 
-        LDCXT(c.stack_ptr, c.status, c.pc);
+            LDCXT(c.stack_ptr, c.status, c.pc);
 
-        scheduler_panic("Control should have been handed off to the support "
-                        "layer by now\n");
+            scheduler_panic(
+                "Control should have been handed off to the support "
+                "layer by now\n");
+        }
     }
     return CONTROL_BLOCK;
 }
@@ -46,8 +50,12 @@ scheduler_control_t tbl_handler()
 
 static scheduler_control_t trap_handler()
 {
-    int pid = active_process != NULL ? active_process->p_pid : 0;
-    pandos_kprintf("<< TRAP (%d)\n", pid);
+    if (active_process != NULL) {
+        int pid = active_process != NULL ? active_process->p_pid : 0;
+        pandos_kprintf("<< TRAP (%d)\n", pid);
+    }else {
+        pandos_kprintf("<< TRAP\n");
+    }
 
     return pass_up_or_die((memaddr)GENERALEXCEPT);
 }

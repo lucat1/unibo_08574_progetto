@@ -27,6 +27,10 @@ int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
 static inline scheduler_control_t syscall_create_process()
 {
     /* parameters of syscall */
+    if (active_process->p_s.reg_a1 == (int)NULL ||
+        active_process->p_s.reg_a2 == (int)NULL) {
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
@@ -61,13 +65,16 @@ static inline scheduler_control_t syscall_terminate_process()
     /* Generate an interrupt to signal the end of Current Process’s time q
        antum/slice. The PLT is reserved for this purpose. */
 
-    pid_t pid = (pid_t)active_process->p_s.reg_a1;
+    if (active_process->p_s.reg_a1 == (int)NULL) {
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
+    pandos_pid_t pid = (pid_t)active_process->p_s.reg_a1;
     pcb_t *p = active_process;
 
     /* If pid is not 0 then the target must be searched */
     if ((pid == 0 && active_process == NULL) ||
         (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL))
-        scheduler_panic("Could not find process by pid: %p\n%b", pid, pid);
+        scheduler_panic("Could not find process by pid: %p\n", pid);
 
     /* calls scheduler */
     kill_process(p);
@@ -80,12 +87,18 @@ static inline scheduler_control_t syscall_terminate_process()
 /* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
+    if (active_process->p_s.reg_a1 == (int)NULL) {
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
     return P((int *)active_process->p_s.reg_a1, active_process);
 }
 
 /* NSYS4 */
 static inline scheduler_control_t syscall_verhogen()
 {
+    if (active_process->p_s.reg_a1 == (int)NULL) {
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
     return V((int *)active_process->p_s.reg_a1) != NULL
                ? CONTROL_PRESERVE(active_process)
                : CONTROL_RESCHEDULE;
@@ -94,6 +107,12 @@ static inline scheduler_control_t syscall_verhogen()
 /* NSYS5 */
 static inline scheduler_control_t syscall_do_io()
 {
+
+    if (active_process->p_s.reg_a1 == (int)NULL ||
+        active_process->p_s.reg_a2 == (int)NULL) {
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
+
     pandos_kprintf("active_process %p\n", active_process);
     int *cmd_addr = (int *)active_process->p_s.reg_a1;
     int cmd_value = (int)active_process->p_s.reg_a2;
@@ -102,7 +121,7 @@ static inline scheduler_control_t syscall_do_io()
     int *base = GET_DEVICE_FROM_COMMAND(cmd_addr);
     int i_n = 0, d_n = 0;
 
-    for (int i = 3; i < 3 + N_EXT_IL; i++) {
+    for (int i = IL_DISK; i < 3 + N_EXT_IL; i++) {
         for (int j = 0; j < N_DEV_PER_IL; j++) {
             int *a = (int *)DEV_REG_ADDR(i, j);
             if (a == base) {
@@ -114,25 +133,40 @@ static inline scheduler_control_t syscall_do_io()
         }
     }
 
-    if (i_n == IL_TERMINAL) {
+    int *sem;
 
-        int *sem_kind, i = d_n;
+    if (i_n == IL_DISK) {
+        sem = disk_semaphores;
+    } else if (i_n == IL_FLASH) {
+        sem = tape_semaphores;
+    } else if (i_n == IL_ETHERNET) {
+        sem = ethernet_semaphores;
+    } else if (i_n == IL_PRINTER) {
+        sem = printer_semaphores;
+    } else if (i_n == IL_TERMINAL) {
+
         if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
-            sem_kind = termw_semaphores;
+            sem = termw_semaphores;
         else
-            sem_kind = termr_semaphores;
-        scheduler_control_t ctrl = P(&sem_kind[i], active_process);
-
-        active_process->p_s.status |= STATUS_IM(i_n);
-
-        /* Finally write the data */
-        *cmd_addr = cmd_value;
-
-        return ctrl;
+            sem = termr_semaphores;
+    } else {
+        /* scheduler_panic("Interrupt line not handled\n"); */
+        pass_up_or_die(GENERALEXCEPT);
     }
 
-    /* TODO: rly ? */
-    return CONTROL_PRESERVE(active_process);
+    if (sem[d_n] > 0) {
+        /* scheduler_panic("Device is already in use\n"); */
+        pass_up_or_die(GENERALEXCEPT);
+    }
+
+    scheduler_control_t ctrl = P(&sem[d_n], active_process);
+
+    active_process->p_s.status |= STATUS_IM(i_n);
+
+    /* Finally write the data */
+    *cmd_addr = cmd_value;
+
+    return ctrl;
 }
 
 /* NSYS6 */
@@ -158,6 +192,9 @@ static inline scheduler_control_t syscall_get_support_data()
 /* NSYS9 */
 static inline scheduler_control_t syscall_get_process_id()
 {
+    if (active_process->p_s.reg_a1 == (int)NULL) {
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
     bool parent = (bool)active_process->p_s.reg_a1;
     /* if parent then return parent pid, else return active process pid */
     if (!parent)

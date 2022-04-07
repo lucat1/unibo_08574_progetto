@@ -64,7 +64,7 @@ static inline void delete_progeny(pcb_t *p)
         kill_process(child);
 }
 
-inline const pcb_t *find_process(pid_t pid)
+inline const pcb_t *find_process(pandos_pid_t pid)
 {
     size_t i = mask_pid_id(pid);
     if (i < 0 || i >= MAX_PROC || get_pcb_table()[i].p_pid != pid)
