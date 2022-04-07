@@ -68,7 +68,7 @@ static inline scheduler_control_t syscall_terminate_process()
     if (active_process->p_s.reg_a1 == (int)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    pid_t pid = (pid_t)active_process->p_s.reg_a1;
+    pandos_pid_t pid = (pid_t)active_process->p_s.reg_a1;
     pcb_t *p = active_process;
 
     /* If pid is not 0 then the target must be searched */
