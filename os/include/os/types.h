@@ -47,7 +47,7 @@ typedef struct support_t {
     pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
 } support_t;
 
-typedef unsigned int pandos_pid_t;
+typedef unsigned int pandos_pid_t; /* NOTE: the type has been changed to bool */
 
 /* process table entry type */
 typedef struct pcb_t {
