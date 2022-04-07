@@ -47,7 +47,7 @@ typedef struct support_t {
     pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
 } support_t;
 
-typedef unsigned int pid_t;
+typedef unsigned int pandos_pid_t;
 
 /* process table entry type */
 typedef struct pcb_t {
@@ -73,7 +73,7 @@ typedef struct pcb_t {
     bool p_prio; /* NOTE: the type has been changed to bool */
 
     /* process id */
-    pid_t p_pid; /* NOTE: the type has been changed to bool */
+    pandos_pid_t p_pid;
 } pcb_t;
 
 /* semaphore descriptor (SEMD) data structure */

@@ -35,7 +35,7 @@ extern void kill_process(pcb_t *p);
  * That is up to the caller */
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);
-extern const pcb_t *find_process(pid_t pid);
+extern const pcb_t *find_process(pandos_pid_t pid);
 
 extern void scheduler_panic(const char *fmt, ...);
 extern void scheduler_wait();
