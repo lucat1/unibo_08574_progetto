@@ -12,6 +12,8 @@
 #include "os/asl.h"
 #include "os/scheduler.h"
 
+#include "os/util.h"
+
 /* Semaphores for each device */
 int disk_semaphores[DEVPERINT];
 int tape_semaphores[DEVPERINT];
@@ -21,7 +23,7 @@ int termr_semaphores[DEVPERINT];
 int termw_semaphores[DEVPERINT];
 int timer_semaphore;
 
-inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
+inline scheduler_control_t _P(int *const sem_addr, pcb_t *const p)
 {
     int r;
 
@@ -41,7 +43,7 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
     }
 }
 
-inline pcb_t *V(int *const sem_addr)
+inline pcb_t *_V(int *const sem_addr)
 {
     pcb_t *p = remove_blocked(sem_addr);
     if (p == NULL) /* means that sem_proc is empty */
@@ -50,6 +52,41 @@ inline pcb_t *V(int *const sem_addr)
         enqueue_process(p);
 
     return p;
+}
+
+inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
+{
+    int r;
+    //pcb_t *t;
+
+    if (*sem_addr == 0) {
+        if ((r = insert_blocked(sem_addr, p)) > 0)
+            scheduler_panic("PASSEREN failed\n");
+        return CONTROL_BLOCK;
+    }
+    /* TODO : big problem here !!! */
+    // else if (!is_ready_queue_empty()) {
+    //     return CONTROL_RESCHEDULE;
+    // } 
+    else {
+        *sem_addr = *sem_addr - 1;
+        return CONTROL_RESCHEDULE;
+    }
+}
+
+inline pcb_t *V(int *const sem_addr)
+{
+    pcb_t *p;
+
+    if (*sem_addr == 1) {
+        return NULL;
+    } else if ((p = remove_blocked(sem_addr)) != NULL) {
+        enqueue_process(p);
+        return p;
+    } else {
+        *sem_addr = *sem_addr + 1;
+        return NULL;
+    }
 }
 
 inline void init_semaphores()

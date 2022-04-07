@@ -57,3 +57,19 @@ void scheduler_unlock()
     setSTATUS((getSTATUS() | STATUS_IEc | STATUS_IM_MASK | STATUS_TE) ^
               STATUS_TE);
 }
+
+pcb_t *get_first_pcb_ready()
+{
+    pcb_t *p = NULL;
+    if (!list_empty(&ready_queue_hi)) {
+        p = remove_proc_q(&ready_queue_hi);
+    } else if (!list_empty(&ready_queue_lo)) {
+        p = remove_proc_q(&ready_queue_lo);
+    }
+    return p;
+}
+
+bool is_ready_queue_empty()
+{
+    return list_empty(&ready_queue_lo) && list_empty(&ready_queue_hi);
+}

@@ -45,6 +45,8 @@ extern void scheduler_unlock();
  * process
  */
 extern void scheduler_takeover();
+extern bool is_ready_queue_empty();
+extern pcb_t *get_first_pcb_ready();
 
 extern void init_scheduler();
 void schedule(pcb_t *pcb, bool enqueue);
