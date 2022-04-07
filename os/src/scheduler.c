@@ -109,6 +109,19 @@ extern void init_scheduler()
     recycle_count = 0;
 }
 
+inline void scheduler_on_empty_queues()
+{
+    if (active_process == NULL && !running_count) {
+        pandos_kprintf("Nothing left, HALT()!");
+        HALT();
+    } else if (active_process == NULL || blocked_count) {
+        active_process = NULL;
+        scheduler_unlock();
+        scheduler_wait();
+    } else
+        scheduler_panic("Deadlock detected.\n");
+}
+
 void schedule(pcb_t *pcb, bool enqueue)
 {
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
@@ -116,20 +129,14 @@ void schedule(pcb_t *pcb, bool enqueue)
         enqueue_process(pcb);
 
     /* Process selection */
-    if (active_process == NULL && running_count == 0) {
-        pandos_kprintf("Nothing left, HALT()!");
-        HALT();
-    } else if (pcb != NULL && !enqueue) {
+    if (pcb != NULL && !enqueue)
         active_process = pcb;
-    } else if (!list_empty(&ready_queue_hi)) {
+    else if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
-    } else if (!list_empty(&ready_queue_lo)) {
+    else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
-    } else {
-        active_process = NULL;
-        scheduler_unlock();
-        scheduler_wait();
-    }
+    else
+        scheduler_on_empty_queues();
 
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )

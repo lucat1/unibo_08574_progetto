@@ -47,6 +47,7 @@ extern void scheduler_unlock();
 extern void scheduler_takeover();
 
 extern void init_scheduler();
+extern void scheduler_on_empty_queues();
 void schedule(pcb_t *pcb, bool enqueue);
 
 #endif /* PANDOS_SCHEDULER_H */
