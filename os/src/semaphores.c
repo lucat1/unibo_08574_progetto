@@ -57,24 +57,25 @@ inline pcb_t *_V(int *const sem_addr)
 inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
 {
     int r;
-    //pcb_t *t;
+    // pcb_t *t;
 
     if (*sem_addr == 0) {
-        pandos_kfprintf(&kstdout, "P block (%p) %d\n", sem_addr, p->p_pid);
         if ((r = insert_blocked(sem_addr, p)) > 0)
             scheduler_panic("PASSEREN failed\n");
+        /* TODO : mhhhhh weirdo */
         blocked_count++;
         return CONTROL_BLOCK;
     }
     // /* TODO : big problem here !!! */
     // else if (!is_ready_queue_empty()) {
-    //     pandos_kfprintf(&kstdout, "P reschedule (%p) %d - %d\n", sem_addr,  p->p_pid, *sem_addr);
+    //     pandos_kfprintf(&kstdout, "P reschedule (%p) %d - %d\n", sem_addr,
+    //     p->p_pid, *sem_addr);
     //     //enqueue_process(p);
     //     return CONTROL_BLOCK;
-    // } 
+    // }
     else {
         *sem_addr = *sem_addr - 1;
-        pandos_kfprintf(&kstdout, "P decr (%p) %d - %d\n", sem_addr,  p->p_pid);
+        pandos_kfprintf(&kstdout, "P decr (%p) %d - %d\n", sem_addr, p->p_pid);
         return CONTROL_RESCHEDULE;
     }
 }
@@ -84,20 +85,23 @@ inline pcb_t *V(int *const sem_addr)
     pcb_t *p;
 
     if (*sem_addr == 1) {
+        /* nothing to do */
         return NULL;
     } else if ((p = remove_blocked(sem_addr)) != NULL) {
         enqueue_process(p);
         return p;
     } else {
         *sem_addr = *sem_addr + 1;
-        blocked_count--;
+        /* TODO : mhhhhh weirdo */
+        if (blocked_count > 0)
+            blocked_count--;
+        pandos_kfprintf(&kstdout, "V sblock (%p)\n", sem_addr);
         return active_process;
     }
 }
 
 inline void init_semaphores()
 {
-
     /* Semaphores */
     for (int i = 0; i < DEVPERINT; ++i)
         disk_semaphores[i] = tape_semaphores[i] = ethernet_semaphores[i] =

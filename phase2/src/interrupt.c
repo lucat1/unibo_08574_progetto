@@ -48,12 +48,12 @@ static inline scheduler_control_t interrupt_timer()
 {
     reset_timer();
     pcb_t *p;
-    // while ((p = V(&timer_semaphore)) != NULL)
-    //     ;
-    while((p = remove_blocked(&timer_semaphore)) != NULL)
-    {
-        enqueue_process(p);
-    }
+    while ((p = V(&timer_semaphore)) != NULL)
+        ;
+    // while((p = remove_blocked(&timer_semaphore)) != NULL)
+    // {
+    //     enqueue_process(p);
+    // }
     timer_semaphore = 0;
     return CONTROL_PRESERVE(active_process);
 }
