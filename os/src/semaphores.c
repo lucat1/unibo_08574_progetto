@@ -60,16 +60,21 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
     //pcb_t *t;
 
     if (*sem_addr == 0) {
+        pandos_kfprintf(&kstdout, "P block (%p) %d\n", sem_addr, p->p_pid);
         if ((r = insert_blocked(sem_addr, p)) > 0)
             scheduler_panic("PASSEREN failed\n");
+        blocked_count++;
         return CONTROL_BLOCK;
     }
-    /* TODO : big problem here !!! */
+    // /* TODO : big problem here !!! */
     // else if (!is_ready_queue_empty()) {
-    //     return CONTROL_RESCHEDULE;
+    //     pandos_kfprintf(&kstdout, "P reschedule (%p) %d - %d\n", sem_addr,  p->p_pid, *sem_addr);
+    //     //enqueue_process(p);
+    //     return CONTROL_BLOCK;
     // } 
     else {
         *sem_addr = *sem_addr - 1;
+        pandos_kfprintf(&kstdout, "P decr (%p) %d - %d\n", sem_addr,  p->p_pid);
         return CONTROL_RESCHEDULE;
     }
 }
@@ -85,7 +90,8 @@ inline pcb_t *V(int *const sem_addr)
         return p;
     } else {
         *sem_addr = *sem_addr + 1;
-        return NULL;
+        blocked_count--;
+        return active_process;
     }
 }
 

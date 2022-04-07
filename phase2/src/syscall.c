@@ -68,7 +68,7 @@ static inline scheduler_control_t syscall_terminate_process()
     if (active_process->p_s.reg_a1 == (int)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    pandos_pid_t pid = (pid_t)active_process->p_s.reg_a1;
+    pandos_pid_t pid = active_process->p_s.reg_a1;
     pcb_t *p = active_process;
 
     /* If pid is not 0 then the target must be searched */
@@ -99,9 +99,11 @@ static inline scheduler_control_t syscall_verhogen()
     if (active_process->p_s.reg_a1 == (int)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    return V((int *)active_process->p_s.reg_a1) != NULL
-               ? CONTROL_PRESERVE(active_process)
-               : CONTROL_RESCHEDULE;
+    V((int *)active_process->p_s.reg_a1);
+    // return V((int *)active_process->p_s.reg_a1) != NULL
+    //            ? CONTROL_PRESERVE(active_process)
+    //            : CONTROL_RESCHEDULE;
+    return CONTROL_RESCHEDULE;
 }
 
 /* NSYS5 */

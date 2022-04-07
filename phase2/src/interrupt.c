@@ -87,7 +87,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
     if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
 
         pcb_t *p = V(&sem[i][devicenumber]);
-        if (p == NULL) {
+        if (p == NULL || p == active_process) {
             if (active_process != NULL) {
                     active_process->p_s.reg_v0 = status;
                     ctrl = CONTROL_RESCHEDULE;
@@ -129,7 +129,7 @@ static inline scheduler_control_t interrupt_terminal()
         if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
             pcb_t *p = V(&sem[i][devicenumber]);
             scheduler_control_t ctrl;
-            if (p == NULL) {
+            if (p == NULL || p == active_process) {
                 if (active_process != NULL) {
                     active_process->p_s.reg_v0 = status;
                     ctrl = CONTROL_RESCHEDULE;

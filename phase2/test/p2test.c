@@ -115,15 +115,18 @@ void print(char *msg)
     devregtr status;
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
+    pandos_kfprintf(&kstderr, "P sem_term_mut : %s\n", msg);
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
+            pandos_kfprintf(&kstderr, "Print panic \n");
             PANIC();
         }
         s++;
     }
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
+    pandos_kfprintf(&kstderr, "V sem_term_mut %s\n", msg);
 }
 
 /* TLB-Refill Handler */
@@ -425,6 +428,7 @@ void p2()
 /* p3 -- clock semaphore test process */
 void p3()
 {
+        print("p3 start\n");
     cpu_t time1, time2;
     // cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int i;
