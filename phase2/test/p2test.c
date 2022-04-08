@@ -15,12 +15,8 @@
  *		Modified by Michael Goldweber on June 19, 2020
  */
 
-#include "p2test.h"
 #include "os/const.h"
 #include "os/types.h"
-#include "os/util.h"
-#include "umps/const.h"
-#include "umps/cp0.h"
 #include <umps/libumps.h>
 
 typedef unsigned int devregtr;
@@ -115,18 +111,15 @@ void print(char *msg)
     devregtr status;
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    pandos_kfprintf(&kstderr, "P sem_term_mut : %s\n", msg);
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status = SYSCALL(DOIO, (int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            pandos_kfprintf(&kstderr, "Print panic \n");
             PANIC();
         }
         s++;
     }
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
-    pandos_kfprintf(&kstderr, "V sem_term_mut %s\n", msg);
 }
 
 /* TLB-Refill Handler */
@@ -141,50 +134,17 @@ void uTLB_RefillHandler()
     LDST((state_t *)0x0FFFF000);
 }
 
-void debugTerminate()
-{
-    print("[x] DEBUG TERMINATE\n");
-    /* now for a more rigorous check of process termination */
-    for (p8inc = 0; p8inc < 4; p8inc++) {
-        /* Reset semaphores */
-        sem_blkp8 = 0;
-        sem_endp8 = 0;
-        for (int i = 0; i < NOLEAVES; i++) {
-            sem_endcreate[i] = 0;
-        }
-
-        p8pid = SYSCALL(CREATEPROCESS, (int)&p8rootstate, PROCESS_PRIO_LOW,
-                        (int)NULL);
-
-        SYSCALL(PASSEREN, (int)&sem_endp8, 0, 0);
-    }
-
-    print("p1 finishes OK -- TTFN\n");
-    *((memaddr *)BADADDR) = 0; /* terminate p1 */
-}
-
 /*********************************************************************/
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test()
 {
+    SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    // SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
-
-    print("xgampx and taken were here :3\n");
     print("p1 v(sem_testsem)\n");
 
-    /*
-    stdout("WAITING\n");
-    LDIT(1000000);
-    WAIT();
-    stdout("END WAITING\n");
-    stdout("WAITING\n");
-    LDIT(1000000);
-    WAIT();
-    stdout("END WAITING\n");
-    */
+    /* set up states of the other processes */
 
     STST(&hp_p1state);
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
@@ -281,7 +241,6 @@ void test()
                     (int)NULL); /* start p2     */
 
     print("p2 was started\n");
-    print("p2\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
@@ -295,8 +254,7 @@ void test()
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW,
                     (int)NULL); /* start p3     */
 
-    // print("p3 is started\n");
-    print("p3\n");
+    print("p3 is started\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
@@ -330,11 +288,8 @@ void test()
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
     print("p1 knows p5 ended\n");
-    // verbose("HO QUASI FINITO %d\n", sem_blkp4 + 1);
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)		*/
-
-    // verbose("HO QUASI FINITO 2\n");
 
     /* now for a more rigorous check of process termination */
     for (p8inc = 0; p8inc < 4; p8inc++) {
@@ -428,9 +383,8 @@ void p2()
 /* p3 -- clock semaphore test process */
 void p3()
 {
-        print("p3 start\n");
     cpu_t time1, time2;
-    // cpu_t cpu_t1, cpu_t2; /* cpu time used       */
+    cpu_t cpu_t1, cpu_t2; /* cpu time used       */
     int i;
 
     time1 = 0;
@@ -447,19 +401,19 @@ void p3()
 
     /* now let's check to see if we're really charge for CPU
        time correctly */
-    // cpu_t1 = SYSCALL(GETTIME, 0, 0, 0);
+    cpu_t1 = SYSCALL(GETTIME, 0, 0, 0);
 
     for (i = 0; i < CLOCKLOOP; i++) {
         SYSCALL(CLOCKWAIT, 0, 0, 0);
     }
 
-    // cpu_t2 = SYSCALL(GETTIME, 0, 0, 0);
+    cpu_t2 = SYSCALL(GETTIME, 0, 0, 0);
 
-    /* if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (*((cpu_t *)TIMESCALEADDR)))) {
+    if (cpu_t2 - cpu_t1 < (MINCLOCKLOOP / (*((cpu_t *)TIMESCALEADDR)))) {
         print("error: p3 - CPU time incorrectly maintained\n");
     } else {
         print("p3 - CPU time correctly maintained\n");
-    } */
+    }
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
     if (pid != p3pid) {
@@ -499,8 +453,6 @@ void p4()
     SYSCALL(VERHOGEN, (int)&sem_synp4, 0, 0); /* V(sem_synp4)     */
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)     */
-
-    // verbose("Incarnazione sbloccata %d\n", p4inc + 1);
 
     SYSCALL(PASSEREN, (int)&sem_synp4, 0, 0); /* P(sem_synp4)     */
 
@@ -614,7 +566,6 @@ void p5sys()
     pFiveSupport.sup_except_state[GENERALEXCEPT].pc_epc =
         pFiveSupport.sup_except_state[GENERALEXCEPT].pc_epc +
         4; /*	 to avoid SYS looping */
-
     LDST(&(pFiveSupport.sup_except_state[GENERALEXCEPT]));
 }
 
@@ -706,8 +657,6 @@ void p8root()
 
     SYSCALL(CREATEPROCESS, (int)&child2state, PROCESS_PRIO_LOW, (int)NULL);
 
-    // verbose("QUA\n");
-
     for (grandchild = 0; grandchild < NOLEAVES; grandchild++) {
         SYSCALL(PASSEREN, (int)&sem_endcreate[grandchild], 0, 0);
     }
@@ -722,7 +671,6 @@ void p8root()
 void child1()
 {
     print("child1 starts\n");
-    // verbose("child1\n");
 
     int ppid = SYSCALL(GETPROCESSID, 1, 0, 0);
     if (ppid != p8pid) {
@@ -734,7 +682,6 @@ void child1()
 
     SYSCALL(CREATEPROCESS, (int)&gchild2state, PROCESS_PRIO_LOW, (int)NULL);
 
-    // verbose("QUA child1\n");
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
 }
 
