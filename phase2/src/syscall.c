@@ -76,6 +76,11 @@ static inline scheduler_control_t syscall_terminate_process()
         (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL))
         scheduler_panic("Could not find process by pid: %p\n", pid);
 
+    /* If the process was blocked on a semaphore, decrease the blocked count */
+    if(p->p_sem_add != NULL){
+        blocked_count--;
+    }
+
     /* calls scheduler */
     kill_process(p);
 

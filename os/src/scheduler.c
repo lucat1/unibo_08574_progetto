@@ -114,6 +114,9 @@ inline void scheduler_on_empty_queues()
     if (active_process == NULL && !running_count) {
         pandos_kprintf("Nothing left, HALT()!");
         HALT();
+                /* TODO: Can the active process be null and blocked count be 0? 
+                 * I think that active_process == NULL is redundant. 
+                 **/
     } else if (active_process == NULL || blocked_count) {
         active_process = NULL;
         scheduler_unlock();
