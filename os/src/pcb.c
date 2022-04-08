@@ -161,7 +161,7 @@ pcb_t *remove_child(pcb_t *p)
 
 pcb_t *out_child(pcb_t *p)
 {
-    /* Note : list_contains could be removed if performance is required */
+    /* Note: list_contains could be removed if performance is required */
     if (p == NULL || p->p_parent == NULL || list_empty(&p->p_parent->p_child) ||
         !list_contains(&p->p_sib, &p->p_parent->p_child))
         return NULL;

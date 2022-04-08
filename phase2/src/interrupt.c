@@ -9,10 +9,10 @@
  */
 #include "interrupt.h"
 #include "native_scheduler.h"
+#include "os/asl.h"
 #include "os/const.h"
 #include "os/scheduler.h"
 #include "os/semaphores.h"
-#include "os/asl.h"
 #include "os/util.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
@@ -50,8 +50,7 @@ static inline scheduler_control_t interrupt_timer()
     pcb_t *p;
     // while ((p = V(&timer_semaphore)) != NULL)
     //     ;
-    while((p = remove_blocked(&timer_semaphore)) != NULL)
-    {
+    while ((p = remove_blocked(&timer_semaphore)) != NULL) {
         enqueue_process(p);
     }
     timer_semaphore = 0;
@@ -67,7 +66,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
                   printer_semaphores};
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
-        if (CAUSE_IP_GET(cause, i)) {
+        if (IL_ACTIVE(cause, i)) {
             il = i;
             break;
         }
@@ -89,11 +88,11 @@ static inline scheduler_control_t interrupt_generic(int cause)
         pcb_t *p = V(&sem[i][devicenumber]);
         if (p == NULL || p == active_process) {
             if (active_process != NULL) {
-                    active_process->p_s.reg_v0 = status;
-                    ctrl = CONTROL_RESCHEDULE;
-                } else {
-                    scheduler_panic("No active process (Interrupt Generic)\n");
-                }
+                active_process->p_s.reg_v0 = status;
+                ctrl = CONTROL_RESCHEDULE;
+            } else {
+                scheduler_panic("No active process (Interrupt Generic)\n");
+            }
         } else {
             p->p_s.reg_v0 = status;
             ctrl = CONTROL_PRESERVE(active_process);
@@ -157,21 +156,20 @@ scheduler_control_t interrupt_handler()
 {
     int cause = getCAUSE();
 
-    if (CAUSE_IP_GET(cause, IL_IPI)) {
+    if (IL_ACTIVE(cause, IL_IPI)) {
         pandos_interrupt("IL_IPI");
         return interrupt_ipi();
-    } else if (CAUSE_IP_GET(cause, IL_CPUTIMER)) {
+    } else if (IL_ACTIVE(cause, IL_CPUTIMER)) {
         pandos_interrupt("LOCAL_TIMER");
         return interrupt_local_timer();
-    } else if (CAUSE_IP_GET(cause, IL_TIMER)) {
+    } else if (IL_ACTIVE(cause, IL_TIMER)) {
         pandos_interrupt("TIMER");
         return interrupt_timer();
-    } else if (CAUSE_IP_GET(cause, IL_DISK) || CAUSE_IP_GET(cause, IL_FLASH) ||
-               CAUSE_IP_GET(cause, IL_ETHERNET) ||
-               CAUSE_IP_GET(cause, IL_PRINTER)) {
+    } else if (IL_ACTIVE(cause, IL_DISK) || IL_ACTIVE(cause, IL_FLASH) ||
+               IL_ACTIVE(cause, IL_ETHERNET) || IL_ACTIVE(cause, IL_PRINTER)) {
         pandos_interrupt("GENERIC");
         return interrupt_generic(cause);
-    } else if (CAUSE_IP_GET(cause, IL_TERMINAL)) {
+    } else if (IL_ACTIVE(cause, IL_TERMINAL)) {
         pandos_interrupt("TERMINAL");
         return interrupt_terminal();
     } else
