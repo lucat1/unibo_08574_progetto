@@ -53,7 +53,7 @@ static scheduler_control_t trap_handler()
     if (active_process != NULL) {
         int pid = active_process != NULL ? active_process->p_pid : 0;
         pandos_kprintf("<< TRAP (%d)\n", pid);
-    }else {
+    } else {
         pandos_kprintf("<< TRAP\n");
     }
 
@@ -63,11 +63,7 @@ static scheduler_control_t trap_handler()
 void exception_handler()
 {
     scheduler_control_t ctrl;
-    int now_tod;
-
-    STCK(now_tod);
     if (active_process != NULL) {
-        active_process->p_time += (now_tod - start_tod);
         pandos_memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE,
                       sizeof(state_t));
     }
@@ -94,5 +90,6 @@ void exception_handler()
             ctrl = trap_handler();
             break;
     }
+
     schedule(ctrl.pcb, ctrl.enqueue);
 }

@@ -20,6 +20,7 @@ extern list_head ready_queue_lo, ready_queue_hi;
 extern pcb_t *active_process;
 extern pcb_t *last_process;
 extern cpu_t start_tod;
+extern cpu_t last_plt;
 extern state_t *wait_state;
 
 /**

@@ -14,7 +14,7 @@
 #include <umps/libumps.h>
 
 inline void reset_timer() { LDIT(IT_INTERVAL); }
-inline void reset_plt() { setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
+inline void reset_plt() { STCK(last_plt); setTIMER(TRANSLATE_TIME(PLT_INTERVAL)); }
 
 void scheduler_wait()
 {

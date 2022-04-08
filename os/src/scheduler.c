@@ -23,6 +23,7 @@ list_head ready_queue_lo, ready_queue_hi;
 pcb_t *active_process;
 pcb_t *last_process;
 cpu_t start_tod;
+cpu_t last_plt;
 state_t *wait_state;
 
 /* Always points to the pid of the most recently created process */
@@ -114,9 +115,9 @@ inline void scheduler_on_empty_queues()
     if (active_process == NULL && !running_count) {
         pandos_kprintf("Nothing left, HALT()!");
         HALT();
-                /* TODO: Can the active process be null and blocked count be 0? 
-                 * I think that active_process == NULL is redundant. 
-                 **/
+        /* TODO: Can the active process be null and blocked count be 0?
+         * I think that active_process == NULL is redundant.
+         **/
     } else if (active_process == NULL || blocked_count) {
         active_process = NULL;
         scheduler_unlock();
@@ -127,6 +128,11 @@ inline void scheduler_on_empty_queues()
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
+    if (pcb != NULL) {
+        int now_tod;
+        STCK(now_tod);
+        active_process->p_time += (now_tod - start_tod);
+    }
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
     if (enqueue && pcb != NULL)
         enqueue_process(pcb);

@@ -180,7 +180,10 @@ static inline scheduler_control_t syscall_do_io()
 /* NSYS6 */
 static inline scheduler_control_t syscall_get_cpu_time()
 {
-    active_process->p_s.reg_v0 = active_process->p_time;
+    signed int now;
+    STCK(now);
+    signed int diff = now - last_plt;
+    active_process->p_s.reg_v0 = active_process->p_time + diff;
     return CONTROL_RESCHEDULE;
 }
 
