@@ -156,6 +156,7 @@ static inline scheduler_control_t syscall_do_io()
         pass_up_or_die(GENERALEXCEPT);
     }
 
+    /* checks that semaphore is correctly synchronized */ 
     if (sem[d_n] > 0) {
         /* scheduler_panic("Device is already in use\n"); */
         pass_up_or_die(GENERALEXCEPT);
