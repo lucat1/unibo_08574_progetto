@@ -99,11 +99,9 @@ static inline scheduler_control_t syscall_verhogen()
     if (active_process->p_s.reg_a1 == (memaddr)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    V((int *)active_process->p_s.reg_a1);
-    // return V((int *)active_process->p_s.reg_a1) != NULL
-    //            ? CONTROL_PRESERVE(active_process)
-    //            : CONTROL_RESCHEDULE;
-    return CONTROL_RESCHEDULE;
+    return V((int *)active_process->p_s.reg_a1) == NULL
+               ? CONTROL_BLOCK
+               : CONTROL_RESCHEDULE;
 }
 
 /* NSYS5 */
@@ -156,7 +154,7 @@ static inline scheduler_control_t syscall_get_support_data()
 static inline scheduler_control_t syscall_get_process_id()
 {
     bool parent = (bool)active_process->p_s.reg_a1;
-    if (parent == (bool)NULL) {
+    if (parent == (bool)NULL || parent < 0 || parent > 1) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     /* if parent then return parent pid, else return active process pid */
