@@ -111,16 +111,15 @@ inline void init_scheduler()
 
 static inline void wait_or_die()
 {
-    pandos_kprintf("wait_or_die\n");
-    if (active_process == NULL && running_count > 0) {
+    if (active_process == NULL || blocked_count) {
+        pandos_kprintf("wait\n");
+        scheduler_wait();
+    }else if (active_process == NULL && running_count <= 0) {
         pandos_kprintf("Nothing left, halting");
         halt();
         /* TODO: Can the active process be null and blocked count be 0?
          * I think that active_process == NULL is redundant.
          **/
-    } else if (active_process == NULL || blocked_count) {
-        pandos_kprintf("wait\n");
-        scheduler_wait();
     } else {
         pandos_kprintf("deadlock\n");
         scheduler_panic("Deadlock detected.\n");
