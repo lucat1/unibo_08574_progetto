@@ -156,7 +156,7 @@ static inline scheduler_control_t syscall_get_support_data()
 static inline scheduler_control_t syscall_get_process_id()
 {
     bool parent = (bool)active_process->p_s.reg_a1;
-    if (parent == (bool)NULL || (int)parent < 0 || (int)parent > 1) {
+    if (&parent == NULL || (parent != (bool)0 && parent != (bool)1)) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     /* if parent then return parent pid, else return active process pid */
@@ -167,7 +167,8 @@ static inline scheduler_control_t syscall_get_process_id()
     else
         active_process->p_s.reg_v0 = 0;
 
-    return CONTROL_PRESERVE(active_process);
+    pandos_kfprintf(&kstderr, "GET PROC ID RESCHEDULE!\n");
+    return CONTROL_RESCHEDULE;
 }
 
 /* NSYS10 */
