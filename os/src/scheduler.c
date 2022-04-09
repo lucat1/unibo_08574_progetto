@@ -52,12 +52,10 @@ inline void enqueue_process(pcb_t *p)
 
 inline pcb_t *dequeue_process(pcb_t *p)
 {
-    pcb_t *r;
-    if ((r = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p)) !=
-        NULL) {
+    pcb_t *t = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
+    if(t != NULL)
         running_count--;
-    }
-    return r;
+    return t;
 }
 
 inline pcb_t *const find_process(pandos_pid_t pid)
@@ -114,7 +112,7 @@ inline void init_scheduler()
 static inline void wait_or_die()
 {
     pandos_kprintf("wait_or_die\n");
-    if (active_process == NULL && !running_count) {
+    if (active_process == NULL && running_count > 0) {
         pandos_kprintf("Nothing left, halting");
         halt();
         /* TODO: Can the active process be null and blocked count be 0?

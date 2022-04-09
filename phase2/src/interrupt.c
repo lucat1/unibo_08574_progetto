@@ -175,6 +175,7 @@ scheduler_control_t interrupt_handler()
     } else {
         pandos_interrupt("UNKNOWN");
         pandos_kfprintf(&kstdout, "UNKNOWN CODE : %d\n", IL_ACTIVE(cause, IL_IPI));
+        return CONTROL_PRESERVE(active_process);
     }
 
     /* The newly unblocked pcb is enqueued back on the Ready Queue and control

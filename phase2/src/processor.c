@@ -30,11 +30,11 @@ inline void set_status(size_t status) { setSTATUS(status); }
 inline size_t get_status() { return getSTATUS(); }
 inline size_t status_interrupts_on_nucleus(size_t prev)
 {
-    return prev | STATUS_IEc | STATUS_IM_MASK | STATUS_TE;
+    return prev | STATUS_IEc | STATUS_TE;
 }
 inline size_t status_interrupts_on_process(size_t prev)
 {
-    return prev | STATUS_IEp | STATUS_IM_MASK | STATUS_TE;
+    return prev | STATUS_IEp | STATUS_TE;
 }
 inline size_t status_toggle_local_timer(size_t prev)
 {
