@@ -191,11 +191,13 @@ void scheduler_takeover()
 
 void scheduler_panic(const char *fmt, ...)
 {
+#ifndef __x86_64__
     pandos_kfprintf(&kstderr, "!! PANIC: ");
     va_list varg;
     va_start(varg, fmt);
     __pandos_printf(&kstderr, memory_writer, fmt, varg);
     va_end();
     __pandos_printf(&kstderr, memory_writer, "\n", NULL);
+#endif
     panic();
 }
