@@ -50,10 +50,14 @@ inline void enqueue_process(pcb_t *p)
     insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 
-inline void dequeue_process(pcb_t *p)
+inline pcb_t *dequeue_process(pcb_t *p)
 {
-    running_count--;
-    out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
+    pcb_t *r;
+    if ((r = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p)) !=
+        NULL) {
+        running_count--;
+    }
+    return r;
 }
 
 inline pcb_t *const find_process(pandos_pid_t pid)
@@ -73,11 +77,9 @@ static inline int kill_process(pcb_t *const p)
         return 2;
 
     /* In case it is blocked by a semaphore*/
-    if (p->p_sem_add != NULL) {
+    if (out_blocked(p) != NULL) {
         --blocked_count;
-        out_blocked(p);
     } else {
-        --running_count;
         dequeue_process(p);
     }
 
@@ -87,14 +89,15 @@ static inline int kill_process(pcb_t *const p)
 
 inline int kill_progeny(pcb_t *p)
 {
-    int r;
+    // int r;
     pcb_t *child;
 
-    while ((child = remove_child(p)) != NULL)
-        if ((r = kill_progeny(child)))
-            return r;
+    kill_process(p);
 
-    return kill_process(p);
+    while ((child = remove_child(p)) != NULL)
+        kill_progeny(child);
+
+    return 0;
 }
 
 inline void init_scheduler()

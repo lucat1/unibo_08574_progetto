@@ -33,7 +33,7 @@ extern pcb_t *spawn_process(bool priority);
 extern int kill_progeny(pcb_t *p);
 
 extern void enqueue_process(pcb_t *p);
-extern void dequeue_process(pcb_t *p);
+extern pcb_t *dequeue_process(pcb_t *p);
 extern pcb_t *const find_process(pandos_pid_t pid);
 
 extern void init_scheduler();

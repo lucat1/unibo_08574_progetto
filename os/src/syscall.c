@@ -84,7 +84,7 @@ static inline scheduler_control_t syscall_terminate_process()
     /* is this is the docs? */
     // if (pid != 0)
     //     p->p_s.reg_v0 = pid;
-    return pid == 0 ? CONTROL_BLOCK : CONTROL_RESCHEDULE;
+    return (pid == 0 || active_process->p_pid == -1) ? CONTROL_BLOCK : CONTROL_RESCHEDULE;
 }
 
 /* NSYS3 */
@@ -167,7 +167,6 @@ static inline scheduler_control_t syscall_get_process_id()
     else
         active_process->p_s.reg_v0 = 0;
 
-    pandos_kfprintf(&kstderr, "GET PROC ID RESCHEDULE!\n");
     return CONTROL_RESCHEDULE;
 }
 
