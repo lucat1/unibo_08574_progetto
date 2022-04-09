@@ -22,7 +22,7 @@ int running_count;
 int blocked_count;
 list_head ready_queue_lo, ready_queue_hi;
 pcb_t *active_process;
-pcb_t *last_process;
+pcb_t *yield_process;
 cpu_t start_tod;
 cpu_t last_plt;
 state_t *wait_state;
@@ -90,12 +90,13 @@ inline int kill_progeny(pcb_t *p)
     // int r;
     pcb_t *child;
 
-    kill_process(p);
-
+    /* in case of pass_up_or_die active_process has to be NULL */
+    //if (p == active_process) active_process = NULL;
+    
     while ((child = remove_child(p)) != NULL)
         kill_progeny(child);
 
-    return 0;
+    return kill_process(p);
 }
 
 inline void init_scheduler()
@@ -105,24 +106,33 @@ inline void init_scheduler()
     mk_empty_proc_q(&ready_queue_hi);
     mk_empty_proc_q(&ready_queue_lo);
     active_process = NULL;
+    yield_process = NULL;
     store_tod(&start_tod);
     recycle_count = 0;
 }
 
 static inline void wait_or_die()
 {
-    if (active_process == NULL || blocked_count) {
+    if (active_process == NULL || blocked_count > 0) {
         pandos_kprintf("wait\n");
         scheduler_wait();
-    }else if (active_process == NULL && running_count <= 0) {
+    }else if (active_process->p_pid == -1 && running_count <= 0) {
         pandos_kprintf("Nothing left, halting");
         halt();
         /* TODO: Can the active process be null and blocked count be 0?
          * I think that active_process == NULL is redundant.
          **/
     } else {
+        pandos_kprintf("act is null : %s", active_process == NULL ? "true" : "false");
         pandos_kprintf("deadlock\n");
         scheduler_panic("Deadlock detected.\n");
+    }
+}
+
+void reset_yield_process() {
+    if(yield_process != NULL) {
+        enqueue_process(yield_process);
+        yield_process = NULL;
     }
 }
 
@@ -144,10 +154,18 @@ void schedule(pcb_t *pcb, bool enqueue)
     else if (!list_empty(&ready_queue_hi)) {
         active_process = remove_proc_q(&ready_queue_hi);
         running_count--;
+        reset_yield_process();
     } else if (!list_empty(&ready_queue_lo)) {
         active_process = remove_proc_q(&ready_queue_lo);
         running_count--;
-    } else
+        reset_yield_process();
+    }
+    else if (yield_process != NULL) {
+        active_process = yield_process;
+        yield_process = NULL;
+        running_count--;
+    } 
+    else
         wait_or_die();
 
     /* This point should never be reached unless processes have been

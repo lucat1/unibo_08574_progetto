@@ -20,10 +20,14 @@
 inline scheduler_control_t pass_up_or_die(memaddr type)
 {
     if (active_process != NULL) {
-        if (active_process->p_support == NULL)
+        pandos_kfprintf(&kstdout, "-- Pass up or Die called");
+        if (active_process->p_support == NULL) {
+            pandos_kfprintf(&kstdout, " : killing\n");
             /* TODO: kill single process and handle children or kill progeny? */
             kill_progeny(active_process);
-        else {
+            pandos_kfprintf(&kstdout, "Running proc (%d)\n", blocked_count);
+        } else {
+            pandos_kfprintf(&kstdout, "-- support layer\n");
             pandos_memcpy(&active_process->p_support->sup_except_state[type],
                           (state_t *)BIOSDATAPAGE, sizeof(state_t));
             context_t c;
@@ -74,7 +78,9 @@ void exception_handler()
             ctrl = interrupt_handler();
             break;
         case 1:
+            break;
         case 2:
+            break;
         case 3:
             ctrl = tbl_handler();
             break;
