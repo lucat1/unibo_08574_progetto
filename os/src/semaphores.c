@@ -22,7 +22,7 @@ int termr_semaphores[DEVPERINT];
 int termw_semaphores[DEVPERINT];
 int timer_semaphore;
 
-inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
+inline scheduler_control_t _P(int *const sem_addr, pcb_t *const p)
 {
     int r;
 
@@ -42,7 +42,7 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
     }
 }
 
-inline pcb_t *V(int *const sem_addr)
+inline pcb_t *_V(int *const sem_addr)
 {
     pcb_t *p = remove_blocked(sem_addr);
     if (p == NULL) /* means that sem_proc is empty */
@@ -53,7 +53,7 @@ inline pcb_t *V(int *const sem_addr)
     return p;
 }
 
-inline scheduler_control_t _P(int *const sem_addr, pcb_t *const p)
+inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
 {
     int r;
     // pcb_t *t;
@@ -79,7 +79,7 @@ inline scheduler_control_t _P(int *const sem_addr, pcb_t *const p)
     }
 }
 
-inline pcb_t *_V(int *const sem_addr)
+inline pcb_t *V(int *const sem_addr)
 {
     pcb_t *p;
 
