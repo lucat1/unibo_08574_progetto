@@ -1,5 +1,5 @@
 /**
- * \file
+ * \file scheduler.c
  * \brief Schedule awating processes.
  *
  * \author Alessandro Frau

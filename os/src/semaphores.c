@@ -73,7 +73,7 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
     //     return CONTROL_BLOCK;
     // }
     else {
-        *sem_addr = *sem_addr - 1;
+        --*sem_addr;
         pandos_kfprintf(&kstdout, "P decr (%p) %d - %d\n", sem_addr, p->p_pid);
         return CONTROL_RESCHEDULE;
     }
@@ -90,7 +90,7 @@ inline pcb_t *V(int *const sem_addr)
         enqueue_process(p);
         return p;
     } else {
-        *sem_addr = *sem_addr + 1;
+        ++*sem_addr;
         /* TODO : mhhhhh weirdo */
         if (blocked_count > 0)
             blocked_count--;
