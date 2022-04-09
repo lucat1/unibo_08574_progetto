@@ -34,9 +34,17 @@ typedef struct state {
 
 extern bool is_user_mode();
 extern void null_state(state_t *s);
+extern void load_state(state_t *);
+extern void store_state(state_t *);
 
 extern void halt();
 extern void panic();
 extern void wait();
+
+extern void set_status(size_t status);
+extern size_t get_status();
+extern size_t status_interrupts_on_nucleus(size_t prev);
+extern size_t status_interrupts_on_process(size_t prev);
+extern size_t status_toggle_local_timer(size_t prev);
 
 #endif /* PANDOS_ARCH_PROCESSOR_H */

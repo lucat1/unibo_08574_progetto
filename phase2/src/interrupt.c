@@ -7,11 +7,12 @@
  * \author Luca Tagliavini
  * \date 20-03-2022
  */
+
 #include "os/interrupt.h"
-#include "native_scheduler.h"
 #include "os/asl.h"
 #include "os/const.h"
 #include "os/scheduler.h"
+#include "os/scheduler_impl.h"
 #include "os/semaphores.h"
 #include "os/util.h"
 #include <umps/arch.h>
@@ -40,14 +41,15 @@ static inline scheduler_control_t interrupt_ipi()
 
 static inline scheduler_control_t interrupt_local_timer()
 {
-    reset_plt();
+    reset_local_timer();
     return CONTROL_RESCHEDULE;
 }
 
 static inline scheduler_control_t interrupt_timer()
 {
-    reset_timer();
     pcb_t *p;
+
+    reset_timer();
     while ((p = V(&timer_semaphore)) != NULL)
         ;
     // while((p = remove_blocked(&timer_semaphore)) != NULL)
@@ -55,6 +57,7 @@ static inline scheduler_control_t interrupt_timer()
     //     enqueue_process(p);
     // }
     timer_semaphore = 0;
+    pandos_kprintf("act: %p\n", active_process);
     return CONTROL_PRESERVE(active_process);
 }
 

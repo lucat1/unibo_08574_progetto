@@ -25,6 +25,9 @@ typedef struct iodev {
 extern iodev_t get_iodev(size_t *cmd_addr);
 extern size_t interrupt_mask(int line);
 
-extern void store_clock(int *time);
+/* tod = time of day */
+extern void store_tod(int *time);
+extern void load_interval_timer(int time);
+extern void load_local_timer(int time);
 
 #endif /* PANDOS_ARCH_DEVICES_H */

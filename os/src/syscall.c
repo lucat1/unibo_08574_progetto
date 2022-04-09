@@ -27,7 +27,8 @@ static inline scheduler_control_t syscall_create_process()
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
-    if (p_s == NULL || p_support_struct == NULL)
+    if (p_s == NULL ||
+        (p_prio != PROCESS_PRIO_LOW && p_prio != PROCESS_PRIO_HIGH))
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     /* spawn new process */
@@ -110,28 +111,21 @@ static inline scheduler_control_t syscall_do_io()
 {
     size_t *cmd_addr = (size_t *)active_process->p_s.reg_a1;
     size_t cmd_value = (size_t)active_process->p_s.reg_a2;
-    if (cmd_addr == (size_t *)NULL || cmd_value == (size_t)NULL) {
+    if (cmd_addr == (size_t *)NULL || cmd_value == (size_t)NULL)
         return pass_up_or_die((memaddr)GENERALEXCEPT);
-    }
 
     iodev_t dev = get_iodev(cmd_addr);
-    if (dev.semaphore == NULL) {
+    if (dev.semaphore == NULL || *dev.semaphore > 0)
         /* scheduler_panic("Invalid interrupt line\n"); */
-        return pass_up_or_die(GENERALEXCEPT);
-    }
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
 
-    /* checks that semaphore is correctly synchronized */
-    if (*dev.semaphore > 0) {
-        /* scheduler_panic("Device is already in use\n"); */
-        pass_up_or_die(GENERALEXCEPT);
-    }
-
-    active_process->p_s.status |= interrupt_mask(dev.interrupt_line);
     scheduler_control_t ctrl = P(dev.semaphore, active_process);
+    active_process->p_s.status |= interrupt_mask(dev.interrupt_line);
 
     /* Finally write the data */
     *cmd_addr = cmd_value;
 
+    pandos_kprintf("do_io result\n");
     return ctrl;
 }
 
@@ -139,7 +133,7 @@ static inline scheduler_control_t syscall_do_io()
 static inline scheduler_control_t syscall_get_cpu_time()
 {
     int now;
-    store_clock(&now);
+    store_tod(&now);
     int diff = now - last_plt;
     active_process->p_s.reg_v0 = active_process->p_time + diff;
     return CONTROL_RESCHEDULE;

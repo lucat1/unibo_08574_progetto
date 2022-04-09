@@ -14,10 +14,10 @@
 #include "exception.h"
 #include "init.h"
 #include "init_impl.h"
-#include "native_scheduler.h"
 #include "os/asl.h"
 #include "os/pcb.h"
 #include "os/scheduler.h"
+#include "os/scheduler_impl.h"
 #include "os/semaphores.h"
 #include "os/util.h"
 #include "p2test.h"
@@ -56,7 +56,7 @@ inline void init()
     init_asl();
     pandos_kprintf("-- reset_timer\n");
     reset_timer();
-    reset_plt();
+    reset_local_timer();
     pandos_kprintf("-- init_process\n");
     init_process();
 }

@@ -19,4 +19,10 @@
 #define mask_pid_id(p) (p & PID_ID_MASK)
 #define mask_recycle(p) (p & RECYCLE_MASK)
 
+extern void reset_timer();
+extern void reset_local_timer();
+
+extern void scheduler_wait();
+extern void scheduler_takeover();
+
 #endif /* PANDOS_SCHEDULER_IMPL_H */

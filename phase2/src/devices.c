@@ -2,6 +2,7 @@
 #include "os/exception_impl.h"
 #include "os/semaphores.h"
 #include "umps/const.h"
+#include "umps/libumps.h"
 #include <umps/arch.h>
 #include <umps/cp0.h>
 
@@ -42,4 +43,6 @@ inline iodev_t get_iodev(size_t *cmd_addr)
 
 inline size_t interrupt_mask(int line) { return STATUS_IM(line); }
 
-inline void store_clock(int *time) { STCK(*time); }
+inline void store_tod(int *time) { STCK(*time); }
+inline void load_interval_timer(int time) { LDIT(time); }
+inline void load_local_timer(int time) { setTIMER(TRANSLATE_TIME(time)); }

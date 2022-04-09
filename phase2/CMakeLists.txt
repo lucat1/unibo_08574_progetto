@@ -1,6 +1,5 @@
 project(phase2)
 add_executable(${PROJECT_NAME}
-    src/native_scheduler.c
     src/interrupt.c
     src/processor.c
     src/devices.c

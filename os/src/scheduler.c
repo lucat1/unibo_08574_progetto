@@ -10,11 +10,13 @@
 
 #include "os/scheduler.h"
 #include "arch/devices.h"
+#include "arch/processor.h"
 #include "os/asl.h"
 #include "os/list.h"
 #include "os/pcb.h"
 #include "os/scheduler_impl.h"
 #include "os/util.h"
+#include "os/util_impl.h"
 
 int running_count;
 int blocked_count;
@@ -32,10 +34,10 @@ static unsigned int recycle_count;
 
 inline pcb_t *spawn_process(bool priority)
 {
-    pcb_t *p = alloc_pcb();
-    if (p == NULL) {
+    pcb_t *p;
+
+    if ((p = alloc_pcb()) == NULL)
         return NULL;
-    }
     p->p_pid = (p - get_pcb_table()) | (recycle_count++ << MAX_PROC_BITS);
     p->p_prio = priority;
     ++running_count;
@@ -99,18 +101,18 @@ inline void kill_process(pcb_t *const p)
     }
 }
 
-extern void init_scheduler()
+inline void init_scheduler()
 {
     running_count = 0;
     blocked_count = 0;
     mk_empty_proc_q(&ready_queue_hi);
     mk_empty_proc_q(&ready_queue_lo);
     active_process = NULL;
-    store_clock(&start_tod);
+    store_tod(&start_tod);
     recycle_count = 0;
 }
 
-inline void scheduler_on_empty_queues()
+static inline void wait_or_die()
 {
     if (active_process == NULL && !running_count) {
         pandos_kprintf("Nothing left, halting");
@@ -120,7 +122,6 @@ inline void scheduler_on_empty_queues()
          **/
     } else if (active_process == NULL || blocked_count) {
         active_process = NULL;
-        scheduler_unlock();
         scheduler_wait();
     } else
         scheduler_panic("Deadlock detected.\n");
@@ -128,9 +129,9 @@ inline void scheduler_on_empty_queues()
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
-    if (pcb != NULL) {
+    if (active_process != NULL) {
         int now_tod;
-        store_clock(&now_tod);
+        store_tod(&now_tod);
         active_process->p_time += (now_tod - start_tod);
     }
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
@@ -145,11 +146,56 @@ void schedule(pcb_t *pcb, bool enqueue)
     else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
     else
-        scheduler_on_empty_queues();
+        wait_or_die();
 
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )
      */
     if (active_process)
         scheduler_takeover();
+}
+
+inline void reset_timer() { load_interval_timer(IT_INTERVAL); }
+inline void reset_local_timer()
+{
+    store_tod(&last_plt);
+    load_local_timer(PLT_INTERVAL);
+}
+
+void scheduler_wait()
+{
+    pandos_kprintf("-- WAIT\n");
+    active_process = NULL;
+    reset_timer();
+    set_status(
+        status_toggle_local_timer(status_interrupts_on_nucleus(get_status())));
+    wait();
+    schedule(NULL, false);
+}
+
+void scheduler_takeover()
+{
+    pandos_kprintf(">> TAKEOVER(%d, %p)\n", active_process->p_pid,
+                   active_process->p_s.pc_epc);
+    /* Enable interrupts */
+    active_process->p_s.status =
+        status_interrupts_on_process(active_process->p_s.status);
+    reset_local_timer();
+    /* Disable the processor Local Timer on hi processes */
+    if (active_process->p_prio)
+        active_process->p_s.status =
+            status_toggle_local_timer(active_process->p_s.status);
+    store_tod(&start_tod);
+    load_state(&active_process->p_s);
+}
+
+void scheduler_panic(const char *fmt, ...)
+{
+    pandos_kfprintf(&kstderr, "!! PANIC: ");
+    va_list varg;
+    va_start(varg, fmt);
+    __pandos_printf(&kstderr, memory_writer, fmt, varg);
+    va_end();
+    __pandos_printf(&kstderr, memory_writer, "\n", NULL);
+    panic();
 }
