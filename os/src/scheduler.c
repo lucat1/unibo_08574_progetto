@@ -40,30 +40,20 @@ inline pcb_t *spawn_process(bool priority)
         return NULL;
     p->p_pid = (p - get_pcb_table()) | (recycle_count++ << MAX_PROC_BITS);
     p->p_prio = priority;
-    ++running_count;
     enqueue_process(p);
     return p;
 }
 
 inline void enqueue_process(pcb_t *p)
 {
+    running_count++;
     insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 
 inline void dequeue_process(pcb_t *p)
 {
+    running_count--;
     out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
-}
-
-/* TODO: Maybe optimize this solution */
-static inline void delete_progeny(pcb_t *p)
-{
-    pcb_t *child;
-
-    if (p == NULL)
-        return;
-    while ((child = remove_child(p)) != NULL)
-        kill_process(child);
 }
 
 inline pcb_t *const find_process(pandos_pid_t pid)
@@ -74,31 +64,37 @@ inline pcb_t *const find_process(pandos_pid_t pid)
     return (pcb_t *const)(get_pcb_table() + i);
 }
 
-/* TODO return int, change if */
-inline void kill_process(pcb_t *const p)
+static inline int kill_process(pcb_t *const p)
 {
-    if (p != NULL) {
-        --running_count;
+    if (p == NULL)
+        return 1;
 
-        /* recursively removes progeny of process that should be terminated */
+    if (p->p_parent != NULL && !out_child(p))
+        return 2;
 
-        delete_progeny(p);
-
-        /* removes process that should be terminated from parent's children */
-        out_child(p);
-
-        /* In case it is blocked by a semaphore*/
+    /* In case it is blocked by a semaphore*/
+    if (p->p_sem_add != NULL) {
+        --blocked_count;
         out_blocked(p);
-
-        /* In case it is in the ready queue */
-        dequeue_process(p);
-
-        /* Set pcb as free */
-        free_pcb(p);
-        p->p_pid = -1;
     } else {
-        pandos_kfprintf(&kstderr, "Can't kill NULL process\n");
+        --running_count;
+        dequeue_process(p);
     }
+
+    free_pcb(p);
+    return 0;
+}
+
+inline int kill_progeny(pcb_t *p)
+{
+    int r;
+    pcb_t *child;
+
+    while ((child = remove_child(p)) != NULL)
+        if ((r = kill_progeny(child)))
+            return r;
+
+    return kill_process(p);
 }
 
 inline void init_scheduler()
@@ -114,6 +110,7 @@ inline void init_scheduler()
 
 static inline void wait_or_die()
 {
+    pandos_kprintf("wait_or_die\n");
     if (active_process == NULL && !running_count) {
         pandos_kprintf("Nothing left, halting");
         halt();
@@ -121,10 +118,12 @@ static inline void wait_or_die()
          * I think that active_process == NULL is redundant.
          **/
     } else if (active_process == NULL || blocked_count) {
-        active_process = NULL;
+        pandos_kprintf("wait\n");
         scheduler_wait();
-    } else
+    } else {
+        pandos_kprintf("deadlock\n");
         scheduler_panic("Deadlock detected.\n");
+    }
 }
 
 void schedule(pcb_t *pcb, bool enqueue)
@@ -135,17 +134,20 @@ void schedule(pcb_t *pcb, bool enqueue)
         active_process->p_time += (now_tod - start_tod);
     }
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
-    if (enqueue && pcb != NULL)
+    if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
+    }
 
     /* Process selection */
     if (pcb != NULL && !enqueue)
         active_process = pcb;
-    else if (!list_empty(&ready_queue_hi))
+    else if (!list_empty(&ready_queue_hi)) {
         active_process = remove_proc_q(&ready_queue_hi);
-    else if (!list_empty(&ready_queue_lo))
+        running_count--;
+    } else if (!list_empty(&ready_queue_lo)) {
         active_process = remove_proc_q(&ready_queue_lo);
-    else
+        running_count--;
+    } else
         wait_or_die();
 
     /* This point should never be reached unless processes have been
@@ -175,8 +177,7 @@ void scheduler_wait()
 
 void scheduler_takeover()
 {
-    pandos_kprintf(">> TAKEOVER(%d, %p)\n", active_process->p_pid,
-                   active_process->p_s.pc_epc);
+    pandos_kprintf(">> TAKEOVER(%d)\n", active_process->p_pid);
     /* Enable interrupts */
     active_process->p_s.status =
         status_interrupts_on_process(active_process->p_s.status);

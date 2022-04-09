@@ -21,7 +21,8 @@ inline scheduler_control_t pass_up_or_die(memaddr type)
 {
     if (active_process != NULL) {
         if (active_process->p_support == NULL)
-            kill_process(active_process);
+            /* TODO: kill single process and handle children or kill progeny? */
+            kill_progeny(active_process);
         else {
             pandos_memcpy(&active_process->p_support->sup_except_state[type],
                           (state_t *)BIOSDATAPAGE, sizeof(state_t));

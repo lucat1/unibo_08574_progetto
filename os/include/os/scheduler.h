@@ -30,7 +30,7 @@ extern state_t *wait_state;
  * \return The allocated process descriptor.
  */
 extern pcb_t *spawn_process(bool priority);
-extern void kill_process(pcb_t *p);
+extern int kill_progeny(pcb_t *p);
 
 extern void enqueue_process(pcb_t *p);
 extern void dequeue_process(pcb_t *p);

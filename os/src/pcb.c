@@ -29,15 +29,17 @@ void init_pcbs()
     /* Add pcb_table elements to the list */
     for (int i = 0; i < MAX_PROC; i++) {
         list_add(&pcb_table[i].p_list, &pcb_free);
+        pcb_table[i].p_pid = -1;
     }
 }
 
 void free_pcb(pcb_t *p)
 {
-    if (p == NULL || list_contains(&p->p_list, &pcb_free)) {
+    if (p == NULL || list_contains(&p->p_list, &pcb_free))
         return;
-    }
+
     list_add(&p->p_list, &pcb_free);
+    p->p_pid = -1;
 }
 
 static inline pcb_t *null_pcb(pcb_t *t)

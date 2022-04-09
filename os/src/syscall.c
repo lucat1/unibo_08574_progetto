@@ -35,7 +35,7 @@ static inline scheduler_control_t syscall_create_process()
     pcb_t *c = spawn_process(p_prio);
 
     /* checks if there are enough resources */
-    if (c == NULL) { /* lack of resorces */
+    if (c == NULL) {
         pandos_kfprintf(&kstderr, "!! ERROR: Cannot create new process\n");
         /* set caller's v0 to -1 */
         active_process->p_s.reg_v0 = -1;
@@ -70,18 +70,21 @@ static inline scheduler_control_t syscall_terminate_process()
     /* If pid is not 0 then the target must be searched */
     if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
         scheduler_panic("Could not find process by pid: %p\n", pid);
+    else
+        p = active_process;
 
     /* If the process was blocked on a semaphore, decrease the blocked count */
     if (p->p_sem_add != NULL) {
         blocked_count--;
     }
 
-    /* calls scheduler */
-    kill_process(p);
+    /* TODO: handle kill_progeny return value */
+    kill_progeny(p);
 
-    /* ??? */
-    p->p_s.reg_v0 = pid;
-    return CONTROL_BLOCK;
+    /* is this is the docs? */
+    // if (pid != 0)
+    //     p->p_s.reg_v0 = pid;
+    return pid == 0 ? CONTROL_BLOCK : CONTROL_RESCHEDULE;
 }
 
 /* NSYS3 */
