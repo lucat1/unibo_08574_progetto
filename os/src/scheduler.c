@@ -8,12 +8,11 @@
  * \date 20-03-2022
  */
 
-#include <umps/libumps.h>
-
+#include "os/scheduler.h"
+#include "arch/devices.h"
 #include "os/asl.h"
 #include "os/list.h"
 #include "os/pcb.h"
-#include "os/scheduler.h"
 #include "os/scheduler_impl.h"
 #include "os/util.h"
 
@@ -65,21 +64,22 @@ static inline void delete_progeny(pcb_t *p)
         kill_process(child);
 }
 
-inline const pcb_t *find_process(pandos_pid_t pid)
+inline pcb_t *const find_process(pandos_pid_t pid)
 {
     size_t i = mask_pid_id(pid);
     if (i < 0 || i >= MAX_PROC || get_pcb_table()[i].p_pid != pid)
         return NULL;
-    return get_pcb_table() + i;
+    return (pcb_t *const)(get_pcb_table() + i);
 }
 
 /* TODO return int, change if */
-inline void kill_process(pcb_t *p)
+inline void kill_process(pcb_t *const p)
 {
     if (p != NULL) {
         --running_count;
 
         /* recursively removes progeny of process that should be terminated */
+
         delete_progeny(p);
 
         /* removes process that should be terminated from parent's children */
@@ -106,15 +106,15 @@ extern void init_scheduler()
     mk_empty_proc_q(&ready_queue_hi);
     mk_empty_proc_q(&ready_queue_lo);
     active_process = NULL;
-    STCK(start_tod);
+    store_clock(&start_tod);
     recycle_count = 0;
 }
 
 inline void scheduler_on_empty_queues()
 {
     if (active_process == NULL && !running_count) {
-        pandos_kprintf("Nothing left, HALT()!");
-        HALT();
+        pandos_kprintf("Nothing left, halting");
+        halt();
         /* TODO: Can the active process be null and blocked count be 0?
          * I think that active_process == NULL is redundant.
          **/
@@ -130,7 +130,7 @@ void schedule(pcb_t *pcb, bool enqueue)
 {
     if (pcb != NULL) {
         int now_tod;
-        STCK(now_tod);
+        store_clock(&now_tod);
         active_process->p_time += (now_tod - start_tod);
     }
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");

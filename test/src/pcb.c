@@ -10,6 +10,8 @@
 #include "os/util.h"
 #include "test/test.h"
 
+#include "test/mock_processor.h"
+
 bool pcb_free_contains(pcb_t *p)
 {
     if (p == NULL || &p->p_list == NULL) {
@@ -36,15 +38,9 @@ int main()
             assert(pcb1->p_parent == NULL);
             assert(pcb1->p_sem_add == NULL);
             assert(pcb1->p_time == 0);
-            assert(pcb1->p_s.entry_hi == 0);
-            assert(pcb1->p_s.cause == 0);
-            assert(pcb1->p_s.status == UNINSTALLED);
-            assert(pcb1->p_s.pc_epc == 0);
-            assert(pcb1->p_s.hi == 0);
-            assert(pcb1->p_s.lo == 0);
-            for (int i = 0; i < STATE_GPR_LEN; i++) {
-                assert(pcb1->p_s.gpr[i] == 0);
-            }
+            /* It is assumed that the null_state function from the underlying
+             * architecture is correct and properly initializes all fields for
+             * the state_t struct */
             assert(pcb1->p_pid == -1);
             assert(pcb1->p_prio == 0);
 

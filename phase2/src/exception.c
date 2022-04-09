@@ -9,10 +9,10 @@
  */
 
 #include "exception.h"
-#include "exception_impl.h"
-#include "interrupt.h"
+#include "os/exception_impl.h"
+#include "os/interrupt.h"
+#include "os/syscall.h"
 #include "os/util.h"
-#include "syscall.h"
 #include <umps/arch.h>
 #include <umps/cp0.h>
 #include <umps/libumps.h>

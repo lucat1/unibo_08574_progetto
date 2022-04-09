@@ -8,6 +8,7 @@
  */
 
 #include "os/pcb.h"
+#include "arch/processor.h"
 #include "os/list.h"
 #include "os/types.h"
 #include "os/util.h"
@@ -49,15 +50,7 @@ static inline pcb_t *null_pcb(pcb_t *t)
     t->p_parent = NULL;
     t->p_time = 0;
     t->p_sem_add = NULL;
-    t->p_s.entry_hi = 0;
-    t->p_s.cause = 0;
-    t->p_s.status = UNINSTALLED;
-    t->p_s.pc_epc = 0;
-    t->p_s.hi = 0;
-    t->p_s.lo = 0;
-    for (int i = 0; i < STATE_GPR_LEN; i++) {
-        t->p_s.gpr[i] = 0;
-    }
+    null_state(&t->p_s);
     /* New fields (phase2) */
     t->p_support = NULL;
     t->p_prio = 0;

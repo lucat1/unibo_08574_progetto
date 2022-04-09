@@ -1,6 +1,7 @@
 #include "os/asl.h"
 #include "os/asl_impl.h"
 #include "os/util.h"
+#include "test/mock_processor.h"
 #include "test/test.h"
 #include <stdlib.h>
 #include <time.h>

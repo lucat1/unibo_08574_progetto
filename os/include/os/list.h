@@ -2,7 +2,7 @@
 #ifndef PANDOS_LIST_H
 #define PANDOS_LIST_H
 
-#include <umps/const.h>
+#include "os/ctypes.h"
 
 /* Define size_tt with the proper length on different architectures */
 #ifdef __x86_64__
@@ -49,7 +49,9 @@ typedef unsigned int size_tt;
 
     return: offset in byte dall'inizio della struttura TYPE al campo MEMBER
 */
+#ifndef __x86_64__
 #define offsetof(TYPE, MEMBER) ((size_tt)(&((TYPE *)0)->MEMBER))
+#endif
 
 /*
     La struttura list_head e' una semplice coppia di puntatore, per implementare

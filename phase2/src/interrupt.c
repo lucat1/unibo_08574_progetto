@@ -7,7 +7,7 @@
  * \author Luca Tagliavini
  * \date 20-03-2022
  */
-#include "interrupt.h"
+#include "os/interrupt.h"
 #include "native_scheduler.h"
 #include "os/asl.h"
 #include "os/const.h"

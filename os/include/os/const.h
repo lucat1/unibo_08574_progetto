@@ -7,7 +7,7 @@
  *
  ****************************************************************************/
 
-#include <umps/const.h>
+#include "os/ctypes.h"
 
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/

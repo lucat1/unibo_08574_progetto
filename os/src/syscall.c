@@ -1,6 +1,6 @@
 /**
  * \file syscall.c
- * \brief Syscalls.
+ * \brief Implementation of all negative syscalls.
  *
  * \author Alessandro Frau
  * \author Gianmaria Rovelli
@@ -8,32 +8,27 @@
  * \date 26-03-2022
  */
 
-#include "syscall.h"
-#include "exception_impl.h"
-#include "interrupt.h"
+#include "os/syscall.h"
+#include "arch/devices.h"
+#include "arch/processor.h"
 #include "os/asl.h"
+#include "os/exception_impl.h"
+#include "os/interrupt.h"
 #include "os/scheduler.h"
 #include "os/semaphores.h"
 #include "os/util.h"
-#include "umps/cp0.h"
-#include <umps/arch.h>
-#include <umps/libumps.h>
 
-#define pandos_syscall(n, pid) pandos_kprintf("<< SYSCALL(%d, " n ")\n", pid)
-
-int checkUserMode() { return ((active_process->p_s.status << 28) >> 31); }
+#define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
 
 /* NSYS1 */
 static inline scheduler_control_t syscall_create_process()
 {
     /* parameters of syscall */
-    if (active_process->p_s.reg_a1 == (int)NULL ||
-        active_process->p_s.reg_a2 == (int)NULL) {
-        return pass_up_or_die((memaddr)GENERALEXCEPT);
-    }
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
+    if (p_s == NULL || p_support_struct == NULL)
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     /* spawn new process */
     pcb_t *c = spawn_process(p_prio);
@@ -65,19 +60,18 @@ static inline scheduler_control_t syscall_terminate_process()
     /* Generate an interrupt to signal the end of Current Process’s time q
        antum/slice. The PLT is reserved for this purpose. */
 
-    if (active_process->p_s.reg_a1 == (int)NULL) {
+    pcb_t *p;
+    const pandos_pid_t pid = active_process->p_s.reg_a1;
+    if (pid == (pandos_pid_t)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    pandos_pid_t pid = active_process->p_s.reg_a1;
-    pcb_t *p = active_process;
 
     /* If pid is not 0 then the target must be searched */
-    if ((pid == 0 && active_process == NULL) ||
-        (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL))
+    if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
         scheduler_panic("Could not find process by pid: %p\n", pid);
 
     /* If the process was blocked on a semaphore, decrease the blocked count */
-    if(p->p_sem_add != NULL){
+    if (p->p_sem_add != NULL) {
         blocked_count--;
     }
 
@@ -92,7 +86,7 @@ static inline scheduler_control_t syscall_terminate_process()
 /* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
-    if (active_process->p_s.reg_a1 == (int)NULL) {
+    if (active_process->p_s.reg_a1 == (memaddr)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     return P((int *)active_process->p_s.reg_a1, active_process);
@@ -101,7 +95,7 @@ static inline scheduler_control_t syscall_passeren()
 /* NSYS4 */
 static inline scheduler_control_t syscall_verhogen()
 {
-    if (active_process->p_s.reg_a1 == (int)NULL) {
+    if (active_process->p_s.reg_a1 == (memaddr)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     V((int *)active_process->p_s.reg_a1);
@@ -114,62 +108,26 @@ static inline scheduler_control_t syscall_verhogen()
 /* NSYS5 */
 static inline scheduler_control_t syscall_do_io()
 {
-
-    if (active_process->p_s.reg_a1 == (int)NULL ||
-        active_process->p_s.reg_a2 == (int)NULL) {
+    size_t *cmd_addr = (size_t *)active_process->p_s.reg_a1;
+    size_t cmd_value = (size_t)active_process->p_s.reg_a2;
+    if (cmd_addr == (size_t *)NULL || cmd_value == (size_t)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
-    pandos_kprintf("active_process %p\n", active_process);
-    int *cmd_addr = (int *)active_process->p_s.reg_a1;
-    int cmd_value = (int)active_process->p_s.reg_a2;
-
-    /* FIND DEVICE NUMBER BY cmd_addr */
-    int *base = GET_DEVICE_FROM_COMMAND(cmd_addr);
-    int i_n = 0, d_n = 0;
-
-    for (int i = IL_DISK; i < 3 + N_EXT_IL; i++) {
-        for (int j = 0; j < N_DEV_PER_IL; j++) {
-            int *a = (int *)DEV_REG_ADDR(i, j);
-            if (a == base) {
-                i_n = i;
-                d_n = j;
-                i = 3 + N_EXT_IL;
-                break;
-            }
-        }
+    iodev_t dev = get_iodev(cmd_addr);
+    if (dev.semaphore == NULL) {
+        /* scheduler_panic("Invalid interrupt line\n"); */
+        return pass_up_or_die(GENERALEXCEPT);
     }
 
-    int *sem;
-
-    if (i_n == IL_DISK) {
-        sem = disk_semaphores;
-    } else if (i_n == IL_FLASH) {
-        sem = tape_semaphores;
-    } else if (i_n == IL_ETHERNET) {
-        sem = ethernet_semaphores;
-    } else if (i_n == IL_PRINTER) {
-        sem = printer_semaphores;
-    } else if (i_n == IL_TERMINAL) {
-
-        if (TERMIMANL_CHECK_IS_WRITING(cmd_addr))
-            sem = termw_semaphores;
-        else
-            sem = termr_semaphores;
-    } else {
-        /* scheduler_panic("Interrupt line not handled\n"); */
-        pass_up_or_die(GENERALEXCEPT);
-    }
-
-    /* checks that semaphore is correctly synchronized */ 
-    if (sem[d_n] > 0) {
+    /* checks that semaphore is correctly synchronized */
+    if (*dev.semaphore > 0) {
         /* scheduler_panic("Device is already in use\n"); */
         pass_up_or_die(GENERALEXCEPT);
     }
 
-    scheduler_control_t ctrl = P(&sem[d_n], active_process);
-
-    active_process->p_s.status |= STATUS_IM(i_n);
+    active_process->p_s.status |= interrupt_mask(dev.interrupt_line);
+    scheduler_control_t ctrl = P(dev.semaphore, active_process);
 
     /* Finally write the data */
     *cmd_addr = cmd_value;
@@ -180,9 +138,9 @@ static inline scheduler_control_t syscall_do_io()
 /* NSYS6 */
 static inline scheduler_control_t syscall_get_cpu_time()
 {
-    signed int now;
-    STCK(now);
-    signed int diff = now - last_plt;
+    int now;
+    store_clock(&now);
+    int diff = now - last_plt;
     active_process->p_s.reg_v0 = active_process->p_time + diff;
     return CONTROL_RESCHEDULE;
 }
@@ -196,17 +154,17 @@ static inline scheduler_control_t syscall_wait_for_clock()
 /* NSYS8 */
 static inline scheduler_control_t syscall_get_support_data()
 {
-    active_process->p_s.reg_v0 = (int)active_process->p_support;
+    active_process->p_s.reg_v0 = (memaddr)active_process->p_support;
     return CONTROL_RESCHEDULE;
 }
 
 /* NSYS9 */
 static inline scheduler_control_t syscall_get_process_id()
 {
-    if (active_process->p_s.reg_a1 == (int)NULL) {
+    bool parent = (bool)active_process->p_s.reg_a1;
+    if (parent == (bool)NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    bool parent = (bool)active_process->p_s.reg_a1;
     /* if parent then return parent pid, else return active process pid */
     if (!parent)
         active_process->p_s.reg_v0 = active_process->p_pid;
@@ -225,51 +183,51 @@ inline scheduler_control_t syscall_handler()
 {
     if (active_process == NULL)
         scheduler_panic("Syscall recieved while active_process was NULL");
-    const int id = (int)active_process->p_s.reg_a0, pid = active_process->p_pid;
-    if (id <= 0 && checkUserMode()) {
+    const int id = (int)active_process->p_s.reg_a0;
+    if (id <= 0 && is_user_mode()) {
         pandos_kfprintf(&kstderr,
                         "Negative syscalls cannot be called in user mode!\n");
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     switch (id) {
         case CREATEPROCESS:
-            pandos_syscall("CREATEPROCESS", pid);
+            pandos_syscall("CREATEPROCESS");
             return syscall_create_process();
             break;
         case TERMPROCESS:
-            pandos_syscall("TERMPROCESS", pid);
+            pandos_syscall("TERMPROCESS");
             return syscall_terminate_process();
             break;
         case PASSEREN:
-            pandos_syscall("PASSEREN", pid);
+            pandos_syscall("PASSEREN");
             return syscall_passeren();
             break;
         case VERHOGEN:
-            pandos_syscall("VERHOGEN", pid);
+            pandos_syscall("VERHOGEN");
             return syscall_verhogen();
             break;
         case DOIO:
-            pandos_syscall("DOIO", pid);
+            pandos_syscall("DOIO");
             return syscall_do_io();
             break;
         case GETTIME:
-            pandos_syscall("GETTIME", pid);
+            pandos_syscall("GETTIME");
             return syscall_get_cpu_time();
             break;
         case CLOCKWAIT:
-            pandos_syscall("CLOCKWAIT", pid);
+            pandos_syscall("CLOCKWAIT");
             return syscall_wait_for_clock();
             break;
         case GETSUPPORTPTR:
-            pandos_syscall("GETSUPPORTPTR", pid);
+            pandos_syscall("GETSUPPORTPTR");
             return syscall_get_support_data();
             break;
         case GETPROCESSID:
-            pandos_syscall("GETPROCESSID", pid);
+            pandos_syscall("GETPROCESSID");
             return syscall_get_process_id();
             break;
         case YIELD:
-            pandos_syscall("YIELD", pid);
+            pandos_syscall("YIELD");
             return syscall_yeld();
             break;
         default:

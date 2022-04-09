@@ -12,6 +12,7 @@
 #define PANDOS_SEMAPHORE_H
 /* TODO: comment */
 
+#include "arch/devices.h"
 #include "os/types.h"
 
 extern int disk_semaphores[DEVPERINT];

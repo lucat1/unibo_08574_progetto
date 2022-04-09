@@ -11,7 +11,6 @@
 #include "os/semaphores.h"
 #include "os/asl.h"
 #include "os/scheduler.h"
-
 #include "os/util.h"
 
 /* Semaphores for each device */

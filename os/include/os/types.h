@@ -8,23 +8,13 @@
 #ifndef PANDOS_TYPES_H
 #define PANDOS_TYPES_H
 
+#include "arch/processor.h"
 #include "const.h"
 #include "list.h"
-#include <umps/types.h>
+#include "os/ctypes.h"
 
 typedef signed int cpu_t;
 /* Avoid re-defining size_t on a modern architecture */
-#ifdef __x86_64__
-typedef unsigned long memaddr;
-#include <stdbool.h>
-#include <stddef.h>
-#else
-typedef unsigned int memaddr;
-typedef unsigned int size_t;
-#define bool _Bool
-#define true 1
-#define false 0
-#endif
 
 /* Page Table Entry descriptor */
 typedef struct pte_entry_t {
@@ -47,7 +37,7 @@ typedef struct support_t {
     pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
 } support_t;
 
-typedef unsigned int pandos_pid_t; /* NOTE: the type has been changed to bool */
+typedef memaddr pandos_pid_t; /* NOTE: the type has been changed to bool */
 
 /* process table entry type */
 typedef struct pcb_t {

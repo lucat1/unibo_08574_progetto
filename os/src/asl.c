@@ -7,9 +7,9 @@
  */
 
 #include "os/asl.h"
+#include "arch/processor.h"
 #include "os/asl_impl.h"
 #include "os/util.h"
-#include "umps/types.h"
 
 static semd_t semd_table[MAX_PROC];
 static list_head semd_free;

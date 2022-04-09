@@ -6,6 +6,7 @@ add_library(${PROJECT_NAME}
     src/asl.c
     src/pcb.c
     src/scheduler.c
+    src/syscall.c
     src/semaphores.c
     src/util.c
 )
