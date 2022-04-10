@@ -2,6 +2,16 @@
 #include "os/scheduler.h"
 #include <umps/cp0.h>
 #include <umps/libumps.h>
+#include <umps/types.h>
+
+inline void init_puv(memaddr tbl_refill_handler, memaddr exception_handler)
+{
+    passupvector_t *const pv = (passupvector_t *)PASSUPVECTOR;
+    pv->tlb_refill_handler = tbl_refill_handler;
+    pv->tlb_refill_stackPtr = KERNELSTACK;
+    pv->exception_handler = exception_handler;
+    pv->exception_stackPtr = KERNELSTACK;
+}
 
 inline bool is_user_mode()
 {
@@ -32,15 +42,14 @@ inline void wait() { WAIT(); }
 
 inline void set_status(size_t status) { setSTATUS(status); }
 inline size_t get_status() { return getSTATUS(); }
-inline size_t status_interrupts_on_nucleus(size_t prev)
+inline void status_interrupts_on_nucleus(size_t *prev)
 {
-    return prev | STATUS_IEc | STATUS_TE;
+    *prev |= STATUS_IEc | STATUS_TE;
 }
-inline size_t status_interrupts_on_process(size_t prev)
+inline void status_interrupts_on_process(size_t *prev)
 {
-    return prev | STATUS_IEp | STATUS_TE;
+    *prev |= STATUS_IEp | STATUS_TE;
 }
-inline size_t status_toggle_local_timer(size_t prev)
-{
-    return prev ^ STATUS_TE;
-}
+inline void status_toggle_local_timer(size_t *prev) { *prev ^= STATUS_TE; }
+inline void status_kernel_mode_on_nucleus(size_t *prev) { *prev |= STATUS_KUc; }
+inline void status_kernel_mode_on_process(size_t *prev) { *prev |= STATUS_KUp; }

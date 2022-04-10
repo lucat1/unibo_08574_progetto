@@ -184,8 +184,13 @@ void scheduler_wait()
     pandos_kprintf("-- WAIT\n");
     active_process = NULL;
     reset_timer();
-    set_status(
-        status_toggle_local_timer(status_interrupts_on_nucleus(get_status())));
+
+    size_t status = get_status();
+    status_interrupts_on_nucleus(&status);
+    status_toggle_local_timer(&status);
+    status_il_on_all(&status);
+    set_status(status);
+
     wait();
     schedule(NULL, false);
 }
@@ -193,14 +198,11 @@ void scheduler_wait()
 void scheduler_takeover()
 {
     pandos_kprintf(">> TAKEOVER(%d)\n", active_process->p_pid);
-    /* Enable interrupts */
-    active_process->p_s.status =
-        status_interrupts_on_process(active_process->p_s.status);
+    status_interrupts_on_process(&active_process->p_s.status);
     reset_local_timer();
     /* Disable the processor Local Timer on hi processes */
     if (active_process->p_prio)
-        active_process->p_s.status =
-            status_toggle_local_timer(active_process->p_s.status);
+        status_toggle_local_timer(&active_process->p_s.status);
     store_tod(&start_tod);
     load_state(&active_process->p_s);
 }

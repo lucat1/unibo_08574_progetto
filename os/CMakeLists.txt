@@ -5,6 +5,7 @@ list(APPEND TRGTS ${PROJECT_NAME})
 add_library(${PROJECT_NAME}
     src/asl.c
     src/pcb.c
+    src/init.c
     src/scheduler.c
     src/syscall.c
     src/semaphores.c

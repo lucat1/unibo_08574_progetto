@@ -5,7 +5,6 @@ add_executable(${PROJECT_NAME}
     src/devices.c
     src/exception.c
     test/p2test.c
-    src/init.c
     src/main.c
 )
 

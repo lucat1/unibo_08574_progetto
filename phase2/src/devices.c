@@ -40,8 +40,8 @@ inline iodev_t get_iodev(size_t *cmd_addr)
     return res;
 }
 
-inline size_t il_mask(int line) { return STATUS_IM(line); }
-inline size_t il_mask_all() { return STATUS_IM_MASK; }
+inline void status_il_on_all(size_t *prev) { *prev |= STATUS_IM_MASK; }
+inline void status_il_on(size_t *prev, int line) { *prev |= STATUS_IM(line); }
 
 inline void store_tod(int *time) { STCK(*time); }
 inline void load_interval_timer(int time) { LDIT(time); }

@@ -7,18 +7,17 @@
  * \date 17-03-2022
  */
 
-#include <umps/libumps.h>
-
+#include "exception.h"
+#include "os/init.h"
 #include "os/scheduler.h"
 #include "os/util.h"
-
-#include "init.h"
+#include "p2test.h"
+#include <umps/libumps.h>
 
 int main(int argc)
 {
-    init();
+    init((memaddr)uTLB_RefillHandler, (memaddr)exception_handler,
+         (memaddr)test);
     schedule(NULL, false);
-
-    scheduler_panic("Scheduler quit\n");
-    return -1;
+    return 1;
 }

@@ -23,8 +23,8 @@ typedef struct iodev {
 } iodev_t;
 
 extern iodev_t get_iodev(size_t *cmd_addr);
-extern size_t il_mask_all();
-extern size_t il_mask(int line);
+extern void status_il_on_all(size_t *prev);
+extern void status_il_on(size_t *prev, int line);
 
 /* tod = time of day */
 extern void store_tod(int *time);

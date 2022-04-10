@@ -116,14 +116,13 @@ static inline scheduler_control_t syscall_do_io()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     scheduler_control_t ctrl = P(dev.semaphore, active_process);
-    active_process->p_s.status |=
-        (active_process->p_prio == 0 ? il_mask_all()
-                                     : il_mask(dev.interrupt_line));
+    if (active_process->p_prio)
+        status_il_on(&active_process->p_s.status, dev.interrupt_line);
+    else
+        status_il_on_all(&active_process->p_s.status);
 
     /* Finally write the data */
     *cmd_addr = cmd_value;
-
-    pandos_kprintf("do_io result\n");
     return ctrl;
 }
 
