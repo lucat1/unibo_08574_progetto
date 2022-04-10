@@ -42,6 +42,7 @@ inline void wait() { WAIT(); }
 
 inline void set_status(size_t status) { setSTATUS(status); }
 inline size_t get_status() { return getSTATUS(); }
+inline size_t get_cause() { return getCAUSE(); }
 inline void status_interrupts_on_nucleus(size_t *prev)
 {
     *prev |= STATUS_IEc | STATUS_TE;

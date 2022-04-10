@@ -1,10 +1,9 @@
 project(phase2)
 add_executable(${PROJECT_NAME}
-    src/interrupt.c
     src/processor.c
     src/devices.c
-    src/exception.c
     test/p2test.c
+    src/exception.c
     src/main.c
 )
 

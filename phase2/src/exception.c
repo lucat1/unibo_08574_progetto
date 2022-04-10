@@ -1,70 +1,211 @@
 /**
  * \file exception.c
- * \brief Implementation \ref exception.h and \ref exception_impl.h
+ * \brief Implementation \ref exception.h.
  *
  * \author Alessandro Frau
+ * \author Gianmaria Rovelli
  * \author Luca Tagliavini
  * \author Stefano Volpe
  * \date 30-03-2022
  */
 
 #include "exception.h"
-#include "os/interrupt.h"
+#include "os/asl.h"
 #include "os/puod.h"
+#include "os/scheduler.h"
+#include "os/scheduler_impl.h"
+#include "os/semaphores.h"
 #include "os/syscall.h"
 #include "os/util.h"
 #include <umps/arch.h>
 #include <umps/cp0.h>
 #include <umps/libumps.h>
 
-scheduler_control_t tbl_handler()
+#define pandos_interrupt(str) pandos_kprintf("<< INTERRUPT(" str ")\n")
+
+/* finds device number of device that generates interrupt */
+int find_device_number(memaddr *bitmap)
 {
-    pandos_kprintf("<< TBL\n");
-    return pass_up_or_die((memaddr)PGFAULTEXCEPT);
+    int device_n = 0;
+
+    while (*bitmap > 1) {
+        ++device_n;
+        *bitmap >>= 1;
+    }
+    return device_n;
 }
 
-static scheduler_control_t trap_handler()
+static inline scheduler_control_t interrupt_ipi()
 {
-    if (active_process != NULL) {
-        int pid = active_process != NULL ? active_process->p_pid : 0;
-        pandos_kprintf("<< TRAP (%d)\n", pid);
-    } else {
-        pandos_kprintf("<< TRAP\n");
+    /* Could be safetly ignored */
+
+    return CONTROL_PRESERVE(active_process);
+}
+
+static inline scheduler_control_t interrupt_local_timer()
+{
+    reset_local_timer();
+    return CONTROL_RESCHEDULE;
+}
+
+static inline scheduler_control_t interrupt_timer()
+{
+    reset_timer();
+    while (timer_semaphore != 1)
+        V(&timer_semaphore);
+    return CONTROL_PRESERVE(active_process);
+}
+
+static inline scheduler_control_t interrupt_generic(int cause)
+{
+
+    /* TODO */
+    int il = IL_DISK;
+    int *sem[] = {disk_semaphores, tape_semaphores, ethernet_semaphores,
+                  printer_semaphores};
+    /* inverse priority */
+    for (int i = IL_DISK; i < IL_PRINTER; i++) {
+        if (IL_ACTIVE(cause, i)) {
+            il = i;
+            break;
+        }
     }
 
-    return pass_up_or_die((memaddr)GENERALEXCEPT);
+    int devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
+
+    int i = il - IL_DISK;
+
+    devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
+    dtpreg_t *dtp_reg = &device_regs->devreg[i][devicenumber].dtp;
+
+    int status = dtp_reg->status;
+
+    scheduler_control_t ctrl = CONTROL_BLOCK;
+
+    if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
+
+        pcb_t *p = V(&sem[i][devicenumber]);
+        if (p == NULL || p == active_process) {
+            if (active_process != NULL) {
+                active_process->p_s.reg_v0 = status;
+                ctrl = CONTROL_RESCHEDULE;
+            } else {
+                scheduler_panic("No active process (Interrupt Generic)\n");
+            }
+        } else {
+            p->p_s.reg_v0 = status;
+            ctrl = CONTROL_PRESERVE(active_process);
+        }
+    } else {
+        scheduler_panic("Device is not installed!\n");
+    }
+
+    /* ACK al device */
+    dtp_reg->command = DEV_C_ACK;
+    return ctrl;
 }
 
-void exception_handler()
+static inline scheduler_control_t interrupt_terminal()
+{
+
+    int devicenumber =
+        find_device_number((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
+
+    devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
+    termreg_t *term_reg =
+        &device_regs->devreg[IL_TERMINAL - IL_DISK][devicenumber].term;
+
+    /* TODO : order is important, check */
+    memaddr(statuses[2]) = {term_reg->transm_status, term_reg->recv_status};
+    memaddr(*commands[2]) = {&term_reg->transm_command,
+                             &term_reg->recv_command};
+    int *sem[] = {termw_semaphores, termr_semaphores};
+
+    // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
+    for (int i = 0; i < 2; ++i) {
+        int status = statuses[i];
+        if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
+            scheduler_panic("Device is not installed!\n");
+
+        pcb_t *p = V(&sem[i][devicenumber]);
+        scheduler_control_t ctrl;
+        if (p == NULL || p == active_process) {
+            if (active_process != NULL) {
+                active_process->p_s.reg_v0 = status;
+                ctrl = CONTROL_RESCHEDULE;
+            } else {
+                scheduler_panic("No active process (Interrupt Terminal)\n");
+            }
+        } else {
+            p->p_s.reg_v0 = status;
+            ctrl = CONTROL_PRESERVE(active_process);
+        }
+
+        *commands[i] = DEV_C_ACK;
+        /* do the first one */
+        return ctrl;
+    }
+    scheduler_panic("Terminal did not ACK\n");
+    /* Make C happy */
+    return CONTROL_BLOCK;
+}
+
+static inline scheduler_control_t interrupt_handler(size_t cause)
+{
+    if (IL_ACTIVE(cause, IL_IPI)) {
+        pandos_interrupt("IL_IPI");
+        return interrupt_ipi();
+    } else if (IL_ACTIVE(cause, IL_CPUTIMER)) {
+        pandos_interrupt("LOCAL_TIMER");
+        return interrupt_local_timer();
+    } else if (IL_ACTIVE(cause, IL_TIMER)) {
+        pandos_interrupt("TIMER");
+        return interrupt_timer();
+    } else if (IL_ACTIVE(cause, IL_DISK) || IL_ACTIVE(cause, IL_FLASH) ||
+               IL_ACTIVE(cause, IL_ETHERNET) || IL_ACTIVE(cause, IL_PRINTER)) {
+        pandos_interrupt("GENERIC");
+        return interrupt_generic(cause);
+    } else if (IL_ACTIVE(cause, IL_TERMINAL)) {
+        pandos_interrupt("TERMINAL");
+        return interrupt_terminal();
+    } else
+        pandos_interrupt("UNKNOWN");
+
+    /* The newly unblocked pcb is enqueued back on the Ready Queue and control
+     * is returned to the Current Process unless the newly unblocked process
+     * has higher prority of the Current Process.
+     * */
+    return CONTROL_RESCHEDULE;
+}
+
+inline void exception_handler()
 {
     scheduler_control_t ctrl;
-    if (active_process != NULL) {
+    if (active_process != NULL)
         pandos_memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE,
                       sizeof(state_t));
-    }
 
-    switch (CAUSE_GET_EXCCODE(getCAUSE())) {
+    switch (CAUSE_GET_EXCCODE(get_cause())) {
         case 0:
-            ctrl = interrupt_handler();
+            ctrl = interrupt_handler(get_cause());
             break;
         case 1:
-            break;
         case 2:
-            break;
         case 3:
-            ctrl = tbl_handler();
+            ctrl = pass_up_or_die((memaddr)PGFAULTEXCEPT);
             break;
         case 8:
             if (active_process == NULL)
                 scheduler_panic(
                     "A syscall happened while active_process was NULL\n");
+            ctrl = syscall_handler();
+
             /* ALWAYS increment the PC to prevent system call loops */
             active_process->p_s.pc_epc += WORD_SIZE;
             active_process->p_s.reg_t9 += WORD_SIZE;
-            ctrl = syscall_handler();
             break;
         default: /* 4-7, 9-12 */
-            ctrl = trap_handler();
+            ctrl = pass_up_or_die((memaddr)GENERALEXCEPT);
             break;
     }
 

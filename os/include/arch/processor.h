@@ -71,6 +71,7 @@ extern void wait();
 
 extern void set_status(size_t status);
 extern size_t get_status();
+extern size_t get_cause();
 extern void status_interrupts_on_nucleus(size_t *prev);
 extern void status_interrupts_on_process(size_t *prev);
 extern void status_toggle_local_timer(size_t *prev);

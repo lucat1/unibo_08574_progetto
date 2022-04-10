@@ -54,6 +54,7 @@ void wait() { ++wait_count; }
 
 void set_status(size_t status) { processor_state.status = status; }
 size_t get_status() { return processor_state.status; }
+size_t get_cause() { return processor_state.cause; }
 void status_interrupts_on_nucleus(size_t *prev)
 {
     *prev |= MOCK_INTERRUPTS_ON_NUCLEUS;

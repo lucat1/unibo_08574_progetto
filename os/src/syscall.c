@@ -12,7 +12,6 @@
 #include "arch/devices.h"
 #include "arch/processor.h"
 #include "os/asl.h"
-#include "os/interrupt.h"
 #include "os/puod.h"
 #include "os/scheduler.h"
 #include "os/semaphores.h"
@@ -58,8 +57,9 @@ static inline scheduler_control_t syscall_create_process()
 /* NSYS2 */
 static inline scheduler_control_t syscall_terminate_process()
 {
+    /* TODO ????? */
     /* Generate an interrupt to signal the end of Current Process’s time q
-       antum/slice. The PLT is reserved for this purpose. */
+     * ntum/slice. The PLT is reserved for this purpose. */
 
     pcb_t *p;
     const pandos_pid_t pid = active_process->p_s.reg_a1;
@@ -112,7 +112,6 @@ static inline scheduler_control_t syscall_do_io()
 
     iodev_t dev = get_iodev(cmd_addr);
     if (dev.semaphore == NULL || *dev.semaphore > 0)
-        /* scheduler_panic("Invalid interrupt line\n"); */
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     scheduler_control_t ctrl = P(dev.semaphore, active_process);
