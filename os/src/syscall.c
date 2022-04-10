@@ -155,7 +155,7 @@ static inline scheduler_control_t syscall_get_process_id()
     if ((parent != (bool)0 && parent != (bool)1))
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
-    /* if parent then return parent pid, else return active process pid */
+    /* Return its own pid, the parent's or 0 otherwhise */
     if (!parent)
         active_process->p_s.reg_v0 = active_process->p_pid;
     else if (active_process->p_parent != NULL)

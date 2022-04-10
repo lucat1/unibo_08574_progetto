@@ -12,12 +12,16 @@
 
 #ifdef __x86_64__
 typedef unsigned long memaddr;
-#include <stdbool.h>
+/* using stdbool.h would be nice here but casts to these types are automatically
+ * mapped in the {0,1} set, and this wouldn't match the behaviour on umps3 */
+typedef unsigned int bool;
+#define true 1
+#define false 0
 #include <stddef.h>
 #else
 typedef unsigned int memaddr;
 typedef unsigned int size_t;
-#define bool _Bool
+typedef unsigned int bool;
 #define true 1
 #define false 0
 #include <umps/const.h>

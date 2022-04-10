@@ -78,7 +78,7 @@ void status_kernel_mode_on_process(size_t *prev)
 
 void reset_processor()
 {
-    user_mode = true;
+    user_mode = false;
     halt_count = 0;
     panic_count = 0;
     wait_count = 0;
