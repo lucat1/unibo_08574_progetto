@@ -9,7 +9,7 @@
 #ifndef PANDOS_TEST_MOCK_PUOD_H
 #define PANDOS_TEST_MOCK_PUOD_H
 
-#include "os/exception_impl.h"
+#include "os/puod.h"
 
 int puod_count;
 

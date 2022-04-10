@@ -47,7 +47,7 @@ static inline scheduler_control_t interrupt_local_timer()
 
 static inline scheduler_control_t interrupt_timer()
 {
-    //pcb_t *p;
+    // pcb_t *p;
 
     reset_timer();
     while (timer_semaphore != 1)
@@ -125,27 +125,26 @@ static inline scheduler_control_t interrupt_terminal()
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
-        if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
-            pcb_t *p = V(&sem[i][devicenumber]);
-            scheduler_control_t ctrl;
-            if (p == NULL || p == active_process) {
-                if (active_process != NULL) {
-                    active_process->p_s.reg_v0 = status;
-                    ctrl = CONTROL_RESCHEDULE;
-                } else {
-                    scheduler_panic("No active process (Interrupt Terminal)\n");
-                }
-            } else {
-                p->p_s.reg_v0 = status;
-                ctrl = CONTROL_PRESERVE(active_process);
-            }
-
-            *commands[i] = DEV_C_ACK;
-            /* do the first one */
-            return ctrl;
-        } else {
+        if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
             scheduler_panic("Device is not installed!\n");
+
+        pcb_t *p = V(&sem[i][devicenumber]);
+        scheduler_control_t ctrl;
+        if (p == NULL || p == active_process) {
+            if (active_process != NULL) {
+                active_process->p_s.reg_v0 = status;
+                ctrl = CONTROL_RESCHEDULE;
+            } else {
+                scheduler_panic("No active process (Interrupt Terminal)\n");
+            }
+        } else {
+            p->p_s.reg_v0 = status;
+            ctrl = CONTROL_PRESERVE(active_process);
         }
+
+        *commands[i] = DEV_C_ACK;
+        /* do the first one */
+        return ctrl;
     }
     scheduler_panic("Terminal did not ACK\n");
     /* Make C happy */
@@ -174,7 +173,8 @@ scheduler_control_t interrupt_handler()
         return interrupt_terminal();
     } else {
         pandos_interrupt("UNKNOWN");
-        pandos_kfprintf(&kstdout, "UNKNOWN CODE : %d\n", IL_ACTIVE(cause, IL_IPI));
+        pandos_kfprintf(&kstdout, "UNKNOWN CODE : %d\n",
+                        IL_ACTIVE(cause, IL_IPI));
         return CONTROL_PRESERVE(active_process);
     }
 

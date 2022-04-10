@@ -9,33 +9,7 @@
 #define PANDOS_TYPES_H
 
 #include "arch/processor.h"
-#include "const.h"
-#include "list.h"
-#include "os/ctypes.h"
-
-typedef signed int cpu_t;
-/* Avoid re-defining size_t on a modern architecture */
-
-/* Page Table Entry descriptor */
-typedef struct pte_entry_t {
-    unsigned int pte_entry_hi;
-    unsigned int pte_entry_lo;
-} pte_entry_t;
-
-/* Support level context */
-typedef struct context_t {
-    unsigned int stack_ptr;
-    unsigned int status;
-    unsigned int pc;
-} context_t;
-
-/* Support level descriptor */
-typedef struct support_t {
-    int sup_asid;                    /* process ID */
-    state_t sup_except_state[2];     /* old state exceptions */
-    context_t sup_except_context[2]; /* new contexts for passing up	*/
-    pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
-} support_t;
+#include "os/list.h"
 
 typedef memaddr pandos_pid_t; /* NOTE: the type has been changed to bool */
 

@@ -53,7 +53,7 @@ inline void enqueue_process(pcb_t *p)
 inline pcb_t *dequeue_process(pcb_t *p)
 {
     pcb_t *t = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
-    if(t != NULL)
+    if (t != NULL)
         running_count--;
     return t;
 }
@@ -74,19 +74,12 @@ static inline int kill_process(pcb_t *const p)
     if (p->p_parent != NULL && !out_child(p))
         return 2;
 
-    if(p->p_pid == 19) {
-        pandos_kfprintf(&kverb, "Killing test\n");
-    }
-
     /* In case it is blocked by a semaphore*/
-    if (p->p_sem_add != NULL) {
-        out_blocked(p);
+    if (out_blocked(p) != NULL)
         --blocked_count;
-    } else {
+    else
         dequeue_process(p);
-    }
 
-    pandos_kprintf("Killed %d", p->p_pid);
     free_pcb(p);
     return 0;
 }
@@ -96,7 +89,8 @@ inline int kill_progeny(pcb_t *p)
     pcb_t *child;
 
     while ((child = remove_child(p)) != NULL)
-        kill_progeny(child);
+        if (kill_progeny(child))
+            return 3;
 
     return kill_process(p);
 }
@@ -118,22 +112,24 @@ static inline void wait_or_die()
     if (active_process == NULL || blocked_count > 0) {
         pandos_kprintf("wait\n");
         scheduler_wait();
-    }else if (active_process->p_pid == -1 && running_count <= 0) {
-        //pbc_t *c = (pcb_t *)find_process(19);
+    } else if (active_process->p_pid == -1 && running_count <= 0) {
+        // pbc_t *c = (pcb_t *)find_process(19);
         pandos_kprintf("Nothing left, halting %d");
         halt();
         /* TODO: Can the active process be null and blocked count be 0?
          * I think that active_process == NULL is redundant.
          **/
     } else {
-        pandos_kprintf("act is null : %s", active_process == NULL ? "true" : "false");
+        pandos_kprintf("act is null : %s",
+                       active_process == NULL ? "true" : "false");
         pandos_kprintf("deadlock\n");
         scheduler_panic("Deadlock detected.\n");
     }
 }
 
-void reset_yield_process() {
-    if(yield_process != NULL) {
+void reset_yield_process()
+{
+    if (yield_process != NULL) {
         enqueue_process(yield_process);
         yield_process = NULL;
     }
@@ -162,13 +158,11 @@ void schedule(pcb_t *pcb, bool enqueue)
         active_process = remove_proc_q(&ready_queue_lo);
         running_count--;
         reset_yield_process();
-    }
-    else if (yield_process != NULL) {
+    } else if (yield_process != NULL) {
         active_process = yield_process;
         yield_process = NULL;
         running_count--;
-    } 
-    else
+    } else
         wait_or_die();
 
     /* This point should never be reached unless processes have been

@@ -10,6 +10,7 @@
 #ifndef PANDOS_ARCH_PROCESSOR_H
 #define PANDOS_ARCH_PROCESSOR_H
 
+#include "os/const.h"
 #include "os/ctypes.h"
 
 #ifdef __x86_64__
@@ -32,10 +33,34 @@ typedef struct state {
 #include <umps/types.h>
 #endif
 
+typedef signed int cpu_t;
+
+/* Page Table Entry descriptor */
+typedef struct pte_entry_t {
+    unsigned int pte_entry_hi;
+    unsigned int pte_entry_lo;
+} pte_entry_t;
+
+/* Support level context */
+typedef struct context_t {
+    unsigned int stack_ptr;
+    unsigned int status;
+    unsigned int pc;
+} context_t;
+
+/* Support level descriptor */
+typedef struct support_t {
+    int sup_asid;                    /* process ID */
+    state_t sup_except_state[2];     /* old state exceptions */
+    context_t sup_except_context[2]; /* new contexts for passing up	*/
+    pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
+} support_t;
+
 extern bool is_user_mode();
 extern void null_state(state_t *s);
-extern void load_state(state_t *);
-extern void store_state(state_t *);
+extern void load_state(state_t *s);
+extern void load_context(context_t *ctx);
+extern void store_state(state_t *s);
 
 extern void halt();
 extern void panic();

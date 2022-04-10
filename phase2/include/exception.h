@@ -1,5 +1,5 @@
 /**
- * \file exception_impl.h
+ * \file exception.h
  * \brief Exception handlers implementations.
  *
  * \author Alessandro Frau

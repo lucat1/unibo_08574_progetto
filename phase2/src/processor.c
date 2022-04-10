@@ -20,6 +20,10 @@ inline void null_state(state_t *s)
         s->gpr[i] = 0;
 }
 inline void load_state(state_t *s) { LDST(s); }
+inline void load_context(context_t *ctx)
+{
+    LDCXT(ctx->stack_ptr, ctx->status, ctx->pc);
+}
 inline void store_state(state_t *s) { STST(s); }
 
 inline void halt() { HALT(); }

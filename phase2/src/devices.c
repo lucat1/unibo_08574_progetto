@@ -1,5 +1,4 @@
 #include "arch/devices.h"
-#include "os/exception_impl.h"
 #include "os/semaphores.h"
 #include "umps/const.h"
 #include "umps/libumps.h"

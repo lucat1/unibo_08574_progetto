@@ -8,6 +8,7 @@ add_library(${PROJECT_NAME}
     src/scheduler.c
     src/syscall.c
     src/semaphores.c
+    src/puod.c
     src/util.c
 )
 add_library(sub::${PROJECT_NAME} ALIAS ${PROJECT_NAME})

@@ -9,43 +9,13 @@
  */
 
 #include "exception.h"
-#include "os/exception_impl.h"
 #include "os/interrupt.h"
+#include "os/puod.h"
 #include "os/syscall.h"
 #include "os/util.h"
 #include <umps/arch.h>
 #include <umps/cp0.h>
 #include <umps/libumps.h>
-
-inline scheduler_control_t pass_up_or_die(memaddr type)
-{
-    if (active_process != NULL) {
-        pandos_kfprintf(&kstdout, "-- Pass up or Die called");
-        if (active_process->p_support == NULL) {
-            pandos_kfprintf(&kstdout, " : killing\n");
-            /* TODO: kill single process and handle children or kill progeny? */
-            kill_progeny(active_process);
-            pandos_kfprintf(&kstdout, "Running proc (%d)\n", blocked_count);
-        } else {
-            pandos_kfprintf(&kstdout, "-- support layer\n");
-            pandos_memcpy(&active_process->p_support->sup_except_state[type],
-                          (state_t *)BIOSDATAPAGE, sizeof(state_t));
-            context_t c;
-            c.stack_ptr =
-                active_process->p_support->sup_except_context[type].stack_ptr;
-            c.status =
-                active_process->p_support->sup_except_context[type].status;
-            c.pc = active_process->p_support->sup_except_context[type].pc;
-
-            LDCXT(c.stack_ptr, c.status, c.pc);
-
-            scheduler_panic(
-                "Control should have been handed off to the support "
-                "layer by now\n");
-        }
-    }
-    return CONTROL_BLOCK;
-}
 
 scheduler_control_t tbl_handler()
 {

@@ -10,9 +10,9 @@
 #ifndef PANDOS_PCB_H
 #define PANDOS_PCB_H
 
-#include "const.h"
-#include "list.h"
-#include "types.h"
+#include "os/const.h"
+#include "os/list.h"
+#include "os/types.h"
 
 #ifdef PANDOS_TESTING
 
