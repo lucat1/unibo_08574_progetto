@@ -156,9 +156,9 @@ static inline scheduler_control_t syscall_get_support_data()
 static inline scheduler_control_t syscall_get_process_id()
 {
     bool parent = (bool)active_process->p_s.reg_a1;
-    if (parent == (bool)NULL || (int)parent < 0 || (int)parent > 1) {
+    if (parent == (bool)NULL || (int)parent < 0 || (int)parent > 1)
         return pass_up_or_die((memaddr)GENERALEXCEPT);
-    }
+
     /* if parent then return parent pid, else return active process pid */
     if (!parent)
         active_process->p_s.reg_v0 = active_process->p_pid;
