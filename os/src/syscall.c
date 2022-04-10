@@ -17,6 +17,7 @@
 #include "os/scheduler.h"
 #include "os/semaphores.h"
 #include "os/util.h"
+#include <umps3/umps/cp0.h>
 
 #define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
 
@@ -70,13 +71,8 @@ static inline scheduler_control_t syscall_terminate_process()
     /* If pid is not 0 then the target must be searched */
     if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
         scheduler_panic("Could not find process by pid: %p\n", pid);
-    else
+    else 
         p = active_process;
-
-    /* If the process was blocked on a semaphore, decrease the blocked count */
-    if (p->p_sem_add != NULL) {
-        blocked_count--;
-    }
 
     /* TODO: handle kill_progeny return value */
     kill_progeny(p);
@@ -121,7 +117,7 @@ static inline scheduler_control_t syscall_do_io()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     scheduler_control_t ctrl = P(dev.semaphore, active_process);
-    active_process->p_s.status |= interrupt_mask(dev.interrupt_line);
+    active_process->p_s.status |= (active_process->p_prio == 0 ? STATUS_IM_MASK : interrupt_mask(dev.interrupt_line));
 
     /* Finally write the data */
     *cmd_addr = cmd_value;

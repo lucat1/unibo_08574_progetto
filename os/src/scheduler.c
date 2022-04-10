@@ -74,25 +74,27 @@ static inline int kill_process(pcb_t *const p)
     if (p->p_parent != NULL && !out_child(p))
         return 2;
 
+    if(p->p_pid == 19) {
+        pandos_kfprintf(&kverb, "Killing test\n");
+    }
+
     /* In case it is blocked by a semaphore*/
-    if (out_blocked(p) != NULL) {
+    if (p->p_sem_add != NULL) {
+        out_blocked(p);
         --blocked_count;
     } else {
         dequeue_process(p);
     }
 
+    pandos_kprintf("Killed %d", p->p_pid);
     free_pcb(p);
     return 0;
 }
 
 inline int kill_progeny(pcb_t *p)
 {
-    // int r;
     pcb_t *child;
 
-    /* in case of pass_up_or_die active_process has to be NULL */
-    //if (p == active_process) active_process = NULL;
-    
     while ((child = remove_child(p)) != NULL)
         kill_progeny(child);
 
@@ -117,7 +119,8 @@ static inline void wait_or_die()
         pandos_kprintf("wait\n");
         scheduler_wait();
     }else if (active_process->p_pid == -1 && running_count <= 0) {
-        pandos_kprintf("Nothing left, halting");
+        //pbc_t *c = (pcb_t *)find_process(19);
+        pandos_kprintf("Nothing left, halting %d");
         halt();
         /* TODO: Can the active process be null and blocked count be 0?
          * I think that active_process == NULL is redundant.

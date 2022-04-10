@@ -47,11 +47,11 @@ static inline scheduler_control_t interrupt_local_timer()
 
 static inline scheduler_control_t interrupt_timer()
 {
-    pcb_t *p;
+    //pcb_t *p;
 
     reset_timer();
-    while ((p = V(&timer_semaphore)) != NULL)
-        ;
+    while (timer_semaphore != 1)
+        V(&timer_semaphore);
     // timer_semaphore = 0;
     pandos_kprintf("act: %p\n", active_process);
     return CONTROL_PRESERVE(active_process);
