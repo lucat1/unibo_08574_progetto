@@ -38,18 +38,21 @@ int find_device_number(memaddr *bitmap)
 static inline scheduler_control_t interrupt_ipi()
 {
     /* Could be safetly ignored */
+    pandos_interrupt("IL_IPI");
 
     return CONTROL_PRESERVE(active_process);
 }
 
 static inline scheduler_control_t interrupt_local_timer()
 {
+    pandos_interrupt("LOCAL_TIMER");
     reset_local_timer();
     return CONTROL_RESCHEDULE;
 }
 
 static inline scheduler_control_t interrupt_timer()
 {
+    pandos_interrupt("TIMER");
     reset_timer();
     while (timer_semaphore != 1)
         V(&timer_semaphore);
@@ -58,7 +61,7 @@ static inline scheduler_control_t interrupt_timer()
 
 static inline scheduler_control_t interrupt_generic(int cause)
 {
-
+    pandos_interrupt("GENERIC");
     /* TODO */
     int il = IL_DISK;
     int *sem[] = {disk_semaphores, tape_semaphores, ethernet_semaphores,
@@ -82,22 +85,20 @@ static inline scheduler_control_t interrupt_generic(int cause)
 
     scheduler_control_t ctrl = CONTROL_BLOCK;
 
-    if ((status & TERMSTATMASK) != DEV_STATUS_NOTINSTALLED) {
+    if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
+        scheduler_panic("Device is not installed!\n");
 
-        pcb_t *p = V(&sem[i][devicenumber]);
-        if (p == NULL || p == active_process) {
-            if (active_process != NULL) {
-                active_process->p_s.reg_v0 = status;
-                ctrl = CONTROL_RESCHEDULE;
-            } else {
-                scheduler_panic("No active process (Interrupt Generic)\n");
-            }
+    pcb_t *p = V(&sem[i][devicenumber]);
+    if (p == NULL || p == active_process) {
+        if (active_process != NULL) {
+            active_process->p_s.reg_v0 = status;
+            ctrl = CONTROL_RESCHEDULE;
         } else {
-            p->p_s.reg_v0 = status;
-            ctrl = CONTROL_PRESERVE(active_process);
+            scheduler_panic("No active process (Interrupt Generic)\n");
         }
     } else {
-        scheduler_panic("Device is not installed!\n");
+        p->p_s.reg_v0 = status;
+        ctrl = CONTROL_PRESERVE(active_process);
     }
 
     /* ACK al device */
@@ -107,7 +108,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
 
 static inline scheduler_control_t interrupt_terminal()
 {
-
+    pandos_interrupt("TERMINAL");
     int devicenumber =
         find_device_number((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
@@ -124,18 +125,16 @@ static inline scheduler_control_t interrupt_terminal()
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
-        if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
+        if ((status & TERMSTATMASK) != DEV_STATUS_TERMINAL_OK)
             scheduler_panic("Device is not installed!\n");
 
         pcb_t *p = V(&sem[i][devicenumber]);
         scheduler_control_t ctrl;
         if (p == NULL || p == active_process) {
-            if (active_process != NULL) {
-                active_process->p_s.reg_v0 = status;
-                ctrl = CONTROL_RESCHEDULE;
-            } else {
+            if (active_process == NULL)
                 scheduler_panic("No active process (Interrupt Terminal)\n");
-            }
+            active_process->p_s.reg_v0 = status;
+            ctrl = CONTROL_RESCHEDULE;
         } else {
             p->p_s.reg_v0 = status;
             ctrl = CONTROL_PRESERVE(active_process);
@@ -152,28 +151,23 @@ static inline scheduler_control_t interrupt_terminal()
 
 static inline scheduler_control_t interrupt_handler(size_t cause)
 {
-    if (IL_ACTIVE(cause, IL_IPI)) {
-        pandos_interrupt("IL_IPI");
+    if (IL_ACTIVE(cause, IL_IPI))
         return interrupt_ipi();
-    } else if (IL_ACTIVE(cause, IL_CPUTIMER)) {
-        pandos_interrupt("LOCAL_TIMER");
+    else if (IL_ACTIVE(cause, IL_CPUTIMER))
         return interrupt_local_timer();
-    } else if (IL_ACTIVE(cause, IL_TIMER)) {
-        pandos_interrupt("TIMER");
+    else if (IL_ACTIVE(cause, IL_TIMER))
         return interrupt_timer();
-    } else if (IL_ACTIVE(cause, IL_DISK) || IL_ACTIVE(cause, IL_FLASH) ||
-               IL_ACTIVE(cause, IL_ETHERNET) || IL_ACTIVE(cause, IL_PRINTER)) {
-        pandos_interrupt("GENERIC");
+    else if (IL_ACTIVE(cause, IL_DISK) || IL_ACTIVE(cause, IL_FLASH) ||
+             IL_ACTIVE(cause, IL_ETHERNET) || IL_ACTIVE(cause, IL_PRINTER))
         return interrupt_generic(cause);
-    } else if (IL_ACTIVE(cause, IL_TERMINAL)) {
-        pandos_interrupt("TERMINAL");
+    else if (IL_ACTIVE(cause, IL_TERMINAL))
         return interrupt_terminal();
-    } else
+    else
         pandos_interrupt("UNKNOWN");
 
-    /* The newly unblocked pcb is enqueued back on the Ready Queue and control
-     * is returned to the Current Process unless the newly unblocked process
-     * has higher prority of the Current Process.
+    /* The newly unblocked pcb is enqueued back on the Ready Queue and
+     * control is returned to the Current Process unless the newly unblocked
+     * process has higher prority of the Current Process.
      * */
     return CONTROL_RESCHEDULE;
 }

@@ -188,7 +188,7 @@ void scheduler_wait()
     size_t status = get_status();
     status_interrupts_on_nucleus(&status);
     status_toggle_local_timer(&status);
-    status_il_on_all(&status);
+    //status_il_on_all(&status);
     set_status(status);
 
     wait();
