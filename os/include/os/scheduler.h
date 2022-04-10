@@ -18,7 +18,7 @@ extern int running_count;
 extern int blocked_count;
 extern list_head ready_queue_lo, ready_queue_hi;
 extern pcb_t *active_process;
-extern pcb_t *last_process;
+extern pcb_t *yield_process;
 extern cpu_t start_tod;
 extern cpu_t last_plt;
 extern state_t *wait_state;
@@ -33,7 +33,7 @@ extern pcb_t *spawn_process(bool priority);
 extern int kill_progeny(pcb_t *p);
 
 extern void enqueue_process(pcb_t *p);
-extern void dequeue_process(pcb_t *p);
+extern pcb_t *dequeue_process(pcb_t *p);
 extern pcb_t *const find_process(pandos_pid_t pid);
 
 extern void init_scheduler();

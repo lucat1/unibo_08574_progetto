@@ -73,18 +73,14 @@ static inline scheduler_control_t syscall_terminate_process()
     else
         p = active_process;
 
-    /* If the process was blocked on a semaphore, decrease the blocked count */
-    if (p->p_sem_add != NULL) {
-        blocked_count--;
-    }
-
     /* TODO: handle kill_progeny return value */
     kill_progeny(p);
 
     /* is this is the docs? */
     // if (pid != 0)
     //     p->p_s.reg_v0 = pid;
-    return pid == 0 ? CONTROL_BLOCK : CONTROL_RESCHEDULE;
+    return (pid == 0 || active_process->p_pid == -1) ? CONTROL_BLOCK
+                                                     : CONTROL_RESCHEDULE;
 }
 
 /* NSYS3 */
@@ -120,7 +116,9 @@ static inline scheduler_control_t syscall_do_io()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     scheduler_control_t ctrl = P(dev.semaphore, active_process);
-    active_process->p_s.status |= interrupt_mask(dev.interrupt_line);
+    active_process->p_s.status |=
+        (active_process->p_prio == 0 ? il_mask_all()
+                                     : il_mask(dev.interrupt_line));
 
     /* Finally write the data */
     *cmd_addr = cmd_value;
@@ -156,7 +154,7 @@ static inline scheduler_control_t syscall_get_support_data()
 static inline scheduler_control_t syscall_get_process_id()
 {
     bool parent = (bool)active_process->p_s.reg_a1;
-    if (parent == (bool)NULL || (int)parent < 0 || (int)parent > 1)
+    if ((parent != (bool)0 && parent != (bool)1))
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
     /* if parent then return parent pid, else return active process pid */
@@ -167,11 +165,15 @@ static inline scheduler_control_t syscall_get_process_id()
     else
         active_process->p_s.reg_v0 = 0;
 
-    return CONTROL_PRESERVE(active_process);
+    return CONTROL_RESCHEDULE;
 }
 
 /* NSYS10 */
-static inline scheduler_control_t syscall_yeld() { return CONTROL_RESCHEDULE; }
+static inline scheduler_control_t syscall_yeld()
+{
+    yield_process = active_process;
+    return CONTROL_BLOCK;
+}
 
 inline scheduler_control_t syscall_handler()
 {

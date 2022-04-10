@@ -38,8 +38,8 @@ void free_pcb(pcb_t *p)
     if (p == NULL || list_contains(&p->p_list, &pcb_free))
         return;
 
-    list_add(&p->p_list, &pcb_free);
     p->p_pid = -1;
+    list_add(&p->p_list, &pcb_free);
 }
 
 static inline pcb_t *null_pcb(pcb_t *t)

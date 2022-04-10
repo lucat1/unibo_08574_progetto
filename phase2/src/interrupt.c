@@ -47,11 +47,11 @@ static inline scheduler_control_t interrupt_local_timer()
 
 static inline scheduler_control_t interrupt_timer()
 {
-    pcb_t *p;
+    //pcb_t *p;
 
     reset_timer();
-    while ((p = V(&timer_semaphore)) != NULL)
-        ;
+    while (timer_semaphore != 1)
+        V(&timer_semaphore);
     // timer_semaphore = 0;
     pandos_kprintf("act: %p\n", active_process);
     return CONTROL_PRESERVE(active_process);
@@ -172,8 +172,11 @@ scheduler_control_t interrupt_handler()
     } else if (IL_ACTIVE(cause, IL_TERMINAL)) {
         pandos_interrupt("TERMINAL");
         return interrupt_terminal();
-    } else
+    } else {
         pandos_interrupt("UNKNOWN");
+        pandos_kfprintf(&kstdout, "UNKNOWN CODE : %d\n", IL_ACTIVE(cause, IL_IPI));
+        return CONTROL_PRESERVE(active_process);
+    }
 
     /* The newly unblocked pcb is enqueued back on the Ready Queue and control
      * is returned to the Current Process unless the newly unblocked process

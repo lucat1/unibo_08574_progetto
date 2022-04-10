@@ -62,18 +62,17 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
         if (!list_empty(&p->p_list))
             dequeue_process(p);
         if ((r = insert_blocked(sem_addr, p)) > 0)
-            scheduler_panic("PASSEREN failed\n");
+            scheduler_panic("PASSEREN failed %d\n", r);
         /* TODO : mhhhhh weirdo */
         pandos_kfprintf(&kstdout, "P block (%p) %d - %d\n", sem_addr, p->p_pid,
                         *sem_addr);
-        blocked_count++;
+        ++blocked_count;
         return CONTROL_BLOCK;
-    } else if ((t = head_blocked(sem_addr)) != NULL) {
+    } else if ((t = remove_blocked(sem_addr)) != NULL) {
         pandos_kfprintf(&kstdout, "P reschedule (%p) %d - %d\n", sem_addr,
                         p->p_pid, *sem_addr);
         enqueue_process(t);
-        if (blocked_count > 0)
-            blocked_count--;
+        --blocked_count;
         return CONTROL_RESCHEDULE;
     } else {
         --*sem_addr;
@@ -89,6 +88,16 @@ inline pcb_t *V(int *const sem_addr)
     if (*sem_addr == 1) {
         /* process already blocked */
         /* nothing to do */
+        //
+        if (active_process->p_sem_add == NULL) {
+            if (!list_empty(&active_process->p_list))
+                dequeue_process(active_process);
+            ++blocked_count;
+            if ((insert_blocked(sem_addr, active_process)) > 0) {
+                scheduler_panic("VERHOGEN failed\n");
+            }
+            
+        }
         return NULL;
     } else if ((p = remove_blocked(sem_addr)) != NULL) {
         /* TODO : mhhhhh weirdo */
