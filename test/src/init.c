@@ -29,6 +29,8 @@ int main()
         }
         assert(!timer_semaphore);
     }
+    /* These tests are rather a meta-test: we assert our testing infrastructure
+     * is actually correct. */
     ensure("the devices are reset")
     {
         assert(!interval_timer);

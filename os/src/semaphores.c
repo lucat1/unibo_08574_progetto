@@ -96,7 +96,6 @@ inline pcb_t *V(int *const sem_addr)
             if ((insert_blocked(sem_addr, active_process)) > 0) {
                 scheduler_panic("VERHOGEN failed\n");
             }
-            
         }
         return NULL;
     } else if ((p = remove_blocked(sem_addr)) != NULL) {

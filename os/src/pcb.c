@@ -39,6 +39,7 @@ void free_pcb(pcb_t *p)
         return;
 
     p->p_pid = -1;
+  list_del(&p->p_list);
     list_add(&p->p_list, &pcb_free);
 }
 
@@ -89,6 +90,7 @@ void insert_proc_q(list_head *head, pcb_t *p)
 {
     if (p == NULL || head == NULL || list_contains(&p->p_list, head))
         return;
+    list_del(&p->p_list);
     list_add_tail(&p->p_list, head);
 }
 
