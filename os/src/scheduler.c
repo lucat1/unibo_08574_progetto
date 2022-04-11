@@ -30,6 +30,10 @@ state_t *wait_state;
 /* Always points to the pid of the most recently created process */
 static unsigned int recycle_count;
 
+#ifdef PANDOS_TESTING
+inline unsigned get_recycle_count() { return recycle_count; }
+#endif
+
 /* TODO: test that max_proc_bits is >= log_2(max_proc) */
 
 inline pcb_t *spawn_process(bool priority)
@@ -188,7 +192,7 @@ void scheduler_wait()
     size_t status = get_status();
     status_interrupts_on_nucleus(&status);
     status_toggle_local_timer(&status);
-    //status_il_on_all(&status);
+    // status_il_on_all(&status);
     set_status(status);
 
     wait();

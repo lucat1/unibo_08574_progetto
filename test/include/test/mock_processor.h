@@ -31,7 +31,7 @@ void null_state(state_t *s)
     s->status = 0;
     s->pc_epc = 0;
     for (int i = 0; i < STATE_GPR_LEN; ++i)
-        s->gpr[STATE_GPR_LEN] = 0;
+        s->gpr[i] = 0;
 }
 void load_state(state_t *s)
 {

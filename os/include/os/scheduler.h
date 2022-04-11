@@ -23,6 +23,10 @@ extern cpu_t start_tod;
 extern cpu_t last_plt;
 extern state_t *wait_state;
 
+#ifdef PANDOS_TESTING
+extern unsigned get_recycle_count();
+#endif
+
 /**
  * \brief Spawns a process and returns the allocated structure.
  * \param[in] priority The proprity of the spawned process. Either 1 for high or
