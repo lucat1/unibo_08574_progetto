@@ -24,7 +24,6 @@ list_head ready_queue_lo, ready_queue_hi;
 pcb_t *active_process;
 pcb_t *yield_process;
 cpu_t start_tod;
-cpu_t last_plt;
 state_t *wait_state;
 
 /* Always points to the pid of the most recently created process */
@@ -134,7 +133,7 @@ static inline void wait_or_die()
 void reset_yield_process()
 {
     if (yield_process != NULL) {
-        enqueue_process(yield_process);
+        insert_proc_q(yield_process->p_prio ? &ready_queue_hi : &ready_queue_lo, yield_process);
         yield_process = NULL;
     }
 }
@@ -179,7 +178,6 @@ void schedule(pcb_t *pcb, bool enqueue)
 inline void reset_timer() { load_interval_timer(IT_INTERVAL); }
 inline void reset_local_timer()
 {
-    store_tod(&last_plt);
     load_local_timer(PLT_INTERVAL);
 }
 

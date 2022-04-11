@@ -19,15 +19,9 @@ int main()
     }
     ensure("the semaphores are initialized")
     {
-        for (int i = 0; i < DEVPERINT; ++i) {
-            assert(!disk_semaphores[i]);
-            assert(!tape_semaphores[i]);
-            assert(!ethernet_semaphores[i]);
-            assert(!printer_semaphores[i]);
-            assert(!termr_semaphores[i]);
-            assert(!termw_semaphores[i]);
+        for (int i = 0; i < 5 * DEVPERINT + 1; ++i) {
+            assert(!semaphores[i]);
         }
-        assert(!timer_semaphore);
     }
     ensure("the devices are reset")
     {
