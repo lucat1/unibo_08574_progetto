@@ -1,6 +1,6 @@
 project (test)
 
-set(TEST_FILES pcb asl util syscall_get_process_id init)
+set(TEST_FILES pcb asl util syscall_get_process_id syscall_yield init)
 
 foreach(TST ${TEST_FILES})
     set(TEST_NAME test_${TST})

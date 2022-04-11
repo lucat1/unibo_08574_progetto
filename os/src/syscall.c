@@ -167,7 +167,7 @@ static inline scheduler_control_t syscall_get_process_id()
 }
 
 /* NSYS10 */
-static inline scheduler_control_t syscall_yeld()
+static inline scheduler_control_t syscall_yield()
 {
     yield_process = active_process;
     return CONTROL_BLOCK;
@@ -222,7 +222,7 @@ inline scheduler_control_t syscall_handler()
             break;
         case YIELD:
             pandos_syscall("YIELD");
-            return syscall_yeld();
+            return syscall_yield();
             break;
         default:
             return pass_up_or_die((memaddr)GENERALEXCEPT);
