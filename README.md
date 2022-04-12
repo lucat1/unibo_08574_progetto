@@ -15,6 +15,29 @@ sub-directories:
 - `phase{n}`: the code for each phase of the project to be compiled into a MIPS
   kernel and tested on the uMPS3 emulator.
 
+## Design choices
+
+The identifier for a new born process (pid for short) is generated in a semi-unique
+way, which provides a good balance between raw performance and roboustness.
+The 32 bits of the pid are subdivded into two sections:
+- The lower `MAX_PROC_BITS` bits identify the index of the underlying `pcb_t`
+  structure in the table of al `pcb_t`s.
+- The remaining `WORD_BITS - MAX_PROC_BITS` bits are set to the lower bits of
+  the `recycle_count` counter.
+The value of `MAX_PROC_BITS` is computed by hand based on the value of
+`MAX_PROC`, preserving the following invariant:
+```
+MAX_PROC_BITS = \lceil log_2(MAX) \rceil
+```
+This approach does not guarantee a complete uniqueness (which cannot be achieved 
+with any limited word length) but is nonetheless an improvement over the simpler
+usage of indices/addresses. Compared to incremental pids the chosen implementation
+lowers the address space significantly by halving possible pids by a factor of
+`2^MAX_PROC_BITS` and using a shared recycle count for all processes. An
+improvement (at the cost of some memory) could use an array of `MAX_PROC`
+recycle counters, having one for each process. This latter approach could also
+improve safety by making pid spoofing much harder.
+
 ## Building
 
 This project uses `cmake` and `make` to compile and requires the host's C
