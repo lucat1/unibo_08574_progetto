@@ -36,8 +36,8 @@ static inline scheduler_control_t syscall_create_process()
     /* checks if there are enough resources */
     if (c == NULL) {
         pandos_kfprintf(&kstderr, "!! ERROR: Cannot create new process\n");
-        /* set caller's v0 to -1 */
-        active_process->p_s.reg_v0 = -1;
+        /* set caller's v0 to NULL_PID */
+        active_process->p_s.reg_v0 = NULL_PID;
     } else {
         c->p_support = p_support_struct;
         pandos_memcpy(&c->p_s, p_s, sizeof(state_t));
@@ -79,8 +79,8 @@ static inline scheduler_control_t syscall_terminate_process()
     /* is this is the docs? */
     // if (pid != 0)
     //     p->p_s.reg_v0 = pid;
-    return (pid == 0 || active_process->p_pid == -1) ? CONTROL_BLOCK
-                                                     : CONTROL_RESCHEDULE;
+    return (pid == 0 || active_process->p_pid == NULL_PID) ? CONTROL_BLOCK
+                                                           : CONTROL_RESCHEDULE;
 }
 
 /* NSYS3 */

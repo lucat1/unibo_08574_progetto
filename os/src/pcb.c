@@ -29,7 +29,7 @@ void init_pcbs()
     /* Add pcb_table elements to the list */
     for (int i = 0; i < MAX_PROC; i++) {
         list_add(&pcb_table[i].p_list, &pcb_free);
-        pcb_table[i].p_pid = -1;
+        pcb_table[i].p_pid = NULL_PID;
     }
 }
 
@@ -38,7 +38,7 @@ void free_pcb(pcb_t *p)
     if (p == NULL || list_contains(&p->p_list, &pcb_free))
         return;
 
-    p->p_pid = -1;
+    p->p_pid = NULL_PID;
     list_sdel(&p->p_list);
     list_add(&p->p_list, &pcb_free);
 }
@@ -47,9 +47,9 @@ static inline pcb_t *null_pcb(pcb_t *t)
 {
     if (t == NULL)
         return NULL;
-    INIT_LIST_HEAD(&t->p_list);
-    INIT_LIST_HEAD(&t->p_child);
-    INIT_LIST_HEAD(&t->p_sib);
+    t->p_list.prev = t->p_list.next = NULL;
+    t->p_child.prev = t->p_child.next = &t->p_child;
+    t->p_sib.prev = t->p_sib.next = NULL;
     t->p_parent = NULL;
     t->p_time = 0;
     t->p_sem_add = NULL;
@@ -57,7 +57,7 @@ static inline pcb_t *null_pcb(pcb_t *t)
     /* New fields (phase2) */
     t->p_support = NULL;
     t->p_prio = 0;
-    t->p_pid = -1;
+    t->p_pid = NULL_PID;
     return t;
 }
 

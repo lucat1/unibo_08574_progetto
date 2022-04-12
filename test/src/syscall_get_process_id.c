@@ -11,22 +11,22 @@ int main()
     it("sanitizes the input parameter")
     {
         active_process = spawn_process(false);
-        assert(active_process->p_pid != -1);
+        assert(active_process->p_pid != NULL_PID);
         SYSCALL(GETPROCESSID, (bool)-2, 0, 0);
-        assert(active_process->p_pid == -1);
+        assert(active_process->p_pid == NULL_PID);
 
         active_process = spawn_process(false);
-        assert(active_process->p_pid != -1);
+        assert(active_process->p_pid != NULL_PID);
         SYSCALL(GETPROCESSID, 2, 0, 0);
-        assert(active_process->p_pid == -1);
+        assert(active_process->p_pid == NULL_PID);
 
         active_process = spawn_process(false);
         SYSCALL(GETPROCESSID, false, 0, 0);
-        assert(active_process->p_pid != -1);
+        assert(active_process->p_pid != NULL_PID);
 
         active_process = spawn_process(false);
         SYSCALL(GETPROCESSID, true, 0, 0);
-        assert(active_process->p_pid != -1);
+        assert(active_process->p_pid != NULL_PID);
     }
     it("returns its pid")
     {

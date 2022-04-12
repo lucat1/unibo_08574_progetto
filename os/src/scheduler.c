@@ -34,6 +34,8 @@ static size_t recycle_count;
 inline size_t get_recycle_count() { return recycle_count; }
 #endif
 
+/* TODO: test that max_proc_bits is >= log_2(max_proc) */
+
 inline void enqueue_process(pcb_t *p)
 {
     if (p == NULL)
@@ -71,7 +73,7 @@ inline pcb_t *spawn_process(bool priority)
 
     if ((p = alloc_pcb()) == NULL)
         return NULL;
-    p->p_pid = (p - get_pcb_table()) | (recycle_count++ << MAX_PROC_BITS);
+    p->p_pid = make_pid(p - get_pcb_table(), recycle_count++);
     p->p_prio = priority;
     enqueue_process(p);
     return p;
@@ -123,7 +125,7 @@ static inline void wait_or_die()
     if (active_process == NULL || blocked_count > 0) {
         pandos_kprintf("wait\n");
         scheduler_wait();
-    } else if (active_process->p_pid == -1 && running_count <= 0) {
+    } else if (active_process->p_pid == NULL_PID && running_count <= 0) {
         // pbc_t *c = (pcb_t *)find_process(19);
         pandos_kprintf("Nothing left, halting %d");
         halt();
@@ -131,8 +133,7 @@ static inline void wait_or_die()
          * I think that active_process == NULL is redundant.
          **/
     } else {
-        pandos_kprintf("act is null : %s",
-                       active_process == NULL ? "true" : "false");
+        scheduler_panic("act is null : %b", active_process->p_pid);
         pandos_kprintf("deadlock\n");
         scheduler_panic("Deadlock detected.\n");
     }
@@ -141,7 +142,8 @@ static inline void wait_or_die()
 void reset_yield_process()
 {
     if (yield_process != NULL) {
-        enqueue_process(yield_process);
+        insert_proc_q(yield_process->p_prio ? &ready_queue_hi : &ready_queue_lo,
+                      yield_process);
         yield_process = NULL;
     }
 }

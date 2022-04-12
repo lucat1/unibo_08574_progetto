@@ -12,7 +12,7 @@ int main()
     it("updates yield_process")
     {
         active_process = spawn_process(false);
-        assert(active_process->p_pid != -1);
+        assert(active_process->p_pid != NULL_PID);
         SYSCALL(YIELD, 0, 0, 0);
         assert(yield_process == active_process);
     }
