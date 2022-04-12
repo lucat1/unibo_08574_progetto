@@ -7,8 +7,10 @@
  */
 
 #include "os/scheduler.h"
+#include "os/const.h"
 #include "os/pcb.h"
 #include "os/scheduler_impl.h"
+#include "os/types.h"
 #include "test/mock_init.h"
 #include "test/test.h"
 #include <math.h>
@@ -49,10 +51,10 @@ int main()
         free_pcb(p1);
         free_pcb(p2);
     }
-    /* todo: loads of tests missing in between here, follow the c file */
     ensure("the constant MAX_PROC_BITS is right")
     {
-        assert(MAX_PROC_BITS >= log(MAX_PROC) / log(2));
+        assert(pow(2, MAX_PROC_BITS) >= MAX_PROC);
+        assert(MAX_PROC_BITS < sizeof(pandos_pid_t) * BYTELENGTH);
     }
     ensure("spawn_process generates the right pid")
     {

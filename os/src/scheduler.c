@@ -33,8 +33,6 @@ static size_t recycle_count;
 inline size_t get_recycle_count() { return recycle_count; }
 #endif
 
-/* TODO: test that max_proc_bits is >= log_2(max_proc) */
-
 inline void enqueue_process(pcb_t *p)
 {
     if (p == NULL)
