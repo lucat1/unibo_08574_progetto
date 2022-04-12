@@ -14,10 +14,25 @@
 #include "os/list.h"
 #include "os/types.h"
 
+/**
+ * \brief Set both fields of a single list head to NULL.
+ * \param[out] l The list head to be set to NULL.
+ * \return Always NULL.
+ */
 #define NULL_LIST_HEAD(l) ((l).prev = (l).next = NULL)
 
+/**
+ * \brief Checks whether both fields of a list head are NULL.
+ * \param[in] l The list head to be checked.
+ * \return true if both fields are NULL, or false otherwise.
+ */
 #define IS_NULL_LIST_HEAD(l) ((l).prev == NULL && (l).next == NULL)
 
+/**
+ * \brief Deletes a single element from its list.
+ * Features input validation and cleanup on success.
+ * \param[in,out] entry The element to be removed.
+ */
 static inline void list_sdel(list_head *entry)
 {
     if (!IS_NULL_LIST_HEAD(*entry)) {
