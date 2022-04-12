@@ -32,16 +32,16 @@ int main()
             assert((pcb1 = alloc_pcb()) != NULL);
 
             /* Check if the pcb is null */
-            assert(list_empty(&pcb1->p_list));
+            assert(IS_NULL_LIST_HEAD(pcb1->p_list));
             assert(list_empty(&pcb1->p_child));
-            assert(list_empty(&pcb1->p_sib));
+            assert(IS_NULL_LIST_HEAD(pcb1->p_sib));
             assert(pcb1->p_parent == NULL);
             assert(pcb1->p_sem_add == NULL);
             assert(pcb1->p_time == 0);
             /* It is assumed that the null_state function from the underlying
              * architecture is correct and properly initializes all fields for
              * the state_t struct */
-            assert(pcb1->p_pid == -1);
+            assert(pcb1->p_pid == NULL_PID);
             assert(pcb1->p_prio == 0);
 
             /* useful for next testing */

@@ -9,8 +9,8 @@ int main()
     mock_init();
     ensure("the scheduler is initialized")
     {
-        assert(!running_count);
-        assert(!blocked_count);
+        assert(!process_count);
+        assert(!softblock_count);
         assert(list_empty(&ready_queue_hi));
         assert(list_empty(&ready_queue_lo));
         assert(active_process == NULL);
@@ -23,6 +23,8 @@ int main()
             assert(!semaphores[i]);
         }
     }
+    /* These tests are rather a meta-test: we assert our testing infrastructure
+     * is actually correct. */
     ensure("the devices are reset")
     {
         assert(!interval_timer);

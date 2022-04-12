@@ -40,6 +40,20 @@ int main()
 
     ensure("an empty list has size 0") { assert(!list_size(&l)); }
 
+    ensure("NULL_LIST_HEAD returns NULL") { assert(NULL_LIST_HEAD(l) == NULL); }
+
+    ensure("NULL_LIST_HEAD correctly updates its parameter")
+    {
+        assert(l.prev == NULL && l.next == NULL);
+    }
+
+    ensure("IS_NULL_LIST_HEAD correctly checks its parameter")
+    {
+        assert(IS_NULL_LIST_HEAD(l));
+        l.prev = l.next = &l;
+        assert(!IS_NULL_LIST_HEAD(l));
+    }
+
     for (i = 0; i < len; ++i)
         list_add(&data[i].l, &l);
     it("returns the current length for a list")
@@ -54,6 +68,16 @@ int main()
     ensure("list_search returns the correct head when it matches")
     {
         assert(list_search(NULL, &l, cmp));
+    }
+    it("list_sdel safely deletes elements from a list")
+    {
+        for (i = 0; i < len; ++i) {
+            list_sdel(&data[i].l);
+            assert(list_size(&l) == len - 1 - i);
+            assert(IS_NULL_LIST_HEAD(data[i].l));
+            list_sdel(&data[i].l);
+            assert(list_size(&l) == len - 1 - i);
+        }
     }
     ensure("str_writer respects the given length of a string")
     {

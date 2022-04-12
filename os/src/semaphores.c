@@ -27,11 +27,14 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
             dequeue_process(p);
         if ((r = insert_blocked(sem_addr, p)) > 0)
             scheduler_panic("PASSEREN failed %d\n", r);
-        ++blocked_count;
+        /* TODO : mhhhhh weirdo */
+        pandos_kfprintf(&kstdout, "P block (%p) %d - %d\n", sem_addr, p->p_pid,
+                        *sem_addr);
+        ++softblock_count;
         return CONTROL_BLOCK;
     } else if ((t = remove_blocked(sem_addr)) != NULL) {
         enqueue_process(t);
-        --blocked_count;
+        --softblock_count;
         return CONTROL_RESCHEDULE;
     } else {
         --*sem_addr;
@@ -47,14 +50,16 @@ inline pcb_t *V(int *const sem_addr)
         if (active_process->p_sem_add == NULL) {
             if (!list_empty(&active_process->p_list))
                 dequeue_process(active_process);
-            if ((insert_blocked(sem_addr, active_process)) > 0)
+            ++softblock_count;
+            if ((insert_blocked(sem_addr, active_process)) > 0) {
                 scheduler_panic("VERHOGEN failed\n");
-            ++blocked_count;
+            }
         }
         return NULL;
     } else if ((p = remove_blocked(sem_addr)) != NULL) {
+        /* TODO : mhhhhh weirdo */
+        --softblock_count;
         enqueue_process(p);
-        --blocked_count;
         return p;
     } else {
         ++*sem_addr;
@@ -79,9 +84,7 @@ int *get_semaphore(int int_l, int dev_n, bool is_w)
     return &semaphores[sem];
 }
 
-int *get_timer_semaphore(){
-    return &semaphores[SEMAPHORES_NUM-1];
-}
+int *get_timer_semaphore() { return &semaphores[SEMAPHORES_NUM - 1]; }
 
 inline void init_semaphores()
 {

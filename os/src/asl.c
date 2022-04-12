@@ -117,7 +117,7 @@ pcb_t *out_blocked(pcb_t *pcb)
         !list_contains(&pcb->p_list, &sem->s_procq))
         return NULL;
 
-    list_del(&pcb->p_list);
+    list_sdel(&pcb->p_list);
     pcb->p_sem_add = NULL;
     if (list_empty(&sem->s_procq))
         free_semd(sem);
