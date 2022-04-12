@@ -129,17 +129,14 @@ static inline scheduler_control_t syscall_do_io()
 /* NSYS6 */
 static inline scheduler_control_t syscall_get_cpu_time()
 {
-    int now;
-    store_tod(&now);
-    int diff = now - last_plt;
-    active_process->p_s.reg_v0 = active_process->p_time + diff;
+    active_process->p_s.reg_v0 = active_process->p_time;
     return CONTROL_RESCHEDULE;
 }
 
 /* NSYS7 */
 static inline scheduler_control_t syscall_wait_for_clock()
 {
-    return P(&timer_semaphore, active_process);
+    return P(get_timer_semaphore(), active_process);
 }
 
 /* NSYS8 */

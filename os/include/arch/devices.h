@@ -23,6 +23,7 @@ typedef struct iodev {
     int interrupt_line;
 } iodev_t;
 
+extern iodev_t _get_iodev(size_t *cmd_addr);
 extern iodev_t get_iodev(size_t *cmd_addr);
 extern void status_il_on_all(size_t *prev);
 extern void status_il_on(size_t *prev, int line);

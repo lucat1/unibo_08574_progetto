@@ -15,7 +15,7 @@
 
 iodev_t get_iodev(size_t *cmd_addr)
 {
-    iodev_t res = {termw_semaphores, 0};
+    iodev_t res = {get_semaphore(IL_TERMINAL, 0, true), 0};
     return res;
 }
 

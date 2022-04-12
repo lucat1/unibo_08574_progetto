@@ -8,35 +8,18 @@
 inline iodev_t get_iodev(size_t *cmd_addr)
 {
     iodev_t res = {NULL, 0};
-    int sem_i = 0;
-    int *base = GET_DEVICE_FROM_COMMAND(cmd_addr);
+    int dev_n = GET_DEVICE_NUMBER_FROM_COMMAND(cmd_addr);
+    int int_l = GET_INTERRUPT_LINE_FROM_DEVICE(dev_n);
+    int sem_i = dev_n;
+    /* first devices */
+    const int T = (IL_TERMINAL - IL_DISK) * DEVPERINT;
+    /* if it is terminal */
+    if(dev_n > T)
+        sem_i = (TERMINAL_CHECK_IS_WRITING(cmd_addr) ? dev_n + 1 : dev_n) + (dev_n - T);
 
-    for (int i = IL_DISK; i < 3 + N_EXT_IL; i++) {
-        for (int j = 0; j < N_DEV_PER_IL; j++) {
-            int *a = (int *)DEV_REG_ADDR(i, j);
-            if (a == base) {
-                res.interrupt_line = i;
-                sem_i = j;
-                i = 3 + N_EXT_IL;
-                break;
-            }
-        }
-    }
+    res.interrupt_line = int_l;
+    res.semaphore = semaphores + sem_i;
 
-    if (res.interrupt_line == IL_DISK) {
-        res.semaphore = disk_semaphores + sem_i;
-    } else if (res.interrupt_line == IL_FLASH) {
-        res.semaphore = tape_semaphores + sem_i;
-    } else if (res.interrupt_line == IL_ETHERNET) {
-        res.semaphore = ethernet_semaphores + sem_i;
-    } else if (res.interrupt_line == IL_PRINTER) {
-        res.semaphore = printer_semaphores + sem_i;
-    } else if (res.interrupt_line == IL_TERMINAL) {
-        if (TERMIMANL_CHECK_IS_WRITING((int *)cmd_addr))
-            res.semaphore = termw_semaphores + sem_i;
-        else
-            res.semaphore = termr_semaphores + sem_i;
-    }
     return res;
 }
 

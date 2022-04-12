@@ -54,8 +54,8 @@ static inline scheduler_control_t interrupt_timer()
 {
     pandos_interrupt("TIMER");
     reset_timer();
-    while (timer_semaphore != 1)
-        V(&timer_semaphore);
+    while (*get_timer_semaphore() != 1)
+        V(get_timer_semaphore());
     return CONTROL_PRESERVE(active_process);
 }
 
@@ -64,8 +64,6 @@ static inline scheduler_control_t interrupt_generic(int cause)
     pandos_interrupt("GENERIC");
     /* TODO */
     int il = IL_DISK;
-    int *sem[] = {disk_semaphores, tape_semaphores, ethernet_semaphores,
-                  printer_semaphores};
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
         if (IL_ACTIVE(cause, i)) {
@@ -73,13 +71,11 @@ static inline scheduler_control_t interrupt_generic(int cause)
             break;
         }
     }
-
     int devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
-
-    int i = il - IL_DISK;
+    int *sem = get_semaphore(il, devicenumber, false);
 
     devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
-    dtpreg_t *dtp_reg = &device_regs->devreg[i][devicenumber].dtp;
+    dtpreg_t *dtp_reg = &device_regs->devreg[il - IL_DISK][devicenumber].dtp;
 
     int status = dtp_reg->status;
 
@@ -88,7 +84,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
     if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
         scheduler_panic("Device is not installed!\n");
 
-    pcb_t *p = V(&sem[i][devicenumber]);
+    pcb_t *p = V(sem);
     if (p == NULL || p == active_process) {
         if (active_process != NULL) {
             active_process->p_s.reg_v0 = status;
@@ -120,29 +116,30 @@ static inline scheduler_control_t interrupt_terminal()
     memaddr(statuses[2]) = {term_reg->transm_status, term_reg->recv_status};
     memaddr(*commands[2]) = {&term_reg->transm_command,
                              &term_reg->recv_command};
-    int *sem[] = {termw_semaphores, termr_semaphores};
+    int *sem[] = {get_semaphore(IL_TERMINAL, devicenumber, false),
+                  get_semaphore(IL_TERMINAL, devicenumber, true)};
 
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
-        if ((status & TERMSTATMASK) != DEV_STATUS_TERMINAL_OK)
-            scheduler_panic("Device is not installed!\n");
+        if ((status & TERMSTATMASK) == DEV_STATUS_TERMINAL_OK) {
 
-        pcb_t *p = V(&sem[i][devicenumber]);
-        scheduler_control_t ctrl;
-        if (p == NULL || p == active_process) {
-            if (active_process == NULL)
-                scheduler_panic("No active process (Interrupt Terminal)\n");
-            active_process->p_s.reg_v0 = status;
-            ctrl = CONTROL_RESCHEDULE;
-        } else {
-            p->p_s.reg_v0 = status;
-            ctrl = CONTROL_PRESERVE(active_process);
+            pcb_t *p = V(sem[i]);
+            scheduler_control_t ctrl;
+            if (p == NULL || p == active_process) {
+                if (active_process == NULL)
+                    scheduler_panic("No active process (Interrupt Terminal)\n");
+                active_process->p_s.reg_v0 = status;
+                ctrl = CONTROL_RESCHEDULE;
+            } else {
+                p->p_s.reg_v0 = status;
+                ctrl = CONTROL_PRESERVE(active_process);
+            }
+
+            *commands[i] = DEV_C_ACK;
+            /* do the first one */
+            return ctrl;
         }
-
-        *commands[i] = DEV_C_ACK;
-        /* do the first one */
-        return ctrl;
     }
     scheduler_panic("Terminal did not ACK\n");
     /* Make C happy */

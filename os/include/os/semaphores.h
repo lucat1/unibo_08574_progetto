@@ -15,16 +15,14 @@
 #include "arch/devices.h"
 #include "os/types.h"
 
-extern int disk_semaphores[DEVPERINT];
-extern int tape_semaphores[DEVPERINT];
-extern int ethernet_semaphores[DEVPERINT];
-extern int printer_semaphores[DEVPERINT];
-extern int termr_semaphores[DEVPERINT];
-extern int termw_semaphores[DEVPERINT];
-extern int timer_semaphore;
+#define SEMAPHORES_NUM (DEVINTNUM + 1) * DEVPERINT + 1
+
+extern int semaphores[SEMAPHORES_NUM];
 
 extern scheduler_control_t P(int *const sem_addr, pcb_t *const p);
 extern pcb_t *V(int *const sem_addr);
+extern int *get_semaphore(int int_l, int dev_n, bool is_w);
+extern int *get_timer_semaphore();
 extern void init_semaphores();
 
 #endif /* PANDOS_SEMAPHORE_H */
