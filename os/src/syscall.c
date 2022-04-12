@@ -68,10 +68,10 @@ static inline scheduler_control_t syscall_terminate_process()
     }
 
     /* If pid is not 0 then the target must be searched */
-    if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
-        scheduler_panic("Could not find process by pid: %p\n", pid);
-    else
+    if(pid == 0)
         p = active_process;
+    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
+        scheduler_panic("Could not find process by pid: %p\n", pid);
 
     /* TODO: handle kill_progeny return value */
     kill_progeny(p);

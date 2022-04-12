@@ -7,7 +7,7 @@
 #include "test/test.h"
 #include "os/const.h"
 #include "os/util.h"
-
+#include <stdio.h>
 /* TESTING NSYS1 & NSYS2 */
 
 void p1(){
@@ -33,8 +33,7 @@ int main()
     }
     it("correctly terminates the newly created process")
     {
-        pcb_t *proc = container_of(list_next(&active_process->p_child), pcb_t, p_sib);
-        assert(proc != NULL);
+        pcb_t *proc = find_process((pandos_pid_t)active_process->p_s.reg_v0);
         assert(proc->p_pid == active_process->p_s.reg_v0);
         SYSCALL(TERMPROCESS, proc->p_pid, 0, 0);
         assert(running_count == 1);
@@ -54,12 +53,12 @@ int main()
     }
     it("correctly terminates the newly created process")
     {
-        pcb_t *proc = container_of(list_next(&active_process->p_child), pcb_t, p_sib);
+        pcb_t *proc = find_process((pandos_pid_t)active_process->p_s.reg_v0);
         assert(proc->p_pid == active_process->p_s.reg_v0);
         SYSCALL(TERMPROCESS, proc->p_pid, 0, 0);
         assert(running_count == 1);
         assert(list_empty(&active_process->p_child));
-        assert(list_empty(&ready_queue_lo));
+        assert(list_size(&ready_queue_lo) == 1);
     }
     it("correctly gets out of memory and returns -1")
     {
