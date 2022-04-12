@@ -66,13 +66,13 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
         /* TODO : mhhhhh weirdo */
         pandos_kfprintf(&kstdout, "P block (%p) %d - %d\n", sem_addr, p->p_pid,
                         *sem_addr);
-        ++blocked_count;
+        ++softblock_count;
         return CONTROL_BLOCK;
     } else if ((t = remove_blocked(sem_addr)) != NULL) {
         pandos_kfprintf(&kstdout, "P reschedule (%p) %d - %d\n", sem_addr,
                         p->p_pid, *sem_addr);
         enqueue_process(t);
-        --blocked_count;
+        --softblock_count;
         return CONTROL_RESCHEDULE;
     } else {
         --*sem_addr;
@@ -92,7 +92,7 @@ inline pcb_t *V(int *const sem_addr)
         if (active_process->p_sem_add == NULL) {
             if (!list_empty(&active_process->p_list))
                 dequeue_process(active_process);
-            ++blocked_count;
+            ++softblock_count;
             if ((insert_blocked(sem_addr, active_process)) > 0) {
                 scheduler_panic("VERHOGEN failed\n");
             }
@@ -100,7 +100,7 @@ inline pcb_t *V(int *const sem_addr)
         return NULL;
     } else if ((p = remove_blocked(sem_addr)) != NULL) {
         /* TODO : mhhhhh weirdo */
-        --blocked_count;
+        --softblock_count;
         enqueue_process(p);
         return p;
     } else {

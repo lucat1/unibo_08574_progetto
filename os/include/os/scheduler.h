@@ -14,8 +14,8 @@
 #include "os/pcb.h"
 #include "os/types.h"
 
-extern size_t running_count;
-extern size_t blocked_count;
+extern size_t process_count;
+extern size_t softblock_count;
 extern list_head ready_queue_lo, ready_queue_hi;
 extern pcb_t *active_process;
 extern pcb_t *yield_process;
