@@ -9,8 +9,8 @@ int main()
     mock_init();
     ensure("the scheduler is initialized")
     {
-        assert(!running_count);
-        assert(!blocked_count);
+        assert(!process_count);
+        assert(!softblock_count);
         assert(list_empty(&ready_queue_hi));
         assert(list_empty(&ready_queue_lo));
         assert(active_process == NULL);

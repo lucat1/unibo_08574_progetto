@@ -19,16 +19,16 @@ int main()
     /* Preventing regressions */
     ensure("enqueue_process does nothing with wrong input")
     {
-        size_t rc = running_count;
+        size_t rc = process_count;
         enqueue_process(NULL);
-        assert(running_count == rc);
+        assert(process_count == rc);
     }
-    ensure("enqueue_process increments the running count")
+    ensure("enqueue_process does not increment the running count")
     {
-        size_t rc = running_count;
+        size_t rc = process_count;
         pcb_t *p = alloc_pcb();
         enqueue_process(p);
-        assert(running_count == rc + 1);
+        assert(process_count == rc);
         dequeue_process(p);
         free_pcb(p);
     }
