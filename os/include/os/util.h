@@ -14,6 +14,18 @@
 #include "os/list.h"
 #include "os/types.h"
 
+#define NULL_LIST_HEAD(l) ((l).prev = (l).next = NULL)
+
+#define IS_NULL_LIST_HEAD(l) ((l).prev == NULL && (l).next == NULL)
+
+static inline void list_sdel(list_head *entry)
+{
+    if (!IS_NULL_LIST_HEAD(*entry)) {
+        list_del(entry);
+        NULL_LIST_HEAD(*entry);
+    }
+}
+
 /**
  * \brief Computes the size of a given list.
  * The sentinel element is not included in the size count.

@@ -119,7 +119,7 @@ int main()
         assert(out_blocked(example_pcb) == NULL);
         semd_t *semd = alloc_semd(&key);
         assert(!insert_blocked(&key, example_pcb));
-        list_del(find_semd(get_semd_h(), &key)->s_procq.next);
+        list_sdel(find_semd(get_semd_h(), &key)->s_procq.next);
         assert(out_blocked(example_pcb) == NULL);
         INIT_LIST_HEAD(&example_pcb->p_list);
         example_pcb->p_sem_add = NULL;

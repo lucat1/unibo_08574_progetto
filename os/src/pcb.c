@@ -39,7 +39,7 @@ void free_pcb(pcb_t *p)
         return;
 
     p->p_pid = -1;
-  list_del(&p->p_list);
+    list_sdel(&p->p_list);
     list_add(&p->p_list, &pcb_free);
 }
 
@@ -90,7 +90,7 @@ void insert_proc_q(list_head *head, pcb_t *p)
 {
     if (p == NULL || head == NULL || list_contains(&p->p_list, head))
         return;
-    list_del(&p->p_list);
+    list_sdel(&p->p_list);
     list_add_tail(&p->p_list, head);
 }
 
@@ -123,7 +123,7 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
         return NULL;
 
     /* Remove p element from list */
-    list_del(&p->p_list);
+    list_sdel(&p->p_list);
 
     return p;
 }
@@ -163,7 +163,7 @@ pcb_t *out_child(pcb_t *p)
         !list_contains(&p->p_sib, &p->p_parent->p_child))
         return NULL;
 
-    list_del(&p->p_sib);
+    list_sdel(&p->p_sib);
     p->p_parent = NULL;
     return p;
 }
