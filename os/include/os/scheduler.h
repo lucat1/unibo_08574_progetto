@@ -7,8 +7,8 @@
  * \date 20-03-2022
  */
 
-#ifndef PANDOS_SCHEDULER_H
-#define PANDOS_SCHEDULER_H
+#ifndef PANDOS_OS_SCHEDULER_H
+#define PANDOS_OS_SCHEDULER_H
 
 #include "os/list.h"
 #include "os/pcb.h"
@@ -43,4 +43,4 @@ extern void init_scheduler();
 void schedule(pcb_t *pcb, bool enqueue);
 void scheduler_panic(const char *fmt, ...);
 
-#endif /* PANDOS_SCHEDULER_H */
+#endif /* PANDOS_OS_SCHEDULER_H */

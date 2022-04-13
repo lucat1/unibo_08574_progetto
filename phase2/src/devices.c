@@ -1,5 +1,6 @@
 #include "arch/devices.h"
 #include "os/semaphores.h"
+#include "semaphores_impl.h"
 #include "umps/const.h"
 #include "umps/libumps.h"
 #include <umps/arch.h>
@@ -14,8 +15,9 @@ inline iodev_t get_iodev(size_t *cmd_addr)
     /* first devices */
     const int T = (IL_TERMINAL - IL_DISK) * DEVPERINT;
     /* if it is terminal */
-    if(dev_n > T)
-        sem_i = (TERMINAL_CHECK_IS_WRITING(cmd_addr) ? dev_n + 1 : dev_n) + (dev_n - T);
+    if (dev_n > T)
+        sem_i = (TERMINAL_CHECK_IS_WRITING(cmd_addr) ? dev_n + 1 : dev_n) +
+                (dev_n - T);
 
     res.interrupt_line = int_l;
     res.semaphore = semaphores + sem_i;
