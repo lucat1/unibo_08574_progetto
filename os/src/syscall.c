@@ -63,15 +63,15 @@ static inline scheduler_control_t syscall_terminate_process()
 
     pcb_t *p;
     const pandos_pid_t pid = active_process->p_s.reg_a1;
-    if (pid == (pandos_pid_t)NULL) {
-        return pass_up_or_die((memaddr)GENERALEXCEPT);
-    }
 
-    /* If pid is not 0 then the target must be searched */
-    if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
-        scheduler_panic("Could not find process by pid: %p\n", pid);
-    else
+    if (pid == (pandos_pid_t)NULL)
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+
+    /* Search for the target when pid != 0 */
+    if (pid == 0)
         p = active_process;
+    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
+        scheduler_panic("Could not find process by pid: %p\n", pid);
 
     /* TODO: handle kill_progeny return value */
     kill_progeny(p);

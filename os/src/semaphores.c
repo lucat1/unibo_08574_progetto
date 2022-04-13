@@ -79,9 +79,7 @@ int *get_semaphore(int int_l, int dev_n, bool is_w)
     return &semaphores[sem];
 }
 
-int *get_timer_semaphore(){
-    return &semaphores[SEMAPHORES_NUM-1];
-}
+int *get_timer_semaphore() { return &semaphores[SEMAPHORES_NUM - 1]; }
 
 inline void init_semaphores()
 {

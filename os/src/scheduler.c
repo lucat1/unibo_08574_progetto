@@ -18,8 +18,8 @@
 #include "os/util.h"
 #include "os/util_impl.h"
 
-int running_count;
-int blocked_count;
+size_t running_count;
+size_t blocked_count;
 list_head ready_queue_lo, ready_queue_hi;
 pcb_t *active_process;
 pcb_t *yield_process;
@@ -27,13 +27,42 @@ cpu_t start_tod;
 state_t *wait_state;
 
 /* Always points to the pid of the most recently created process */
-static unsigned int recycle_count;
+static size_t recycle_count;
 
 #ifdef PANDOS_TESTING
-inline unsigned get_recycle_count() { return recycle_count; }
+inline size_t get_recycle_count() { return recycle_count; }
 #endif
 
-/* TODO: test that max_proc_bits is >= log_2(max_proc) */
+inline void enqueue_process(pcb_t *p)
+{
+    if (p == NULL)
+        return;
+
+    running_count++;
+    insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
+}
+
+inline pcb_t *dequeue_process(pcb_t *p)
+{
+    pcb_t *r;
+
+    if (p == NULL ||
+        (r = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p)) ==
+            NULL)
+        return NULL;
+    else
+        --running_count;
+
+    return r;
+}
+
+inline pcb_t *const find_process(pandos_pid_t pid)
+{
+    size_t i = mask_pid_id(pid);
+    if (i < 0 || i >= MAX_PROC || get_pcb_table()[i].p_pid != pid)
+        return NULL;
+    return (pcb_t *const)(get_pcb_table() + i);
+}
 
 inline pcb_t *spawn_process(bool priority)
 {
@@ -45,28 +74,6 @@ inline pcb_t *spawn_process(bool priority)
     p->p_prio = priority;
     enqueue_process(p);
     return p;
-}
-
-inline void enqueue_process(pcb_t *p)
-{
-    running_count++;
-    insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
-}
-
-inline pcb_t *dequeue_process(pcb_t *p)
-{
-    pcb_t *t = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
-    if (t != NULL)
-        running_count--;
-    return t;
-}
-
-inline pcb_t *const find_process(pandos_pid_t pid)
-{
-    size_t i = mask_pid_id(pid);
-    if (i < 0 || i >= MAX_PROC || get_pcb_table()[i].p_pid != pid)
-        return NULL;
-    return (pcb_t *const)(get_pcb_table() + i);
 }
 
 static inline int kill_process(pcb_t *const p)

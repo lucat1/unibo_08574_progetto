@@ -13,7 +13,8 @@
 /* TODO: comment */
 
 #include "arch/devices.h"
-#include "os/types.h"
+#include "os/const.h"
+#include "os/scheduler.h"
 
 #define SEMAPHORES_NUM (DEVINTNUM + 1) * DEVPERINT + 1
 

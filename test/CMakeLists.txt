@@ -1,6 +1,15 @@
 project (test)
 
-set(TEST_FILES pcb asl util syscall_get_process_id syscall_yield init)
+set(TEST_FILES
+    pcb
+    asl
+    util
+    init
+    scheduler
+    syscall_process_lifecycle
+    syscall_get_process_id
+    syscall_yield
+)
 
 foreach(TST ${TEST_FILES})
     set(TEST_NAME test_${TST})
@@ -13,5 +22,6 @@ foreach(TST ${TEST_FILES})
         PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)
     target_link_libraries(${TEST_NAME}
         sub::os
+        m
     )
 endforeach()
