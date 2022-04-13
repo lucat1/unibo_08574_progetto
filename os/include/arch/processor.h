@@ -77,6 +77,8 @@ extern void status_interrupts_on_process(size_t *prev);
 extern void status_toggle_local_timer(size_t *prev);
 extern void status_kernel_mode_on_nucleus(size_t *prev);
 extern void status_kernel_mode_on_process(size_t *prev);
-extern void status_reserved_instruction(size_t *prev);
+
+extern void cause_clean(size_t *prev);
+extern void cause_reserved_instruction(size_t *prev);
 
 #endif /* PANDOS_ARCH_PROCESSOR_H */

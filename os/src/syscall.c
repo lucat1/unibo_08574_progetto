@@ -73,7 +73,7 @@ static inline scheduler_control_t syscall_terminate_process()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
-    if(kill_progeny(p))
+    if (kill_progeny(p))
         scheduler_panic("Kill progeny failed!");
 
     /* is this is the docs? */
@@ -176,7 +176,8 @@ inline scheduler_control_t syscall_handler()
         scheduler_panic("Syscall recieved while active_process was NULL");
     const int id = (int)active_process->p_s.reg_a0;
     if (id <= 0 && is_user_mode()) {
-        status_reserved_instruction(&active_process->p_s.status);
+        cause_clean(&active_process->p_s.cause);
+        cause_reserved_instruction(&active_process->p_s.cause);
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     switch (id) {

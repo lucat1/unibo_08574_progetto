@@ -76,7 +76,8 @@ void status_kernel_mode_on_process(size_t *prev)
 {
     *prev |= MOCK_KERNEL_MODE_ON_PROCESS;
 }
-void status_reserved_instruction(size_t *prev)
+void cause_clean(size_t *prev) { *prev = 0; }
+void cause_reserved_instruction(size_t *prev)
 {
     *prev |= MOCK_RESERVED_INSTRUCTION;
 }
