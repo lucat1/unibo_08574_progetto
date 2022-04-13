@@ -125,6 +125,7 @@ static inline scheduler_control_t interrupt_terminal()
     // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
+        /* todo: dobbiamo davvero farlo?, lo fa gia' il codice livello utente */
         if ((status & TERMSTATMASK) != DEV_STATUS_TERMINAL_OK)
             scheduler_panic("Device is not installed!\n");
 
