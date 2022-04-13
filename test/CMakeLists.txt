@@ -7,6 +7,7 @@ set(TEST_FILES
     init
     scheduler
     syscall_process_lifecycle
+    syscall_P_and_V
     syscall_get_process_id
     syscall_yield
 )
