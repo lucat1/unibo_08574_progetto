@@ -13,6 +13,14 @@
 
 #include "os/ctypes.h"
 
+/**
+ * \brief Initializes the data structures, the devices, the Pass Up Vector, and
+ * the first process.
+ * \param[in] tbl_refill_handler Nucleus TLB-Refill event handler address.
+ * \param[in] exception_handler Nucleus exception handler address.
+ * \param[in] init_pc Nucleus function that is to be the entry point of the
+ * exception (and interrupt) handling.
+ */
 extern void init(memaddr tbl_refill_handler, memaddr exception_handler,
                  memaddr init_pc);
 
