@@ -8,8 +8,7 @@
 #include "test/mock_iodev.h"
 #include "test/mock_syscall.h"
 #include "test/test.h"
-#include <stdio.h>
-/* TESTING NSYS1 & NSYS2 */
+/* NSYS1 & NSYS2 */
 
 void p1()
 {

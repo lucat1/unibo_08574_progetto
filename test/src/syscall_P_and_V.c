@@ -7,19 +7,12 @@
 #include "test/test.h"
 #include "os/const.h"
 #include "os/util.h"
-#include <stdio.h>
-/* TESTING NSYS3 and NSYS4 */
-
-void p1(){
-    /* It is not supposed to do anything*/
-}
+/* NSYS3 and NSYS4 */
 
 int main()
 {
     mock_init();
     active_process = spawn_process(false);
-    state_t proc1;
-    set_state(&proc1, (memaddr) p1);
     it("correctly P the current process on a semaphore")
     {
         assert(active_process->p_pid != -1);
