@@ -14,6 +14,8 @@
 #include "os/list.h"
 #include "os/types.h"
 
+#define NULL_PID 0u
+
 #ifdef PANDOS_TESTING
 
 /**

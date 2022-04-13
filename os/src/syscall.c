@@ -16,7 +16,6 @@
 #include "os/scheduler.h"
 #include "os/semaphores.h"
 #include "os/util.h"
-
 #define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
 
 /* NSYS1 */
@@ -26,18 +25,18 @@ static inline scheduler_control_t syscall_create_process()
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
-    if (p_s == NULL ||
-        (p_prio != PROCESS_PRIO_LOW && p_prio != PROCESS_PRIO_HIGH))
+    if((active_process->p_s.reg_a2 != PROCESS_PRIO_LOW && active_process->p_s.reg_a2 != PROCESS_PRIO_HIGH) || p_s == NULL){
         return pass_up_or_die((memaddr)GENERALEXCEPT);
-
+    }
+        
     /* spawn new process */
     pcb_t *c = spawn_process(p_prio);
 
     /* checks if there are enough resources */
     if (c == NULL) {
         pandos_kfprintf(&kstderr, "!! ERROR: Cannot create new process\n");
-        /* set caller's v0 to -1 */
-        active_process->p_s.reg_v0 = -1;
+        /* set caller's v0 to NULL_PID */
+        active_process->p_s.reg_v0 = NULL_PID;
     } else {
         c->p_support = p_support_struct;
         pandos_memcpy(&c->p_s, p_s, sizeof(state_t));
@@ -70,8 +69,10 @@ static inline scheduler_control_t syscall_terminate_process()
     /* Search for the target when pid != 0 */
     if (pid == 0)
         p = active_process;
-    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
+    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL){
         scheduler_panic("Could not find process by pid: %p\n", pid);
+        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
 
     /* TODO: handle kill_progeny return value */
     kill_progeny(p);
@@ -79,8 +80,8 @@ static inline scheduler_control_t syscall_terminate_process()
     /* is this is the docs? */
     // if (pid != 0)
     //     p->p_s.reg_v0 = pid;
-    return (pid == 0 || active_process->p_pid == -1) ? CONTROL_BLOCK
-                                                     : CONTROL_RESCHEDULE;
+    return (pid == 0 || active_process->p_pid == NULL_PID) ? CONTROL_BLOCK
+                                                           : CONTROL_RESCHEDULE;
 }
 
 /* NSYS3 */

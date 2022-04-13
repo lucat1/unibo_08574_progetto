@@ -12,6 +12,7 @@
 #include "os/ctypes.h"
 
 #ifdef __x86_64__
+#define DEVINTNUM 5
 #define DEVPERINT 8
 #else
 #include <umps/const.h>

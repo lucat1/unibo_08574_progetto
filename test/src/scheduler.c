@@ -7,8 +7,10 @@
  */
 
 #include "os/scheduler.h"
+#include "os/const.h"
 #include "os/pcb.h"
 #include "os/scheduler_impl.h"
+#include "os/types.h"
 #include "test/mock_init.h"
 #include "test/test.h"
 #include <math.h>
@@ -19,16 +21,16 @@ int main()
     /* Preventing regressions */
     ensure("enqueue_process does nothing with wrong input")
     {
-        size_t rc = running_count;
+        size_t rc = process_count;
         enqueue_process(NULL);
-        assert(running_count == rc);
+        assert(process_count == rc);
     }
-    ensure("enqueue_process increments the running count")
+    ensure("enqueue_process does not increment the running count")
     {
-        size_t rc = running_count;
+        size_t rc = process_count;
         pcb_t *p = alloc_pcb();
         enqueue_process(p);
-        assert(running_count == rc + 1);
+        assert(process_count == rc);
         dequeue_process(p);
         free_pcb(p);
     }
@@ -49,10 +51,10 @@ int main()
         free_pcb(p1);
         free_pcb(p2);
     }
-    /* todo: loads of tests missing in between here, follow the c file */
     ensure("the constant MAX_PROC_BITS is right")
     {
-        assert(MAX_PROC_BITS >= log(MAX_PROC) / log(2));
+        assert(pow(2, MAX_PROC_BITS) >= MAX_PROC);
+        assert(MAX_PROC_BITS < sizeof(pandos_pid_t) * BYTELENGTH);
     }
     ensure("spawn_process generates the right pid")
     {

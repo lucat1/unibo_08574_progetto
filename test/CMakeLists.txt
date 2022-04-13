@@ -7,6 +7,11 @@ set(TEST_FILES
     init
     scheduler
     syscall_process_lifecycle
+    syscall_P_and_V
+    syscall_do_io
+    syscall_get_cpu_time
+    syscall_clock_wait
+    syscall_get_support_data
     syscall_get_process_id
     syscall_yield
 )

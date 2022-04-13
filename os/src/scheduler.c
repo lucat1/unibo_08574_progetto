@@ -18,8 +18,8 @@
 #include "os/util.h"
 #include "os/util_impl.h"
 
-size_t running_count;
-size_t blocked_count;
+size_t process_count;
+size_t softblock_count;
 list_head ready_queue_lo, ready_queue_hi;
 pcb_t *active_process;
 pcb_t *yield_process;
@@ -38,7 +38,6 @@ inline void enqueue_process(pcb_t *p)
     if (p == NULL)
         return;
 
-    running_count++;
     insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
 }
 
@@ -50,8 +49,6 @@ inline pcb_t *dequeue_process(pcb_t *p)
         (r = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p)) ==
             NULL)
         return NULL;
-    else
-        --running_count;
 
     return r;
 }
@@ -70,7 +67,8 @@ inline pcb_t *spawn_process(bool priority)
 
     if ((p = alloc_pcb()) == NULL)
         return NULL;
-    p->p_pid = (p - get_pcb_table()) | (recycle_count++ << MAX_PROC_BITS);
+    ++process_count;
+    p->p_pid = make_pid(p - get_pcb_table(), recycle_count++);
     p->p_prio = priority;
     enqueue_process(p);
     return p;
@@ -84,9 +82,10 @@ static inline int kill_process(pcb_t *const p)
     if (p->p_parent != NULL && !out_child(p))
         return 2;
 
+    --process_count;
     /* In case it is blocked by a semaphore*/
     if (out_blocked(p) != NULL)
-        --blocked_count;
+        --softblock_count;
     else
         dequeue_process(p);
 
@@ -107,8 +106,8 @@ inline int kill_progeny(pcb_t *p)
 
 inline void init_scheduler()
 {
-    running_count = 0;
-    blocked_count = 0;
+    process_count = 0;
+    softblock_count = 0;
     mk_empty_proc_q(&ready_queue_hi);
     mk_empty_proc_q(&ready_queue_lo);
     active_process = NULL;
@@ -119,28 +118,19 @@ inline void init_scheduler()
 
 static inline void wait_or_die()
 {
-    if (active_process == NULL || blocked_count > 0) {
-        pandos_kprintf("wait\n");
-        scheduler_wait();
-    } else if (active_process->p_pid == -1 && running_count <= 0) {
-        // pbc_t *c = (pcb_t *)find_process(19);
-        pandos_kprintf("Nothing left, halting %d");
+    if (!process_count)
         halt();
-        /* TODO: Can the active process be null and blocked count be 0?
-         * I think that active_process == NULL is redundant.
-         **/
-    } else {
-        pandos_kprintf("act is null : %s",
-                       active_process == NULL ? "true" : "false");
-        pandos_kprintf("deadlock\n");
-        scheduler_panic("Deadlock detected.\n");
-    }
+    else if (softblock_count)
+        scheduler_wait();
+    else
+        scheduler_panic("Deadlock detected\n");
 }
 
 void reset_yield_process()
 {
     if (yield_process != NULL) {
-        insert_proc_q(yield_process->p_prio ? &ready_queue_hi : &ready_queue_lo, yield_process);
+        insert_proc_q(yield_process->p_prio ? &ready_queue_hi : &ready_queue_lo,
+                      yield_process);
         yield_process = NULL;
     }
 }
@@ -162,16 +152,13 @@ void schedule(pcb_t *pcb, bool enqueue)
         active_process = pcb;
     else if (!list_empty(&ready_queue_hi)) {
         active_process = remove_proc_q(&ready_queue_hi);
-        running_count--;
         reset_yield_process();
     } else if (!list_empty(&ready_queue_lo)) {
         active_process = remove_proc_q(&ready_queue_lo);
-        running_count--;
         reset_yield_process();
     } else if (yield_process != NULL) {
         active_process = yield_process;
         yield_process = NULL;
-        running_count--;
     } else
         wait_or_die();
 
@@ -183,10 +170,7 @@ void schedule(pcb_t *pcb, bool enqueue)
 }
 
 inline void reset_timer() { load_interval_timer(IT_INTERVAL); }
-inline void reset_local_timer()
-{
-    load_local_timer(PLT_INTERVAL);
-}
+inline void reset_local_timer() { load_local_timer(PLT_INTERVAL); }
 
 void scheduler_wait()
 {

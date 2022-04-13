@@ -11,7 +11,6 @@ inline scheduler_control_t pass_up_or_die(memaddr type)
                       (state_t *)BIOSDATAPAGE, sizeof(state_t));
         load_context(&active_process->p_support->sup_except_context[type]);
     } else
-        /* TODO: kill single process and handle children or kill progeny? */
         kill_progeny(active_process);
 
     return CONTROL_BLOCK;
