@@ -25,10 +25,12 @@ static inline scheduler_control_t syscall_create_process()
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
-    if((active_process->p_s.reg_a2 != PROCESS_PRIO_LOW && active_process->p_s.reg_a2 != PROCESS_PRIO_HIGH) || p_s == NULL){
+    if ((active_process->p_s.reg_a2 != PROCESS_PRIO_LOW &&
+         active_process->p_s.reg_a2 != PROCESS_PRIO_HIGH) ||
+        p_s == NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-        
+
     /* spawn new process */
     pcb_t *c = spawn_process(p_prio);
 
@@ -69,7 +71,7 @@ static inline scheduler_control_t syscall_terminate_process()
     /* Search for the target when pid != 0 */
     if (pid == 0)
         p = active_process;
-    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL){
+    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL) {
         scheduler_panic("Could not find process by pid: %p\n", pid);
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
@@ -177,8 +179,7 @@ inline scheduler_control_t syscall_handler()
         scheduler_panic("Syscall recieved while active_process was NULL");
     const int id = (int)active_process->p_s.reg_a0;
     if (id <= 0 && is_user_mode()) {
-        pandos_kfprintf(&kstderr,
-                        "Negative syscalls cannot be called in user mode!\n");
+        status_rights_infringment(&active_process->p_s.status);
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     switch (id) {

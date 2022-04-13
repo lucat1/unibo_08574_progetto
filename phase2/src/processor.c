@@ -54,3 +54,7 @@ inline void status_interrupts_on_process(size_t *prev)
 inline void status_toggle_local_timer(size_t *prev) { *prev ^= STATUS_TE; }
 inline void status_kernel_mode_on_nucleus(size_t *prev) { *prev |= STATUS_KUc; }
 inline void status_kernel_mode_on_process(size_t *prev) { *prev |= STATUS_KUp; }
+inline void status_rights_infringment(size_t *prev)
+{
+    *prev |= (EXC_RI << CAUSESHIFT);
+}
