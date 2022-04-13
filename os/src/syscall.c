@@ -179,7 +179,7 @@ inline scheduler_control_t syscall_handler()
         scheduler_panic("Syscall recieved while active_process was NULL");
     const int id = (int)active_process->p_s.reg_a0;
     if (id <= 0 && is_user_mode()) {
-        status_rights_infringment(&active_process->p_s.status);
+        status_reserved_instruction(&active_process->p_s.status);
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
     switch (id) {

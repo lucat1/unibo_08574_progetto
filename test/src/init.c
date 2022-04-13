@@ -17,14 +17,13 @@ int main()
         assert(yield_process == NULL);
         assert(!get_recycle_count());
     }
-    ensure("the semaphores are initialized")
-    {
-        for (int i = 0; i < 5 * DEVPERINT + 1; ++i) {
-            assert(!semaphores[i]);
-        }
-    }
     /* These tests are rather a meta-test: we assert our testing infrastructure
      * is actually correct. */
+    ensure("device semaphores are set to 0")
+    {
+        for (size_t i = 0; i < MOCK_SEMAPHORES_LEN; ++i)
+            assert(semaphores[i] == 0);
+    }
     ensure("the devices are reset")
     {
         assert(!interval_timer);

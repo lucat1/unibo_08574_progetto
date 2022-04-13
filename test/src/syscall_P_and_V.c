@@ -1,12 +1,12 @@
+#include "os/const.h"
 #include "os/scheduler.h"
 #include "os/syscall.h"
 #include "os/types.h"
-#include "test/mock_init.h"
-#include "test/mock_syscall.h"
-#include "test/mock_iodev.h"
-#include "test/test.h"
-#include "os/const.h"
 #include "os/util.h"
+#include "test/mock_init.h"
+#include "test/mock_iodev.h"
+#include "test/mock_syscall.h"
+#include "test/test.h"
 /* NSYS3 and NSYS4 */
 
 int main()
@@ -33,7 +33,7 @@ int main()
     }
     it("correctly P and V on every semaphores")
     {
-        for(int i = 0; i<SEMAPHORES_NUM; i++){
+        for (size_t i = 0; i < MOCK_SEMAPHORES_LEN; ++i) {
             SYSCALL(PASSEREN, (size_t)&semaphores[i], 0, 0);
             assert(softblock_count == 1);
             assert(semaphores[i] == 0);
@@ -51,7 +51,6 @@ int main()
         /* Missing semaddr */
         SYSCALL(PASSEREN, 0, 0, 0);
         assert(process_count == 0);
-
     }
     ensure("V does not break with a missing semaddr")
     {

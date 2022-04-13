@@ -17,6 +17,7 @@
 #define MOCK_INTERRUPTS_LOCAL_TIMER 0x800  /* 12-th bit is on */
 #define MOCK_KERNEL_MODE_ON_NUCLEUS 0x1000 /* 13-th bit is on */
 #define MOCK_KERNEL_MODE_ON_PROCESS 0x2000 /* 14-th bit is on */
+#define MOCK_RESERVED_INSTRUCTION 0x2000   /* 14-th bit is on */
 
 bool user_mode;
 int halt_count;
@@ -74,6 +75,10 @@ void status_kernel_mode_on_nucleus(size_t *prev)
 void status_kernel_mode_on_process(size_t *prev)
 {
     *prev |= MOCK_KERNEL_MODE_ON_PROCESS;
+}
+void status_reserved_instruction(size_t *prev)
+{
+    *prev |= MOCK_RESERVED_INSTRUCTION;
 }
 
 void reset_processor()

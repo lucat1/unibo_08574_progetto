@@ -17,6 +17,7 @@
 #include "os/semaphores.h"
 #include "test/mock_devices.h"
 #include "test/mock_processor.h"
+#include "test/mock_semaphores.h"
 
 void mock_init()
 {
