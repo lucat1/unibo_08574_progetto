@@ -33,7 +33,6 @@ int main()
     it("correctly V the current process on it's semaphore")
     {
         SYSCALL(VERHOGEN, (size_t)&semaphores[0], 0, 0);
-        printf("blocked %d, semaphore value: %d", softblock_count, semaphores[0]);
         assert(softblock_count == 0);
         assert(semaphores[0] == 0);
         assert(active_process->p_sem_add == NULL);
@@ -53,6 +52,20 @@ int main()
             assert(active_process->p_sem_add == NULL);
             assert(process_count == 1);
         }
+    }
+    ensure("P does not break with a missing semaddr")
+    {
+        /* Missing semaddr */
+        SYSCALL(PASSEREN, 0, 0, 0);
+        assert(process_count == 0);
+
+    }
+    ensure("V does not break with a missing semaddr")
+    {
+        active_process = spawn_process(false);
+        /* Missing semaddr */
+        SYSCALL(VERHOGEN, 0, 0, 0);
+        assert(process_count == 0);
     }
     return 0;
 }

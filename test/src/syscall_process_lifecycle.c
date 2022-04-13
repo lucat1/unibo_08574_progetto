@@ -100,10 +100,8 @@ int main()
         state_t proc2;
         set_state(&proc2, (memaddr)p1);
         SYSCALL(CREATEPROCESS, (size_t)&proc2, true, 0);
-        printf("%d", process_count);
         /* Test with a broken process id*/
         SYSCALL(TERMPROCESS, 99, 0, 0);
-        printf("%d", process_count);
         assert(process_count == 0);
     }
     it("correctly terminates the active_process")
