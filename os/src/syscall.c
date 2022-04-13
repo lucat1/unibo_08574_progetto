@@ -58,7 +58,6 @@ static inline scheduler_control_t syscall_create_process()
 /* NSYS2 */
 static inline scheduler_control_t syscall_terminate_process()
 {
-
     pcb_t *p;
     const pandos_pid_t pid = active_process->p_s.reg_a1;
 

@@ -11,3 +11,6 @@ type.
 Type alias `pandos_pid_t` from `os/include/os/types.h` is defined as an
 `unsigned int`, despite the provided API suggesting each PIDs should be
 represented as an `int`.
+
+To maintain a correct cpu time we consider the time spent handling the syscall as 
+time spent inside the cpu time.

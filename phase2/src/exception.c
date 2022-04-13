@@ -172,6 +172,11 @@ static inline scheduler_control_t interrupt_handler(size_t cause)
 
 inline void exception_handler()
 {
+    int now_tod;
+    if (active_process != NULL) {
+        store_tod(&now_tod);
+        active_process->p_time += (now_tod - start_tod);
+    }
     scheduler_control_t ctrl;
     if (active_process != NULL)
         pandos_memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE,
@@ -190,8 +195,10 @@ inline void exception_handler()
             if (active_process == NULL)
                 scheduler_panic(
                     "A syscall happened while active_process was NULL\n");
+            store_tod(&start_tod);
             ctrl = syscall_handler();
-
+            store_tod(&now_tod);
+            active_process->p_time += (now_tod - start_tod);
             /* ALWAYS increment the PC to prevent system call loops */
             active_process->p_s.pc_epc += WORD_SIZE;
             active_process->p_s.reg_t9 += WORD_SIZE;

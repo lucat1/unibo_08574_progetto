@@ -137,11 +137,6 @@ void reset_yield_process()
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
-    if (active_process != NULL) {
-        int now_tod;
-        store_tod(&now_tod);
-        active_process->p_time += (now_tod - start_tod);
-    }
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
