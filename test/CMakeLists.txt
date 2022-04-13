@@ -10,6 +10,7 @@ set(TEST_FILES
     syscall_P_and_V
     syscall_get_cpu_time
     syscall_clock_wait
+    syscall_get_support_data
     syscall_get_process_id
     syscall_yield
 )
