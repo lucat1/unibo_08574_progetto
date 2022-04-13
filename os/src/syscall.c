@@ -58,9 +58,6 @@ static inline scheduler_control_t syscall_create_process()
 /* NSYS2 */
 static inline scheduler_control_t syscall_terminate_process()
 {
-    /* TODO ????? */
-    /* Generate an interrupt to signal the end of Current Process’s time q
-     * ntum/slice. The PLT is reserved for this purpose. */
 
     pcb_t *p;
     const pandos_pid_t pid = active_process->p_s.reg_a1;
@@ -76,8 +73,8 @@ static inline scheduler_control_t syscall_terminate_process()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
-    /* TODO: handle kill_progeny return value */
-    kill_progeny(p);
+    if(kill_progeny(p))
+        scheduler_panic("Kill progeny failed!");
 
     /* is this is the docs? */
     // if (pid != 0)
