@@ -1,12 +1,12 @@
+#include "os/const.h"
 #include "os/scheduler.h"
 #include "os/syscall.h"
 #include "os/types.h"
-#include "test/mock_init.h"
-#include "test/mock_syscall.h"
-#include "test/mock_iodev.h"
-#include "test/test.h"
-#include "os/const.h"
 #include "os/util.h"
+#include "test/mock_init.h"
+#include "test/mock_iodev.h"
+#include "test/mock_syscall.h"
+#include "test/test.h"
 /* NSYS6 */
 
 int main()

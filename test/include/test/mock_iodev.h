@@ -11,12 +11,18 @@
 #define PANDOS_TEST_MOCK_IODEV_H
 
 #include "arch/devices.h"
-#include "os/semaphores.h"
+#include "test/mock_semaphores.h"
+
+#define MOCK_WRONG_CMD_ADDR 0x0F0F0F0F
+iodev_t ok = {&semaphores[0], 0};
+iodev_t err = {NULL, 0};
 
 iodev_t get_iodev(size_t *cmd_addr)
 {
-    iodev_t res = {get_semaphore(IL_TERMINAL, 0, true), 0};
-    return res;
+    if (cmd_addr == (size_t *)MOCK_WRONG_CMD_ADDR)
+        return err;
+
+    return ok;
 }
 
 #endif /* PANDOS_TEST_MOCK_IODEV_H */

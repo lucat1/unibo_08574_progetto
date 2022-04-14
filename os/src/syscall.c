@@ -67,10 +67,8 @@ static inline scheduler_control_t syscall_terminate_process()
     /* Search for the target when pid != 0 */
     if (pid == 0)
         p = active_process;
-    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL) {
-        scheduler_panic("Could not find process by pid: %p\n", pid);
+    else if (pid != 0 && (p = (pcb_t *)find_process(pid)) == NULL)
         return pass_up_or_die((memaddr)GENERALEXCEPT);
-    }
 
     if (kill_progeny(p))
         scheduler_panic("Kill progeny failed!");
@@ -104,14 +102,17 @@ static inline scheduler_control_t syscall_verhogen()
 /* NSYS5 */
 static inline scheduler_control_t syscall_do_io()
 {
+    iodev_t dev;
     size_t *cmd_addr = (size_t *)active_process->p_s.reg_a1;
     size_t cmd_value = (size_t)active_process->p_s.reg_a2;
-    if (cmd_addr == (size_t *)NULL || cmd_value == (size_t)NULL)
+
+    if (cmd_addr == (size_t *)NULL ||
+        (dev = get_iodev(cmd_addr)).semaphore == NULL ||
+        head_blocked(dev.semaphore) != NULL)
         return pass_up_or_die((memaddr)GENERALEXCEPT);
 
-    iodev_t dev = get_iodev(cmd_addr);
-    if (dev.semaphore == NULL || *dev.semaphore > 0)
-        return pass_up_or_die((memaddr)GENERALEXCEPT);
+    if (*dev.semaphore > 0)
+        scheduler_panic("A device syncronization semaphore has a value > 0");
 
     scheduler_control_t ctrl = P(dev.semaphore, active_process);
     if (active_process->p_prio)
