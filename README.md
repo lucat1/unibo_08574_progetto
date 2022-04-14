@@ -18,19 +18,22 @@ sub-directories:
 
 ## Design choices
 
-The identifier for a new born process (pid for short) is generated in a semi-unique
-way, which provides a good balance between raw performance and roboustness.
-The 32 bits of the pid are subdivded into two sections:
+The identifier for a new born process (pid for short) is generated in a
+semi-unique way, which provides a good balance between raw performance and
+roboustness. The 32 bits of the pid are initially subdivided into two sections:
 
-- The lower `MAX_PROC_BITS` bits identify the index of the underlying `pcb_t`
-  structure in the table of al `pcb_t`s.
-- The remaining `WORD_BITS - MAX_PROC_BITS` bits are set to the lower bits of
+- the lower `MAX_PROC_BITS` bits identify the index of the underlying `pcb_t`
+  structure in the table of al `pcb_t`s;
+- the remaining `WORD_BITS - MAX_PROC_BITS` bits are set to the lower bits of
   the `recycle_count` counter.
-  The value of `MAX_PROC_BITS` is computed by hand based on the value of
-  `MAX_PROC`, preserving the following invariant:
+
+Finally, the resulting pid is incremented by one. This is done to reserve 0 as
+the value of the conventional `NULL_PID`, which does not describe any valid pid
+at all. The value of `MAX_PROC_BITS` is computed by hand based on the value of
+`MAX_PROC`, preserving the following invariant:
 
 ```
-MAX_PROC_BITS = \lceil log_2(MAX) \rceil
+MAX_PROC_BITS \geq \lceil log_2(MAX_PROC) \rceil
 ```
 
 This approach does not guarantee a complete uniqueness (which cannot be achieved
