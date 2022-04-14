@@ -94,14 +94,24 @@ extern int term_putchar(termreg_t *term, char c);
  * \brief Prints a string to the given serial terminal.
  * If `len` is zero, it is ignored. If a terminator character is encountered
  * before `len` character have been written, the copy process halts.
- * \param[out] dest The serial terminal to which the string is to be
- * printed. \param[in] data The string to be printed. \param[in] len The
- * length of the string to be printed. \return Returns the number of written
+ * \param[out] dest The serial terminal to which the string is to be printed.
+ * \param[in] data The string to be printed. \param[in] len The length of the
+ * string to be printed. \return Returns the number of written
  * characters.
  */
 extern size_t serial_writer(void *dest, const char *data, size_t len);
 
+/**
+ * \brief Prints a string to the given memory area.
+ * If `len` is zero, it is ignored. If a terminator character is encountered
+ * before `len` character have been written, the copy process halts.
+ * \param[out] dest The memory area to which the string is to be printed.
+ * \param[in] data The string to be printed. \param[in] len The length of the
+ * string to be printed. \return Returns the number of written
+ * characters.
+ */
 extern size_t memory_writer(void *dest, const char *data, size_t len);
+
 #endif
 
 #endif /* PANDOS_UTIL_IMPL_H */
