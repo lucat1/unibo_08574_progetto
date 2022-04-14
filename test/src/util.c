@@ -40,18 +40,18 @@ int main()
 
     ensure("an empty list has size 0") { assert(!list_size(&l)); }
 
-    ensure("NULL_LIST_HEAD returns NULL") { assert(NULL_LIST_HEAD(l) == NULL); }
+    ensure("LIST_HEAD_NULL returns NULL") { assert(LIST_HEAD_NULL(&l) == NULL); }
 
-    ensure("NULL_LIST_HEAD correctly updates its parameter")
+    ensure("LIST_HEAD_NULL correctly updates its parameter")
     {
         assert(l.prev == NULL && l.next == NULL);
     }
 
-    ensure("IS_NULL_LIST_HEAD correctly checks its parameter")
+    ensure("list_null correctly checks its parameter")
     {
-        assert(IS_NULL_LIST_HEAD(l));
+        assert(list_null(&l));
         l.prev = l.next = &l;
-        assert(!IS_NULL_LIST_HEAD(l));
+        assert(!list_null(&l));
     }
 
     for (i = 0; i < len; ++i)
@@ -74,7 +74,7 @@ int main()
         for (i = 0; i < len; ++i) {
             list_sdel(&data[i].l);
             assert(list_size(&l) == len - 1 - i);
-            assert(IS_NULL_LIST_HEAD(data[i].l));
+            assert(list_null(&data[i].l));
             list_sdel(&data[i].l);
             assert(list_size(&l) == len - 1 - i);
         }

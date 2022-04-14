@@ -19,7 +19,7 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
     pcb_t *t;
 
     if (*sem_addr == 0) {
-        if (!list_empty(&p->p_list))
+        if (!list_null(&p->p_list))
             dequeue_process(p);
         if ((r = insert_blocked(sem_addr, p)) > 0)
             scheduler_panic("PASSEREN failed %d\n", r);
@@ -44,7 +44,7 @@ inline pcb_t *V(int *const sem_addr)
 
     if (*sem_addr == 1) {
         if (active_process->p_sem_add == NULL) {
-            if (!list_empty(&active_process->p_list))
+            if (!list_null(&active_process->p_list))
                 dequeue_process(active_process);
             ++softblock_count;
             if ((insert_blocked(sem_addr, active_process)) > 0)

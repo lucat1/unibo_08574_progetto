@@ -19,14 +19,16 @@
  * \param[out] l The list head to be set to NULL.
  * \return Always NULL.
  */
-#define NULL_LIST_HEAD(l) ((l).prev = (l).next = NULL)
+#define LIST_HEAD_NULL(l) ((l)->prev = (l)->next = NULL)
 
 /**
  * \brief Checks whether both fields of a list head are NULL.
  * \param[in] l The list head to be checked.
  * \return true if both fields are NULL, or false otherwise.
  */
-#define IS_NULL_LIST_HEAD(l) ((l).prev == NULL && (l).next == NULL)
+static inline int list_null(const list_head *head) {
+  return head->prev == NULL && head->next == NULL;
+}
 
 /**
  * \brief Deletes a single element from its list.
@@ -35,9 +37,9 @@
  */
 static inline void list_sdel(list_head *entry)
 {
-    if (!IS_NULL_LIST_HEAD(*entry)) {
+    if (!list_null(entry)) {
         list_del(entry);
-        NULL_LIST_HEAD(*entry);
+        LIST_HEAD_NULL(entry);
     }
 }
 
@@ -202,6 +204,8 @@ static inline void list_print(const list_head *head)
     if (head) {
         if (list_empty(head))
             p("empty list\n");
+        else if(list_null(head))
+            p("null list\n");
         else
             for (iter = head->next; iter != head; iter = iter->next)
                 p("%p = {%p, %p}\n", (void *)iter, (void *)iter->prev,

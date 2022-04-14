@@ -32,9 +32,9 @@ int main()
             assert((pcb1 = alloc_pcb()) != NULL);
 
             /* Check if the pcb is null */
-            assert(IS_NULL_LIST_HEAD(pcb1->p_list));
+            assert(list_null(&pcb1->p_list));
             assert(list_empty(&pcb1->p_child));
-            assert(IS_NULL_LIST_HEAD(pcb1->p_sib));
+            assert(list_null(&pcb1->p_sib));
             assert(pcb1->p_parent == NULL);
             assert(pcb1->p_sem_add == NULL);
             assert(pcb1->p_time == 0);
@@ -89,18 +89,19 @@ int main()
     }
     it("correctly created an empty PCBs list")
     {
-        mk_empty_proc_q(&pcb1->p_list);
+        list_head l = LIST_HEAD_INIT(l);
+        mk_empty_proc_q(&l);
         /* check that p_list is initialized */
-        assert(&pcb1->p_list != NULL);
+        assert(&l != NULL);
+        assert(empty_proc_q(&l));
         /* check that p_list is empty */
-        assert(empty_proc_q(&pcb1->p_list));
-        /* check that p_list is empty */
-        assert(head_proc_q(&pcb1->p_list) == NULL);
-        assert(list_empty(&pcb1->p_list));
+        assert(head_proc_q(&l) == NULL);
+        assert(list_empty(&l));
     }
 
     it("correctly added PCB to p_list")
     {
+      mk_empty_proc_q(&pcb1->p_list);
         insert_proc_q(&pcb1->p_list, pcb2);
         assert(list_contains(&pcb1->p_list, &pcb2->p_list));
         insert_proc_q(&pcb1->p_list, pcb5);

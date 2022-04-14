@@ -47,8 +47,8 @@ static inline pcb_t *null_pcb(pcb_t *t)
 {
     if (t == NULL)
         return NULL;
-    t->p_list.prev = t->p_list.next = NULL;
-    t->p_child.prev = t->p_child.next = &t->p_child;
+    LIST_HEAD_NULL(&t->p_list);
+    INIT_LIST_HEAD(&t->p_child);
     t->p_sib.prev = t->p_sib.next = NULL;
     t->p_parent = NULL;
     t->p_time = 0;
