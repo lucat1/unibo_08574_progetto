@@ -13,6 +13,10 @@
 
 #include "os/scheduler.h"
 
+/**
+ * \brief Runs the syscall requested by the active process.
+ * \return Always CONTROL_RESCHEDULE.
+ */
 extern scheduler_control_t syscall_handler();
 
 #endif /* PANDOS_SYSCALL_H */
