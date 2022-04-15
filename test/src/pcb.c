@@ -8,9 +8,8 @@
 
 #include "os/pcb.h"
 #include "os/util.h"
-#include "test/test.h"
-
 #include "test/mock_processor.h"
+#include "test/test.h"
 
 bool pcb_free_contains(pcb_t *p)
 {
@@ -101,7 +100,7 @@ int main()
 
     it("correctly added PCB to p_list")
     {
-      mk_empty_proc_q(&pcb1->p_list);
+        mk_empty_proc_q(&pcb1->p_list);
         insert_proc_q(&pcb1->p_list, pcb2);
         assert(list_contains(&pcb1->p_list, &pcb2->p_list));
         insert_proc_q(&pcb1->p_list, pcb5);

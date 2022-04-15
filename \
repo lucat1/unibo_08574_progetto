@@ -21,9 +21,9 @@ int main()
     /* The two following tests are to prevent regressions */
     ensure("enqueue_process does nothing with wrong input")
     {
+        size_t rc = process_count;
         enqueue_process(NULL);
-        assert(list_size(&ready_queue_hi) == 0);
-        assert(list_size(&ready_queue_lo) == 0);
+        assert(process_count == rc);
     }
     ensure("enqueue_process does not increment the running count")
     {
@@ -34,9 +34,10 @@ int main()
         dequeue_process(p);
         free_pcb(p);
     }
+
     ensure("enqueue_process does not break a previous queue")
     {
-        list_head head = LIST_HEAD_INIT(head);
+        list_head head;
         pcb_t *p = alloc_pcb();
         insert_proc_q(&head, p);
         assert(!list_null(&p->p_list));
@@ -66,50 +67,18 @@ int main()
         free_pcb(p1);
         free_pcb(p2);
     }
-
     ensure("dequeue_process errors with wrong input")
     {
+        size_t rc = process_count;
         assert(dequeue_process(NULL) == NULL);
+        assert(process_count == rc);
         pcb_t *p = alloc_pcb();
-        assert(list_null(&p->p_list));
+    assert(list_null(&p->p_list);
         assert(dequeue_process(NULL) == NULL);
-        assert(list_null(&p->p_list));
-
-        /* The process is in a list but it's not a ready list */
-        list_head head = LIST_HEAD_INIT(head);
-        insert_proc_q(&head, p);
-        assert(!list_null(&p->p_list));
-        assert(!list_empty(&head));
-        assert(list_contains(&p->p_list, &head));
-        dequeue_process(p);
-        assert(!list_null(&p->p_list));
-        assert(!list_empty(&head));
-        assert(list_contains(&p->p_list, &head));
-        free_pcb(p);
+    assert(list_null(&p->p_list);
+    free_pcb(p);
+        assert(process_count == rc);
     }
-    ensure("dequeue_process correctly removes a process from its queue")
-    {
-        pcb_t *p1 = spawn_process(false);
-        assert(process_count == 1);
-        assert(!list_null(&p1->p_list));
-        assert(list_contains(&p1->p_list, &ready_queue_lo));
-        dequeue_process(p1);
-        assert(list_empty(&ready_queue_lo));
-        assert(!list_contains(&p1->p_list, &ready_queue_lo));
-        kill_progeny(p1);
-        --process_count;
-
-        pcb_t *p2 = spawn_process(true);
-        assert(process_count == 1);
-        assert(!list_null(&p2->p_list));
-        assert(list_contains(&p2->p_list, &ready_queue_hi));
-        dequeue_process(p2);
-        assert(list_empty(&ready_queue_hi));
-        assert(!list_contains(&p2->p_list, &ready_queue_hi));
-        kill_progeny(p2);
-        --process_count;
-    }
-
     ensure("the constant MAX_PROC_BITS is right")
     {
         assert(pow(2, MAX_PROC_BITS) >= MAX_PROC);

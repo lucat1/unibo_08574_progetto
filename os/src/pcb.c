@@ -124,7 +124,6 @@ pcb_t *out_proc_q(list_head *head, pcb_t *p)
 
     /* Remove p element from list */
     list_sdel(&p->p_list);
-
     return p;
 }
 

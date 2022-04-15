@@ -18,6 +18,8 @@
 #include "os/util.h"
 #include "os/util_impl.h"
 
+#define process_queue(p) (p)->p_prio ? &ready_queue_hi : &ready_queue_lo
+
 size_t process_count;
 size_t softblock_count;
 list_head ready_queue_lo, ready_queue_hi;
@@ -38,19 +40,15 @@ inline void enqueue_process(pcb_t *p)
     if (p == NULL)
         return;
 
-    insert_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p);
+    insert_proc_q(process_queue(p), p);
 }
 
 inline pcb_t *dequeue_process(pcb_t *p)
 {
-    pcb_t *r;
-
-    if (p == NULL ||
-        (r = out_proc_q(p->p_prio ? &ready_queue_hi : &ready_queue_lo, p)) ==
-            NULL)
+    if (p == NULL)
         return NULL;
 
-    return r;
+    return out_proc_q(process_queue(p), p);
 }
 
 inline pcb_t *const find_process(pandos_pid_t pid)
@@ -82,7 +80,11 @@ static inline int kill_process(pcb_t *const p)
     if (p->p_parent != NULL && !out_child(p))
         return 2;
 
-    --process_count;
+    /* Decrement the counter only if the process was in some kind of list and
+     * not just allocated */
+    if (!list_null(&p->p_list))
+        --process_count;
+
     /* In case it is blocked by a semaphore*/
     if (out_blocked(p) != NULL)
         --softblock_count;
@@ -126,15 +128,6 @@ static inline void wait_or_die()
         scheduler_panic("Deadlock detected\n");
 }
 
-void reset_yield_process()
-{
-    if (yield_process != NULL) {
-        insert_proc_q(yield_process->p_prio ? &ready_queue_hi : &ready_queue_lo,
-                      yield_process);
-        yield_process = NULL;
-    }
-}
-
 void schedule(pcb_t *pcb, bool enqueue)
 {
     pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
@@ -145,18 +138,20 @@ void schedule(pcb_t *pcb, bool enqueue)
     /* Process selection */
     if (pcb != NULL && !enqueue)
         active_process = pcb;
-    else if (!list_empty(&ready_queue_hi)) {
+    else if (!list_empty(&ready_queue_hi))
         active_process = remove_proc_q(&ready_queue_hi);
-        reset_yield_process();
-    } else if (!list_empty(&ready_queue_lo)) {
+    else if (!list_empty(&ready_queue_lo))
         active_process = remove_proc_q(&ready_queue_lo);
-        reset_yield_process();
-    } else if (yield_process != NULL) {
+    else if (yield_process != NULL) {
         active_process = yield_process;
         yield_process = NULL;
     } else
         wait_or_die();
 
+    if (yield_process != NULL) {
+        insert_proc_q(process_queue(yield_process), yield_process);
+        yield_process = NULL;
+    }
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )
      */
