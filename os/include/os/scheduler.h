@@ -23,7 +23,7 @@ extern cpu_t start_tod;
 extern state_t *wait_state;
 
 #ifdef PANDOS_TESTING
-extern size_t get_recycle_count();
+size_t get_recycle_count();
 #endif
 
 /**
@@ -34,12 +34,24 @@ extern size_t get_recycle_count();
  */
 extern pcb_t *spawn_process(bool priority);
 
+#ifdef PANDOS_TESTING
+/**
+ * \brief Kills a single process by removing it from any queue or semaphore,
+ * decrementing the process count and freeing the associated pcb. The caller
+ * does not own the provided memory address after this call.
+ * \param[in,out] p Pointer to the PCB to be killed.
+ * \return 0 on success, 1 on NULL input, 2 if input could not be removed from
+ * its parent.
+ */
+int kill_process(pcb_t *const p);
+#endif
+
 /**
  * \brief Recursively kills a process and all of its progeny. This procedure
  * abruptly comes to a halt on the first failed kill.
  * \param[in,out] p Pointer to the PCB whose progeny is to be killed.
- * \return 0 on success, 1 on NULL input, 2 if input could not be removed from
- * its parent, or 3 if any of its descendants could not be killed.
+ * \return 0 on success, 1 on NULL input, 2 if input could not be removed
+ * from its parent, or 3 if any of its descendants could not be killed.
  */
 extern int kill_progeny(pcb_t *p);
 

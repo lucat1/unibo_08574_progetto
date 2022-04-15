@@ -7,6 +7,7 @@
  */
 
 #include "os/scheduler.h"
+#include "os/asl_impl.h"
 #include "os/const.h"
 #include "os/pcb.h"
 #include "os/scheduler_impl.h"
@@ -97,7 +98,6 @@ int main()
         assert(list_empty(&ready_queue_lo));
         assert(!list_contains(&p1->p_list, &ready_queue_lo));
         kill_progeny(p1);
-        --process_count;
 
         pcb_t *p2 = spawn_process(true);
         assert(process_count == 1);
@@ -107,7 +107,75 @@ int main()
         assert(list_empty(&ready_queue_hi));
         assert(!list_contains(&p2->p_list, &ready_queue_hi));
         kill_progeny(p2);
-        --process_count;
+    }
+
+    ensure("spawn_process sanitizes the priority parameter")
+    {
+        size_t len = list_size(get_pcb_free());
+        assert(spawn_process((bool)2) == NULL);
+        assert(list_size(get_pcb_free()) == len);
+        assert(spawn_process((bool)-1) == NULL);
+        assert(list_size(get_pcb_free()) == len);
+    }
+    ensure("spawn_process behaves properly (except pid)")
+    {
+        size_t len = list_size(get_pcb_free()), count = process_count;
+        for (int i = 0; i < 2; ++i) {
+            pcb_t *p = spawn_process((bool)i);
+            assert(p != NULL);
+            assert(list_size(get_pcb_free()) == len - 1);
+            assert(process_count == count + 1);
+            assert(p->p_prio == (bool)i);
+            assert(!list_null(&p->p_list));
+            assert(!list_contains(get_pcb_free(), &p->p_list));
+            assert(list_contains(i ? &ready_queue_hi : &ready_queue_lo,
+                                 &p->p_list));
+            kill_progeny(p);
+        }
+    }
+
+    ensure("kill_process erros with broken parameters")
+    {
+        size_t count = process_count;
+        assert(kill_process(NULL) == 1);
+        assert(process_count == count);
+        pcb_t *p = alloc_pcb();
+        p->p_parent = p + 1;
+        assert(kill_process(p) == 2);
+        assert(process_count == count);
+        free_pcb(p);
+    }
+    ensure("kill_process removes the process from a tree")
+    {
+        pcb_t *parent = spawn_process(false), *p = spawn_process(false);
+        assert(parent->p_pid != NULL_PID);
+        assert(p->p_pid != NULL_PID);
+        insert_child(parent, p);
+        assert(!empty_child(parent));
+        assert(p->p_parent == parent);
+        assert(kill_process(p) == 0);
+        assert(empty_child(parent));
+        assert(p->p_parent == NULL);
+        assert(p->p_pid == NULL_PID);
+        kill_progeny(parent);
+    }
+    ensure("kill_process removes the process from a semaphore")
+    {
+        int sem;
+        pcb_t *p = spawn_process(false);
+        assert(p->p_pid != NULL_PID);
+        dequeue_process(p);
+        insert_blocked(&sem, p);
+        semd_t *semd = find_semd(get_semd_h(), &sem);
+        assert(semd != NULL);
+        assert(p->p_sem_add == &sem);
+        assert(!list_empty(&p->p_list));
+        assert(head_blocked(&sem) == p);
+        assert(kill_process(p) == 0);
+        assert(p->p_sem_add == NULL);
+        assert(list_contains(get_semd_free(), &semd->s_link));
+        assert(p->p_pid == NULL_PID);
+        kill_progeny(p);
     }
 
     ensure("the constant MAX_PROC_BITS is right")

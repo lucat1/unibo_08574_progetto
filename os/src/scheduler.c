@@ -32,7 +32,7 @@ state_t *wait_state;
 static size_t recycle_count;
 
 #ifdef PANDOS_TESTING
-inline size_t get_recycle_count() { return recycle_count; }
+size_t get_recycle_count() { return recycle_count; }
 #endif
 
 inline void enqueue_process(pcb_t *p)
@@ -63,7 +63,7 @@ inline pcb_t *spawn_process(bool priority)
 {
     pcb_t *p;
 
-    if ((p = alloc_pcb()) == NULL)
+    if ((priority != true && priority != false) || (p = alloc_pcb()) == NULL)
         return NULL;
     ++process_count;
     p->p_pid = make_pid(p - get_pcb_table(), recycle_count++);
@@ -72,7 +72,11 @@ inline pcb_t *spawn_process(bool priority)
     return p;
 }
 
-static inline int kill_process(pcb_t *const p)
+#ifndef PANDOS_TESTING
+static inline
+#endif
+    int
+    kill_process(pcb_t *const p)
 {
     if (p == NULL)
         return 1;
@@ -80,17 +84,13 @@ static inline int kill_process(pcb_t *const p)
     if (p->p_parent != NULL && !out_child(p))
         return 2;
 
-    /* Decrement the counter only if the process was in some kind of list and
-     * not just allocated */
-    if (!list_null(&p->p_list))
-        --process_count;
+    --process_count;
 
-    /* In case it is blocked by a semaphore*/
-    if (out_blocked(p) != NULL)
+    /* Decrease the amount of processes blocked if one of them is killed */
+    if (out_blocked(p) == p)
         --softblock_count;
-    else
-        dequeue_process(p);
 
+    /* The removal of the process from any queue is handled by the free_pcb */
     free_pcb(p);
     return 0;
 }
