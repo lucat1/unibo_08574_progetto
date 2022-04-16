@@ -7,16 +7,12 @@
  */
 
 #include "os/semaphores.h"
-#include "os/list.h"
-#include "os/pcb.h"
-#include "os/util.h"
+#include "test/mock_devices.h"
+#include "test/mock_processor.h"
 #include "test/test.h"
 
 int main()
 {
-    ensure("P(NULL, NULL) does not crash")
-    {
-        // P(NULL, NULL);
-    }
+    ensure("P(NULL, NULL) does not crash") { P(NULL, NULL); }
     return 0;
 }

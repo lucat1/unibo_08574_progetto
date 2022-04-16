@@ -35,6 +35,9 @@ static size_t recycle_count;
 size_t get_recycle_count() { return recycle_count; }
 #endif
 
+inline void reset_timer() { load_interval_timer(IT_INTERVAL); }
+inline void reset_local_timer() { load_local_timer(PLT_INTERVAL); }
+
 inline void enqueue_process(pcb_t *p)
 {
     if (p == NULL)
@@ -118,6 +121,34 @@ inline void init_scheduler()
     recycle_count = 0;
 }
 
+static inline void scheduler_wait()
+{
+    pandos_kprintf("-- WAIT\n");
+    active_process = NULL;
+    reset_timer();
+
+    size_t status = get_status();
+    status_interrupts_on_nucleus(&status);
+    status_toggle_local_timer(&status);
+    // status_il_on_all(&status);
+    set_status(status);
+
+    wait();
+    schedule(NULL, false);
+}
+
+static inline void scheduler_takeover()
+{
+    pandos_kprintf(">> TAKEOVER(%d)\n", active_process->p_pid);
+    status_interrupts_on_process(&active_process->p_s.status);
+    reset_local_timer();
+    /* Disable the processor Local Timer on hi processes */
+    if (active_process->p_prio)
+        status_toggle_local_timer(&active_process->p_s.status);
+    store_tod(&start_tod);
+    load_state(&active_process->p_s);
+}
+
 static inline void wait_or_die()
 {
     if (!process_count)
@@ -157,37 +188,6 @@ void schedule(pcb_t *pcb, bool enqueue)
      */
     if (active_process)
         scheduler_takeover();
-}
-
-inline void reset_timer() { load_interval_timer(IT_INTERVAL); }
-inline void reset_local_timer() { load_local_timer(PLT_INTERVAL); }
-
-void scheduler_wait()
-{
-    pandos_kprintf("-- WAIT\n");
-    active_process = NULL;
-    reset_timer();
-
-    size_t status = get_status();
-    status_interrupts_on_nucleus(&status);
-    status_toggle_local_timer(&status);
-    // status_il_on_all(&status);
-    set_status(status);
-
-    wait();
-    schedule(NULL, false);
-}
-
-void scheduler_takeover()
-{
-    pandos_kprintf(">> TAKEOVER(%d)\n", active_process->p_pid);
-    status_interrupts_on_process(&active_process->p_s.status);
-    reset_local_timer();
-    /* Disable the processor Local Timer on hi processes */
-    if (active_process->p_prio)
-        status_toggle_local_timer(&active_process->p_s.status);
-    store_tod(&start_tod);
-    load_state(&active_process->p_s);
 }
 
 void scheduler_panic(const char *fmt, ...)
