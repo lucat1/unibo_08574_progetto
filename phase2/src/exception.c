@@ -66,7 +66,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
     int il = IL_DISK;
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
-        if (IL_ACTIVE(cause, i)) {
+        if (cause & CAUSE_IP(i)) {
             il = i;
             break;
         }
@@ -149,16 +149,16 @@ static inline scheduler_control_t interrupt_terminal()
 
 static inline scheduler_control_t interrupt_handler(size_t cause)
 {
-    if (IL_ACTIVE(cause, IL_IPI))
+    if (cause & CAUSE_IP(IL_IPI))
         return interrupt_ipi();
-    else if (IL_ACTIVE(cause, IL_CPUTIMER))
+    else if (cause & CAUSE_IP(IL_CPUTIMER))
         return interrupt_local_timer();
-    else if (IL_ACTIVE(cause, IL_TIMER))
+    else if (cause & CAUSE_IP(IL_TIMER))
         return interrupt_timer();
-    else if (IL_ACTIVE(cause, IL_DISK) || IL_ACTIVE(cause, IL_FLASH) ||
-             IL_ACTIVE(cause, IL_ETHERNET) || IL_ACTIVE(cause, IL_PRINTER))
+    else if (cause & CAUSE_IP(IL_DISK) & CAUSE_IP(IL_FLASH) &
+             CAUSE_IP(IL_ETHERNET) & CAUSE_IP(IL_PRINTER))
         return interrupt_generic(cause);
-    else if (IL_ACTIVE(cause, IL_TERMINAL))
+    else if (cause & CAUSE_IP(IL_TERMINAL))
         return interrupt_terminal();
     else
         pandos_interrupt("UNKNOWN");

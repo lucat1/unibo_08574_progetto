@@ -92,9 +92,6 @@
 #define DEVICE_COMMAND(il_n, dev_n)                                            \
     (memaddr *)(DEV_REG_ADDR(il_n, dev_n) + RECV_COMMAND)
 
-/* Returns 1 if the interrupt il_no is pending */
-#define IL_ACTIVE(cause, il_no) ((cause) & (1 << ((il_no) + 8)))
-
 /* Status register constants */
 #define ALLOFF 0x00000000
 #define USERPON 0x00000008
