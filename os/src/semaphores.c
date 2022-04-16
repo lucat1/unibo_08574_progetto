@@ -18,6 +18,8 @@ inline scheduler_control_t P(int *const sem_addr, pcb_t *const p)
     int r;
     pcb_t *t;
 
+    if (sem_addr == NULL || p == NULL)
+        return CONTROL_RESCHEDULE;
     if (*sem_addr == 0) {
         if (!list_null(&p->p_list))
             dequeue_process(p);
@@ -42,8 +44,10 @@ inline pcb_t *V(int *const sem_addr)
 {
     pcb_t *p;
 
+    if (sem_addr == NULL)
+        return NULL;
     if (*sem_addr == 1) {
-        if (active_process->p_sem_add == NULL) {
+        if (active_process != NULL && active_process->p_sem_add == NULL) {
             if (!list_null(&active_process->p_list))
                 dequeue_process(active_process);
             ++softblock_count;

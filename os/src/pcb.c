@@ -88,7 +88,7 @@ int empty_proc_q(list_head *head)
 
 void insert_proc_q(list_head *head, pcb_t *p)
 {
-    if (p == NULL || head == NULL || list_contains(&p->p_list, head))
+    if (p == NULL || head == NULL)
         return;
     list_sdel(&p->p_list);
     list_add_tail(&p->p_list, head);
