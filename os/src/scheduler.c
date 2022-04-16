@@ -95,7 +95,7 @@ static inline
     return 0;
 }
 
-inline int kill_progeny(pcb_t *p)
+inline int kill_progeny(pcb_t *const p)
 {
     pcb_t *child;
 

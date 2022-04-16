@@ -134,16 +134,65 @@ int main()
         }
     }
 
+    ensure("find_process returns NULL with invalid input")
+    {
+        assert(find_process(make_pid(-1, 0)) == NULL);
+        assert(find_process(make_pid(MAX_PROC, 0)) == NULL);
+        /* Valid format pid but pcb 8 is not alive */
+        assert(find_process(make_pid(0, 0)) == NULL);
+    }
+    ensure("find_process the appropriate process")
+    {
+        pcb_t *p1 = spawn_process(false), *p2 = spawn_process(false);
+        assert(find_process(p1->p_pid) == p1);
+        assert(find_process(p1->p_pid) != p2);
+        assert(find_process(p2->p_pid) == p2);
+        assert(find_process(p2->p_pid) != p1);
+        kill_progeny(p1);
+        kill_progeny(p2);
+    }
+
+    ensure("the constant MAX_PROC_BITS is right")
+    {
+        assert(pow(2, MAX_PROC_BITS) >= MAX_PROC);
+        assert(MAX_PROC_BITS < sizeof(pandos_pid_t) * BYTELENGTH);
+    }
+    ensure("spawn_process generates the right pid")
+    {
+        size_t recycle = get_recycle_count();
+        int first_id =
+            head_proc_q((list_head *)get_pcb_free()) - get_pcb_table();
+        pcb_t *p1 = spawn_process(false);
+        int second_id =
+            head_proc_q((list_head *)get_pcb_free()) - get_pcb_table();
+        pcb_t *p2 = spawn_process(false);
+        assert(p1->p_pid != -1);
+        assert(p2->p_pid != -1);
+        assert(mask_pid_id(p1->p_pid) == first_id);
+        assert(mask_recycle(p1->p_pid) == recycle);
+        assert(mask_pid_id(p2->p_pid) == second_id);
+        assert(mask_recycle(p2->p_pid) == recycle + 1);
+        kill_progeny(p1);
+        int third_id =
+            head_proc_q((list_head *)get_pcb_free()) - get_pcb_table();
+        p1 = spawn_process(false);
+        assert(mask_pid_id(p1->p_pid) == third_id);
+        assert(mask_recycle(p1->p_pid) == recycle + 2);
+        kill_progeny(p1);
+        kill_progeny(p2);
+    }
+
     ensure("kill_process erros with broken parameters")
     {
         size_t count = process_count;
         assert(kill_process(NULL) == 1);
         assert(process_count == count);
-        pcb_t *p = alloc_pcb();
-        p->p_parent = p + 1;
+        pcb_t *p = alloc_pcb(), *parent = alloc_pcb();
+        p->p_parent = parent;
         assert(kill_process(p) == 2);
         assert(process_count == count);
         free_pcb(p);
+        free_pcb(parent);
     }
     ensure("kill_process removes the process from a tree")
     {
@@ -176,36 +225,6 @@ int main()
         assert(list_contains(get_semd_free(), &semd->s_link));
         assert(p->p_pid == NULL_PID);
         kill_progeny(p);
-    }
-
-    ensure("the constant MAX_PROC_BITS is right")
-    {
-        assert(pow(2, MAX_PROC_BITS) >= MAX_PROC);
-        assert(MAX_PROC_BITS < sizeof(pandos_pid_t) * BYTELENGTH);
-    }
-    ensure("spawn_process generates the right pid")
-    {
-        size_t recycle = get_recycle_count();
-        int first_id =
-            head_proc_q((list_head *)get_pcb_free()) - get_pcb_table();
-        pcb_t *p1 = spawn_process(false);
-        int second_id =
-            head_proc_q((list_head *)get_pcb_free()) - get_pcb_table();
-        pcb_t *p2 = spawn_process(false);
-        assert(p1->p_pid != -1);
-        assert(p2->p_pid != -1);
-        assert(mask_pid_id(p1->p_pid) == first_id);
-        assert(mask_recycle(p1->p_pid) == recycle);
-        assert(mask_pid_id(p2->p_pid) == second_id);
-        assert(mask_recycle(p2->p_pid) == recycle + 1);
-        kill_progeny(p1);
-        int third_id =
-            head_proc_q((list_head *)get_pcb_free()) - get_pcb_table();
-        p1 = spawn_process(false);
-        assert(mask_pid_id(p1->p_pid) == third_id);
-        assert(mask_recycle(p1->p_pid) == recycle + 2);
-        kill_progeny(p1);
-        kill_progeny(p2);
     }
     return 0;
 }
