@@ -1,5 +1,11 @@
-#include "os/pcb.h"
-#include "os/scheduler.h"
+/**
+ * \file syscall_get_process_id.c
+ * \brief Tests around the GETPROCESSID system call.
+ *
+ * \author Luca Tagliavini
+ * \date 11-04-2022
+ */
+
 #include "test/mock_init.h"
 #include "test/mock_iodev.h"
 #include "test/mock_syscall.h"

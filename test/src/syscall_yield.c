@@ -1,3 +1,11 @@
+/**
+ * \file syscall_yield.c
+ * \brief Tests around the YIELD system call.
+ *
+ * \author Alessandro Frau
+ * \date 12-04-2022
+ */
+
 #include "os/scheduler.h"
 #include "os/syscall.h"
 #include "os/types.h"

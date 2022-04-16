@@ -1,17 +1,15 @@
-#include "os/const.h"
-#include "os/scheduler.h"
-#include "os/syscall.h"
-#include "os/types.h"
-#include "os/util.h"
+/**
+ * \file syscall_yield.c
+ * \brief Tests around the CLOCKWAIT system call.
+ *
+ * \author Alessandro Frau
+ * \date 12-04-2022
+ */
+
 #include "test/mock_init.h"
 #include "test/mock_iodev.h"
 #include "test/mock_syscall.h"
 #include "test/test.h"
-/* NSYS7 */
-
-void p1()
-{ /* It is not supposed to do anything*/
-}
 
 int main()
 {

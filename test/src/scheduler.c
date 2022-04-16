@@ -1,8 +1,9 @@
 /**
  * \file scheduler.c
- * \brief Unit tests for the scheduler core.
+ * \brief Unit tests for the scheduler core procedures.
  *
  * \author Luca Tagliavini
+ * \author Stefano Volpe
  * \date 11-04-2022
  */
 

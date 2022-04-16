@@ -1,33 +1,27 @@
-#include "os/const.h"
-#include "os/pcb.h"
-#include "os/scheduler.h"
-#include "os/syscall.h"
-#include "os/types.h"
-#include "os/util.h"
+/**
+ * \file syscall_process_lifecycle.c
+ * \brief Tests around the CREATEPROCESS and TERMPROCESS system call.
+ *
+ * \author Alessandro Frau
+ * \author Luca Tagliavini
+ * \date 12-04-2022
+ */
+
 #include "test/mock_init.h"
 #include "test/mock_iodev.h"
 #include "test/mock_syscall.h"
 #include "test/test.h"
-/* NSYS1 & NSYS2 */
-
-void p1()
-{
-    return;
-    /* It is not supposed to do anything*/
-}
 
 int main()
 {
     mock_init();
     active_process = spawn_process(false);
-    state_t proc1;
-    set_state(&proc1, (memaddr)p1);
     int pids[19];
     it("correctly creates a new high priority process")
     {
         assert(active_process->p_pid != NULL_PID);
 
-        SYSCALL(CREATEPROCESS, (size_t)&proc1, true, 0);
+        SYSCALL(CREATEPROCESS, (size_t)rand(), true, 0);
 
         assert(active_process->p_s.reg_v0 != NULL_PID);
         assert(process_count == 2);
@@ -47,7 +41,7 @@ int main()
     {
         assert(active_process->p_pid != NULL_PID);
 
-        SYSCALL(CREATEPROCESS, (size_t)&proc1, false, 0);
+        SYSCALL(CREATEPROCESS, (size_t)rand(), false, 0);
 
         assert(active_process->p_s.reg_v0 != NULL_PID);
         assert(process_count == 2);
@@ -69,13 +63,13 @@ int main()
          * To add at least 19 more processes to get out of memory
          */
         for (int i = 0; i < 19; i++) {
-            SYSCALL(CREATEPROCESS, (size_t)&proc1, true, 0);
+            SYSCALL(CREATEPROCESS, (size_t)rand(), true, 0);
             assert(list_size(&active_process->p_child) == i + 1);
             assert(process_count == i + 2);
             pids[i] = active_process->p_s.reg_v0;
         }
         assert(active_process->p_s.reg_v0 != NULL_PID);
-        SYSCALL(CREATEPROCESS, (size_t)&proc1, true, 0);
+        SYSCALL(CREATEPROCESS, (size_t)rand(), true, 0);
         assert(list_size(&active_process->p_child) == 19);
         assert(process_count == 20);
         assert(active_process->p_s.reg_v0 == NULL_PID);
@@ -88,7 +82,7 @@ int main()
         }
         /* Ensure that it does not accept values except for true and false for
          * priority */
-        SYSCALL(CREATEPROCESS, (size_t)&proc1, 2, 0);
+        SYSCALL(CREATEPROCESS, (size_t)rand(), 2, 0);
         assert(process_count == 0);
         /* TODO: Test the status and support parameters in the Createprocess,
          * idk how to test it */
@@ -97,7 +91,6 @@ int main()
     {
         active_process = spawn_process(false);
         state_t proc2;
-        set_state(&proc2, (memaddr)p1);
         SYSCALL(CREATEPROCESS, (size_t)&proc2, true, 0);
         /* Test with a broken process id*/
         SYSCALL(TERMPROCESS, 99, 0, 0);
@@ -106,8 +99,6 @@ int main()
     it("correctly terminates the active_process")
     {
         active_process = spawn_process(false);
-        state_t proc1;
-        set_state(&proc1, (memaddr)p1);
         SYSCALL(TERMPROCESS, 0, 0, 0);
         assert(list_empty(&ready_queue_hi));
         assert(list_empty(&ready_queue_lo));

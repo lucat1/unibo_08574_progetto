@@ -1,3 +1,11 @@
+/**
+ * \file init.c
+ * \brief Tests concerning \ref init.c and \ref mock_init.h
+ *
+ * \author Stefano Volpe
+ * \date 10-04-2022
+ */
+
 #include "arch/devices.h"
 #include "os/list.h"
 #include "os/scheduler.h"

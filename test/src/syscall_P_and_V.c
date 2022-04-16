@@ -1,3 +1,11 @@
+/**
+ * \file syscall_yield.c
+ * \brief Tests around the PASSEREN and VERHOGEN system call.
+ *
+ * \author Alessandro Frau
+ * \date 12-04-2022
+ */
+
 #include "test/mock_init.h"
 #include "test/mock_iodev.h"
 #include "test/mock_syscall.h"
