@@ -23,9 +23,6 @@
 extern void reset_timer();
 extern void reset_local_timer();
 
-extern void scheduler_wait();
-extern void scheduler_takeover();
-
 #ifdef PANDOS_TESTING
 /**
  * \brief Kills a single process by removing it from any queue or semaphore,

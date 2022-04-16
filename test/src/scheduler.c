@@ -226,5 +226,21 @@ int main()
         assert(p->p_pid == NULL_PID);
         kill_progeny(p);
     }
+
+    /* NOTE: kill progeny cannot fail outside of what's already been tested for
+     * kill_process so no tests have been written for malformed input. */
+    ensure("kill_progeny recursively removes all children")
+    {
+        pcb_t *pcbs[3];
+        for (size_t i = 0; i < 3; ++i)
+            pcbs[i] = spawn_process(false);
+
+        insert_child(pcbs[0], pcbs[1]);
+        insert_child(pcbs[1], pcbs[2]);
+        assert(kill_progeny(pcbs[0]) == 0);
+        assert(pcbs[0]->p_pid == NULL_PID);
+        assert(pcbs[1]->p_pid == NULL_PID);
+        assert(pcbs[2]->p_pid == NULL_PID);
+    }
     return 0;
 }
