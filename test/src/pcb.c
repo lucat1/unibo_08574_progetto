@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file pcb.c
  * \brief Tests concerning \ref pcb.h
  *
  * \author Alessandro Frau

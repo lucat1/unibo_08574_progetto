@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file util_impl.h
  * \brief Helper routines and such
  *
  * \author Luca Tagliavini

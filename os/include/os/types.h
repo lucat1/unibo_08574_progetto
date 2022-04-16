@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file types.h
  * \brief Type definitions
  *
  * \author Luca Tagliavini

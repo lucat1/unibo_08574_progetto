@@ -1,5 +1,5 @@
 /**
- * \file
+ * \file semaphores.c
  * \brief Tests concerning \ref semaphores.h
  *
  * \author Stefano Volpe

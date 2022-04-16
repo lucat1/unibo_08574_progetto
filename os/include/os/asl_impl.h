@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file asl_impl.h
  * \brief Active Semaphore List implementation interface
  *
  * \author Luca Tagliavini

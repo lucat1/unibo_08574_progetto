@@ -1,5 +1,5 @@
 /**
- * \file
+ * \file util.c
  * \brief Tests concerning \ref util.h
  *
  * \author Luca Tagliavini

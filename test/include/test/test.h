@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file test.h
  * \brief Support for a basic testing system
  *
  * \author Luca Tagliavini
