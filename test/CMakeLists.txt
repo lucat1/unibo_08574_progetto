@@ -6,6 +6,7 @@ set(TEST_FILES
     util
     init
     scheduler
+    semaphores
     syscall_process_lifecycle
     syscall_P_and_V
     syscall_do_io

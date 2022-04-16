@@ -1,4 +1,5 @@
-/** \file
+/**
+ * \file
  * \brief Tests concerning \ref util.h
  *
  * \author Luca Tagliavini
@@ -40,7 +41,10 @@ int main()
 
     ensure("an empty list has size 0") { assert(!list_size(&l)); }
 
-    ensure("LIST_HEAD_NULL returns NULL") { assert(LIST_HEAD_NULL(&l) == NULL); }
+    ensure("LIST_HEAD_NULL returns NULL")
+    {
+        assert(LIST_HEAD_NULL(&l) == NULL);
+    }
 
     ensure("LIST_HEAD_NULL correctly updates its parameter")
     {

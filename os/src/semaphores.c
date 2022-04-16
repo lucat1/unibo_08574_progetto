@@ -1,5 +1,5 @@
 /**
- * \file semaphores.c
+ * \file
  * \brief Device semaphore management.
  *
  * \author Gianmaria Rovelli
