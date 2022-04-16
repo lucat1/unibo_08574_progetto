@@ -18,7 +18,6 @@
 #include "os/util.h"
 #define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
 
-/* NSYS1 */
 static inline scheduler_control_t syscall_create_process()
 {
     /* parameters of syscall */
@@ -55,7 +54,6 @@ static inline scheduler_control_t syscall_create_process()
     return CONTROL_PRESERVE(active_process);
 }
 
-/* NSYS2 */
 static inline scheduler_control_t syscall_terminate_process()
 {
     pcb_t *p;
@@ -80,7 +78,6 @@ static inline scheduler_control_t syscall_terminate_process()
                                                            : CONTROL_RESCHEDULE;
 }
 
-/* NSYS3 */
 static inline scheduler_control_t syscall_passeren()
 {
     if (active_process->p_s.reg_a1 == (memaddr)NULL) {
@@ -89,7 +86,6 @@ static inline scheduler_control_t syscall_passeren()
     return P((int *)active_process->p_s.reg_a1, active_process);
 }
 
-/* NSYS4 */
 static inline scheduler_control_t syscall_verhogen()
 {
     if (active_process->p_s.reg_a1 == (memaddr)NULL) {
@@ -99,7 +95,6 @@ static inline scheduler_control_t syscall_verhogen()
                                                         : CONTROL_RESCHEDULE;
 }
 
-/* NSYS5 */
 static inline scheduler_control_t syscall_do_io()
 {
     iodev_t dev;
@@ -125,27 +120,23 @@ static inline scheduler_control_t syscall_do_io()
     return ctrl;
 }
 
-/* NSYS6 */
 static inline scheduler_control_t syscall_get_cpu_time()
 {
     active_process->p_s.reg_v0 = active_process->p_time;
     return CONTROL_RESCHEDULE;
 }
 
-/* NSYS7 */
 static inline scheduler_control_t syscall_wait_for_clock()
 {
     return P(get_timer_semaphore(), active_process);
 }
 
-/* NSYS8 */
 static inline scheduler_control_t syscall_get_support_data()
 {
     active_process->p_s.reg_v0 = (memaddr)active_process->p_support;
     return CONTROL_RESCHEDULE;
 }
 
-/* NSYS9 */
 static inline scheduler_control_t syscall_get_process_id()
 {
     bool parent = (bool)active_process->p_s.reg_a1;
@@ -163,7 +154,6 @@ static inline scheduler_control_t syscall_get_process_id()
     return CONTROL_RESCHEDULE;
 }
 
-/* NSYS10 */
 static inline scheduler_control_t syscall_yield()
 {
     yield_process = active_process;
