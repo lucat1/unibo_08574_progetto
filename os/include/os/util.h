@@ -26,8 +26,9 @@
  * \param[in] l The list head to be checked.
  * \return true if both fields are NULL, or false otherwise.
  */
-static inline int list_null(const list_head *head) {
-  return head->prev == NULL && head->next == NULL;
+static inline int list_null(const list_head *head)
+{
+    return head->prev == NULL && head->next == NULL;
 }
 
 /**
@@ -164,7 +165,7 @@ size_t pandos_fprintf(int fd, const char *fmt, ...);
 #define pandos_printf(fmt, ...) pandos_fprintf(0, fmt, ##__VA_ARGS__)
 
 /* Number of lines in the memory print buffer */
-#define MEM_WRITER_LINES 64
+#define MEM_WRITER_LINES 102
 /* Length of a single line in characters */
 #define MEM_WRITER_LINE_LENGTH 40
 
@@ -204,7 +205,7 @@ static inline void list_print(const list_head *head)
     if (head) {
         if (list_empty(head))
             p("empty list\n");
-        else if(list_null(head))
+        else if (list_null(head))
             p("null list\n");
         else
             for (iter = head->next; iter != head; iter = iter->next)
