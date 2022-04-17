@@ -3,6 +3,7 @@
  * \brief Implementation of architecture-specific device functionality.
  *
  * \author Luca Tagliavini
+ * \author Gianmaria Rovelli
  * \date 10-04-2022
  */
 

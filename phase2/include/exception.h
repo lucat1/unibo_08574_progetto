@@ -11,6 +11,9 @@
 #ifndef PANDOS_EXCEPTION_H
 #define PANDOS_EXCEPTION_H
 
+/**
+ * \brief Exception's handler
+ */
 extern void exception_handler();
 
 #endif /* PANDOS_EXCEPTION_H */

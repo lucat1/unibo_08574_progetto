@@ -3,6 +3,7 @@
  * \brief Schedule awating processes.
  *
  * \author Alessandro Frau
+ * \author Gianmaria Rovelli
  * \author Luca Tagliavini
  * \author Stefano Volpe
  * \date 20-03-2022

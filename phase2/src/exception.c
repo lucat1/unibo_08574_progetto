@@ -23,7 +23,11 @@
 
 #define pandos_interrupt(str) pandos_kprintf("<< INTERRUPT(" str ")\n")
 
-/* finds device number of device that generates interrupt */
+/**
+ * \brief Finds device number of device that generated an interrupt.
+ * \param[in] bitmap Bitmap of the interrupt line where device has to be looked for.
+ * \return Device number that generated an interrupt.
+ */
 int find_device_number(memaddr *bitmap)
 {
     int device_n = 0;
@@ -35,6 +39,10 @@ int find_device_number(memaddr *bitmap)
     return device_n;
 }
 
+/**
+ * \brief Handler for inter-processor interrupts
+ * \return Control preserve as current process
+ */
 static inline scheduler_control_t interrupt_ipi()
 {
     /* Could be safetly ignored */
@@ -43,6 +51,10 @@ static inline scheduler_control_t interrupt_ipi()
     return CONTROL_PRESERVE(active_process);
 }
 
+/**
+ * \brief Handler for processor local timer interrupts (PLT)
+ * \return Control reschedule
+ */
 static inline scheduler_control_t interrupt_local_timer()
 {
     pandos_interrupt("LOCAL_TIMER");
@@ -50,6 +62,10 @@ static inline scheduler_control_t interrupt_local_timer()
     return CONTROL_RESCHEDULE;
 }
 
+/**
+ * \brief Handler for interval timer interrupts (Bus)
+ * \return Control preserve as current process
+ */
 static inline scheduler_control_t interrupt_timer()
 {
     pandos_interrupt("TIMER");
@@ -59,10 +75,13 @@ static inline scheduler_control_t interrupt_timer()
     return CONTROL_PRESERVE(active_process);
 }
 
+/**
+ * \brief Handler for generic interrupts (Disk, Flash, Network, Printer)
+ * \return Control depends on semaphore of the device involved
+ */
 static inline scheduler_control_t interrupt_generic(int cause)
 {
     pandos_interrupt("GENERIC");
-    /* TODO */
     int il = IL_DISK;
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
@@ -102,6 +121,10 @@ static inline scheduler_control_t interrupt_generic(int cause)
     return ctrl;
 }
 
+/**
+ * \brief Handler for terminal interrupts
+ * \return Control depends on semaphore of the terminal involved
+ */
 static inline scheduler_control_t interrupt_terminal()
 {
     pandos_interrupt("TERMINAL");
@@ -112,17 +135,14 @@ static inline scheduler_control_t interrupt_terminal()
     termreg_t *term_reg =
         &device_regs->devreg[IL_TERMINAL - IL_DISK][devicenumber].term;
 
-    /* TODO : order is important, check */
     memaddr(statuses[2]) = {term_reg->transm_status, term_reg->recv_status};
     memaddr(*commands[2]) = {&term_reg->transm_command,
                              &term_reg->recv_command};
     int *sem[] = {get_semaphore(IL_TERMINAL, devicenumber, false),
                   get_semaphore(IL_TERMINAL, devicenumber, true)};
 
-    // pandos_kfprintf(&kverb, "\n[-] TERM INT START (%d)\n", act_pid);
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
-        /* todo: dobbiamo davvero farlo?, lo fa gia' il codice livello utente */
         if ((status & TERMSTATMASK) != DEV_STATUS_TERMINAL_OK)
             scheduler_panic("Device is not installed!\n");
 
@@ -147,6 +167,11 @@ static inline scheduler_control_t interrupt_terminal()
     return CONTROL_BLOCK;
 }
 
+/**
+ * \brief Handler for interrupts
+ * \param[in] cause Interrupt cause
+ * \return Control depends on semaphore of the terminal involved
+ */
 static inline scheduler_control_t interrupt_handler(size_t cause)
 {
     if (cause & CAUSE_IP(IL_IPI))
@@ -170,6 +195,9 @@ static inline scheduler_control_t interrupt_handler(size_t cause)
     return CONTROL_RESCHEDULE;
 }
 
+/**
+ * \brief Exceptions handler
+ */
 inline void exception_handler()
 {
     int now_tod;

@@ -17,7 +17,6 @@ int interval_timer;
 int local_timer;
 int tod;
 
-// iodev_t get_iodev(size_t *cmd_addr) {}
 void status_il_on_all(size_t *prev) { *prev |= MOCK_IL_MASK_ALL; }
 void status_il_on(size_t *prev, int line) { *prev |= (1 << line); }
 
