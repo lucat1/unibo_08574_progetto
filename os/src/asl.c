@@ -86,9 +86,8 @@ void init_asl()
 
     INIT_LIST_HEAD(&semd_free);
     INIT_LIST_HEAD(&semd_h);
-    for (i = 0; i < MAX_PROC; ++i) {
+    for (i = 0; i < MAX_PROC; ++i)
         list_add(&semd_table[i].s_link, &semd_free);
-    }
 }
 
 int insert_blocked(int *sem_addr, pcb_t *p)
@@ -120,8 +119,8 @@ pcb_t *out_blocked(pcb_t *pcb)
 
     list_sdel(&pcb->p_list);
     pcb->p_sem_add = NULL;
-    if (list_empty(&sem->s_procq))
-        free_semd(sem);
+    if (list_empty(&sem->s_procq) && free_semd(sem))
+        return NULL;
     return pcb;
 }
 

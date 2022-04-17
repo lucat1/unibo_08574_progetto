@@ -1,10 +1,18 @@
+/**
+ * \file devices.c
+ * \brief Implementation of architecture-specific device functionality.
+ *
+ * \author Luca Tagliavini
+ * \date 10-04-2022
+ */
+
 #include "arch/devices.h"
 #include "os/semaphores.h"
 #include "semaphores_impl.h"
-#include "umps/const.h"
-#include "umps/libumps.h"
 #include <umps/arch.h>
+#include <umps/const.h>
 #include <umps/cp0.h>
+#include <umps/libumps.h>
 
 inline iodev_t get_iodev(size_t *cmd_addr)
 {
@@ -20,7 +28,7 @@ inline iodev_t get_iodev(size_t *cmd_addr)
                 (dev_n - T);
 
     res.interrupt_line = int_l;
-    res.semaphore = semaphores + sem_i;
+    res.semaphore = get_semaphores() + sem_i;
 
     return res;
 }

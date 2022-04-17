@@ -49,114 +49,117 @@ int main()
     }
     ensure("P works fine with multiple semaphores active")
     {
-        pcb_t pcb1, pcb2, pcb3;
-        LIST_HEAD_NULL(&pcb1.p_list);
-        LIST_HEAD_NULL(&pcb2.p_list);
-        LIST_HEAD_NULL(&pcb3.p_list);
+        pcb_t *pcbs[3];
+        for (size_t i = 0; i < 3; ++i)
+            pcbs[i] = alloc_pcb();
         int key = 0;
         semd_t *semd = alloc_semd(&key);
 
-        assert(equals(P(&key, &pcb1), CONTROL_BLOCK));
+        assert(equals(P(&key, pcbs[0]), CONTROL_BLOCK));
         assert(!key);
         assert(list_size(&semd->s_procq) == 1);
         assert(softblock_count == 1);
 
-        assert(equals(P(&key, &pcb2), CONTROL_BLOCK));
+        assert(equals(P(&key, pcbs[1]), CONTROL_BLOCK));
         assert(!key);
         assert(list_size(&semd->s_procq) == 2);
         assert(softblock_count == 2);
 
-        assert(equals(P(&key, &pcb3), CONTROL_BLOCK));
+        assert(equals(P(&key, pcbs[2]), CONTROL_BLOCK));
         assert(!key);
         assert(list_size(&semd->s_procq) == 3);
         assert(softblock_count == 3);
 
         free_semd(semd);
+        for (size_t i = 0; i < 3; ++i)
+            free_pcb(pcbs[i]);
         softblock_count = 0;
     }
     ensure("V(NULL) works as expected") { assert(V(NULL) == NULL); }
     ensure("V works fine with multiple semaphores active")
     {
-        pcb_t pcb1, pcb2, pcb3;
-        LIST_HEAD_NULL(&pcb1.p_list);
-        pcb1.p_sem_add = NULL;
-        LIST_HEAD_NULL(&pcb2.p_list);
-        pcb2.p_sem_add = NULL;
-        LIST_HEAD_NULL(&pcb3.p_list);
-        pcb3.p_sem_add = NULL;
+        pcb_t *pcbs[3];
+        for (size_t i = 0; i < 3; ++i)
+            pcbs[i] = alloc_pcb();
         int key = 0;
         semd_t *semd = alloc_semd(&key);
 
-        active_process = &pcb1;
+        active_process = pcbs[0];
         assert(V(&key) == active_process);
         assert(key == 1);
         assert(list_empty(&semd->s_procq));
         assert(!softblock_count);
 
-        active_process = &pcb2;
+        active_process = pcbs[1];
         assert(V(&key) == NULL);
         assert(key == 1);
         assert(list_size(&semd->s_procq) == 1);
         assert(softblock_count == 1);
 
-        active_process = &pcb3;
+        active_process = pcbs[2];
         assert(V(&key) == NULL);
         assert(key == 1);
         assert(list_size(&semd->s_procq) == 2);
         assert(softblock_count == 2);
 
+        for (size_t i = 0; i < 3; ++i)
+            free_pcb(pcbs[i]);
         free_semd(semd);
         active_process = NULL;
         softblock_count = 0;
     }
     ensure("P and V work fine together")
     {
-        pcb_t pcb1, pcb2, pcb3;
-        LIST_HEAD_NULL(&pcb1.p_list);
-        pcb1.p_sem_add = NULL;
-        LIST_HEAD_NULL(&pcb2.p_list);
-        pcb2.p_sem_add = NULL;
-        LIST_HEAD_NULL(&pcb3.p_list);
-        pcb3.p_sem_add = NULL;
+        pcb_t *pcbs[3];
+        for (size_t i = 0; i < 3; ++i)
+            pcbs[i] = alloc_pcb();
         int key = 0;
-        semd_t *semd = alloc_semd(&key);
 
-        assert(equals(P(&key, &pcb1), CONTROL_BLOCK));
+        assert(equals(P(&key, pcbs[0]), CONTROL_BLOCK));
         assert(!key);
-        assert(list_size(&semd->s_procq) == 1);
+        assert(list_size(&find_semd(get_semd_h(), &key)->s_procq) == 1);
         assert(softblock_count == 1);
 
-        active_process = &pcb2;
-        assert(V(&key) == &pcb1);
+        active_process = pcbs[1];
+        assert(V(&key) == pcbs[0]);
         assert(key == 0);
-        assert(list_empty(&semd->s_procq));
+        assert(find_semd(get_semd_h(), &key) == NULL);
+        assert(active_process->p_sem_add == NULL);
         assert(!softblock_count);
 
-        active_process = &pcb3;
-        assert(V(&key) == &pcb3);
+        active_process = pcbs[2];
+        assert(V(&key) == pcbs[2]);
         assert(key == 1);
-        assert(list_empty(&semd->s_procq));
+        assert(find_semd(get_semd_h(), &key) == NULL);
+        assert(active_process->p_sem_add == NULL);
         assert(!softblock_count);
 
-        active_process = &pcb1;
+        semd_t *sem;
+        active_process = pcbs[0];
         assert(V(&key) == NULL);
         assert(key == 1);
-        assert(list_size(&semd->s_procq) == 1);
+        assert((sem = find_semd(get_semd_h(), &key)) != NULL);
+        assert(list_size(&sem->s_procq) == 1);
+        assert(active_process->p_sem_add == &key);
         assert(softblock_count == 1);
+        sem = NULL; /* Added safety */
 
-        assert(equals(P(&key, &pcb2), CONTROL_RESCHEDULE));
+        assert(equals(P(&key, pcbs[1]), CONTROL_RESCHEDULE));
         assert(key == 1);
-        assert(list_empty(&semd->s_procq));
+        assert(find_semd(get_semd_h(), &key) == NULL);
+        assert(pcbs[1]->p_sem_add == NULL);
         assert(!softblock_count);
 
-        assert(equals(P(&key, &pcb3), CONTROL_RESCHEDULE));
+        assert(equals(P(&key, pcbs[2]), CONTROL_RESCHEDULE));
         assert(!key);
-        assert(list_empty(&semd->s_procq));
+        assert(find_semd(get_semd_h(), &key) == NULL);
+        assert(pcbs[2]->p_sem_add == NULL);
         assert(!softblock_count);
 
-        free_semd(semd);
         active_process = NULL;
         softblock_count = 0;
+        for (size_t i = 0; i < 3; ++i)
+            free_pcb(pcbs[i]);
     }
     return 0;
 }

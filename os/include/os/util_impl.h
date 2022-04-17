@@ -12,7 +12,7 @@
 #define PANDOS_UTIL_IMPL_H
 
 #include "os/types.h"
-#include "umps/libumps.h"
+#include <umps/libumps.h>
 
 #ifndef __x86_64__
 #define va_arg(varg, type) (type) * ((type *)varg++)

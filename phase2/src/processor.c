@@ -1,3 +1,11 @@
+/**
+ * \file processor.c
+ * \brief Implementation of architecture-specific functionality for the CPU.
+ *
+ * \author Luca Tagliavini
+ * \date 10-04-2022
+ */
+
 #include "arch/processor.h"
 #include "os/scheduler.h"
 #include <umps/cp0.h>

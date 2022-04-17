@@ -13,6 +13,6 @@
 #define SEMAPHORES_NUM (DEVINTNUM + 1) * DEVPERINT + 1
 
 /* Semaphores for each device */
-extern int semaphores[SEMAPHORES_NUM];
+extern int *get_semaphores();
 
 #endif /* PANDOS_SEMAPHORE_IMPL_H */
