@@ -19,6 +19,10 @@
 
 #define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
 
+/**
+ * \brief CREATEPROCESS syscall implementation (SYSCALL -1)
+ * \return Control preserved on current process
+ */
 static inline scheduler_control_t syscall_create_process()
 {
     pcb_t *c;
@@ -44,6 +48,11 @@ static inline scheduler_control_t syscall_create_process()
     return CONTROL_PRESERVE(active_process);
 }
 
+/**
+ * \brief TERMPROCESS syscall implementation (SYSCALL -2)
+ * \return Control blocked if caller's `pid` is 0 or if current process has been killed,
+ *         control reschedule othewise
+ */
 static inline scheduler_control_t syscall_terminate_process()
 {
     pcb_t *p;
@@ -61,13 +70,15 @@ static inline scheduler_control_t syscall_terminate_process()
     if (kill_progeny(p))
         scheduler_panic("Kill progeny failed!");
 
-    /* is this is the docs? */
-    // if (pid != 0)
-    //     p->p_s.reg_v0 = pid;
     return (pid == 0 || active_process->p_pid == NULL_PID) ? CONTROL_BLOCK
                                                            : CONTROL_RESCHEDULE;
 }
 
+
+/**
+ * \brief PASSEREN syscall implementation (SYSCALL -3)
+ * \return Control depends on semaphore to be P'ed
+ */
 static inline scheduler_control_t syscall_passeren()
 {
     if (active_process->p_s.reg_a1 == (memaddr)NULL) {
@@ -76,6 +87,10 @@ static inline scheduler_control_t syscall_passeren()
     return P((int *)active_process->p_s.reg_a1, active_process);
 }
 
+/**
+ * \brief VERHOGEN syscall implementation (SYSCALL -4)
+ * \return Control depends on semaphore to be V'ed
+ */
 static inline scheduler_control_t syscall_verhogen()
 {
     if (active_process->p_s.reg_a1 == (memaddr)NULL) {
@@ -85,6 +100,11 @@ static inline scheduler_control_t syscall_verhogen()
                                                         : CONTROL_RESCHEDULE;
 }
 
+/**
+ * \brief DOIO syscall implementation (SYSCALL -5), writes command to targeted address memory,
+ *        both passed as parameters 
+ * \return Control depends on device's semaphore passed as parameter
+ */
 static inline scheduler_control_t syscall_do_io()
 {
     iodev_t dev;
@@ -110,23 +130,41 @@ static inline scheduler_control_t syscall_do_io()
     return ctrl;
 }
 
+/**
+ * \brief GETTIME syscall implementation (SYSCALL -6)
+ * \return Control reschedule
+ */
 static inline scheduler_control_t syscall_get_cpu_time()
 {
     active_process->p_s.reg_v0 = active_process->p_time;
     return CONTROL_RESCHEDULE;
 }
 
+/**
+ * \brief CLOCKWAIT syscall implementation (SYSCALL -7), blocks current process
+ *        in clock's semaphore
+ * \return Control depends on clock's semaphore status
+ */
 static inline scheduler_control_t syscall_wait_for_clock()
 {
     return P(get_timer_semaphore(), active_process);
 }
 
+/**
+ * \brief GETSUPPORTPTR syscall implementation (SYSCALL -8) , blocks current process
+ *        in clock semaphore
+ * \return Control reschedule
+ */
 static inline scheduler_control_t syscall_get_support_data()
 {
     active_process->p_s.reg_v0 = (memaddr)active_process->p_support;
     return CONTROL_RESCHEDULE;
 }
 
+/**
+ * \brief GETPROCESSID syscall implementation (SYSCALL -9)
+ * \return Control reschedule 
+ */
 static inline scheduler_control_t syscall_get_process_id()
 {
     bool parent = (bool)active_process->p_s.reg_a1;
@@ -144,12 +182,23 @@ static inline scheduler_control_t syscall_get_process_id()
     return CONTROL_RESCHEDULE;
 }
 
+/**
+ * \brief YIELD syscall implementation (SYSCALL -10), current process 
+ *        release processor's control
+ * \return Control blocked 
+ */
 static inline scheduler_control_t syscall_yield()
 {
     yield_process = active_process;
     return CONTROL_BLOCK;
 }
 
+
+/**
+ * \brief Syscall handler
+ * \return Control depends on syscall executed , pass up or die
+ *         is called in case of errors
+ */
 inline scheduler_control_t syscall_handler()
 {
     if (active_process == NULL)

@@ -3,6 +3,7 @@
  * \brief The pass up or die handler
  *
  * \author Alessandro Frau
+ * \author Gianmaria Rovelli
  * \author Luca Tagliavini
  * \date 30-03-2022
  */

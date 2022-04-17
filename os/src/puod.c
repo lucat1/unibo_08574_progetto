@@ -1,3 +1,11 @@
+/**
+ * \file puod.c
+ * \brief Pass up or die
+ *
+ * \author Gianmaria Rovelli
+ * \date 20-03-2022
+ */
+
 #include "os/puod.h"
 #include "os/util.h"
 

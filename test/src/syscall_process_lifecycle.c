@@ -100,8 +100,6 @@ int main()
          * priority */
         SYSCALL(CREATEPROCESS, (size_t)rand(), 2, 0);
         assert(process_count == 0);
-        /* TODO: Test the status and support parameters in the Createprocess,
-         * idk how to test it */
     }
     ensure("terminate_process does not break if the input is broken")
     {
