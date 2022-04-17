@@ -28,7 +28,7 @@ int find_device_number(memaddr *bitmap)
 {
     int device_n = 0;
 
-    while (*bitmap > 1) {
+    while (*bitmap > 1 && device_n < N_DEV_PER_IL) {
         ++device_n;
         *bitmap >>= 1;
     }

@@ -85,7 +85,7 @@ void insert_proc_q(list_head *head, pcb_t *p);
  * \brief Returns a pointer to the first element of the list.
  * \param[in] head The head of the list.
  * \return Returns a pointer to the first element of the list. If the head is
- * NULL it returns NULL.
+ * NULL or empty it returns NULL.
  */
 pcb_t *head_proc_q(list_head *head);
 

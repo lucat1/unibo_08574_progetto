@@ -16,39 +16,29 @@
 #include "os/scheduler.h"
 #include "os/semaphores.h"
 #include "os/util.h"
+
 #define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
 
 static inline scheduler_control_t syscall_create_process()
 {
-    /* parameters of syscall */
+    pcb_t *c;
     state_t *p_s = (state_t *)active_process->p_s.reg_a1;
     bool p_prio = (bool)active_process->p_s.reg_a2;
     support_t *p_support_struct = (support_t *)active_process->p_s.reg_a3;
+
     if ((active_process->p_s.reg_a2 != PROCESS_PRIO_LOW &&
          active_process->p_s.reg_a2 != PROCESS_PRIO_HIGH) ||
         p_s == NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
-    /* spawn new process */
-    pcb_t *c = spawn_process(p_prio);
-
-    /* checks if there are enough resources */
-    if (c == NULL) {
-        pandos_kfprintf(&kstderr, "!! ERROR: Cannot create new process\n");
-        /* set caller's v0 to NULL_PID */
+    /* Checks if there are enough resources */
+    if ((c = spawn_process(p_prio)) == NULL)
         active_process->p_s.reg_v0 = NULL_PID;
-    } else {
+    else {
         c->p_support = p_support_struct;
         pandos_memcpy(&c->p_s, p_s, sizeof(state_t));
-        /* p_time is already set to 0 from the alloc_pcb call inside
-         * spawn_process */
-        /* p_sem_add is already set to NULL from the alloc_pcb call inside
-         * spawn_process */
-
-        /* adds new process as child of caller process */
         insert_child(active_process, c);
-        /* sets caller's v0 to new process pid */
         active_process->p_s.reg_v0 = c->p_pid;
     }
     return CONTROL_PRESERVE(active_process);
