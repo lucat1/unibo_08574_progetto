@@ -69,7 +69,7 @@ static inline scheduler_control_t interrupt_timer()
     return CONTROL_PRESERVE(active_process);
 }
 
-static inline scheduler_control_t *return_status(pcb_t *p, int status)
+static inline scheduler_control_t return_status(pcb_t *p, int status)
 {
     if (p == active_process) {
         if (active_process == NULL)
