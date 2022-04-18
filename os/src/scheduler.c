@@ -128,7 +128,6 @@ inline void init_scheduler()
 
 static inline void scheduler_wait()
 {
-    pandos_kprintf("-- WAIT\n");
     active_process = NULL;
     reset_timer();
 
@@ -144,7 +143,6 @@ static inline void scheduler_wait()
 
 static inline void scheduler_takeover()
 {
-    pandos_kprintf(">> TAKEOVER(%d)\n", active_process->p_pid);
     status_interrupts_on_process(&active_process->p_s.status);
     reset_local_timer();
     /* Disable the processor Local Timer on hi processes */
@@ -166,7 +164,6 @@ static inline void wait_or_die()
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
-    pandos_kprintf("-- SCHEDULE(%p, %s)\n", pcb, enqueue ? "true" : "false");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
     }
