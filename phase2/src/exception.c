@@ -69,6 +69,19 @@ static inline scheduler_control_t interrupt_timer()
     return CONTROL_PRESERVE(active_process);
 }
 
+static inline scheduler_control_t *return_status(pcb_t *p, int status)
+{
+    if (p == active_process) {
+        if (active_process == NULL)
+            scheduler_panic("No active process (Interrupt Generic)\n");
+        active_process->p_s.reg_v0 = status;
+        return CONTROL_RESCHEDULE;
+    } else {
+        p->p_s.reg_v0 = status;
+        return CONTROL_PRESERVE(active_process);
+    }
+}
+
 /**
  * \brief Handler for generic interrupts (Disk, Flash, Network, Printer)
  * \return Control depends on semaphore of the device involved
@@ -88,26 +101,15 @@ static inline scheduler_control_t interrupt_generic(int cause)
 
     devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
     dtpreg_t *dtp_reg = &device_regs->devreg[il - IL_DISK][devicenumber].dtp;
-
     int status = dtp_reg->status;
-
-    scheduler_control_t ctrl = CONTROL_BLOCK;
 
     if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
         scheduler_panic("Device is not installed!\n");
 
     pcb_t *p = V(sem);
-    if (p == NULL || p == active_process) {
-        if (active_process == NULL)
-            scheduler_panic("No active process (Interrupt Generic)\n");
-        active_process->p_s.reg_v0 = status;
-        ctrl = CONTROL_RESCHEDULE;
-    } else {
-        p->p_s.reg_v0 = status;
-        ctrl = CONTROL_PRESERVE(active_process);
-    }
+    scheduler_control_t ctrl = return_status(p, status);
 
-    /* ACK al device */
+    /* Send the acknowledgement to the device */
     dtp_reg->command = DEV_C_ACK;
     return ctrl;
 }
@@ -150,12 +152,13 @@ static inline scheduler_control_t interrupt_terminal()
             }
 
             *commands[i] = DEV_C_ACK;
-            /* do the first one */
+            /* Send the acknowledgement to the device */
             return ctrl;
         }
     }
-    scheduler_panic("Terminal did not ACK\n");
-    /* Make C happy */
+
+    scheduler_panic("Unexpected interrupt from terminal device %d\n",
+                    devicenumber);
     return CONTROL_BLOCK;
 }
 
