@@ -17,8 +17,6 @@
 #include "os/semaphores.h"
 #include "os/util.h"
 
-#define pandos_syscall(n) pandos_kprintf("<< SYSCALL(" n ")\n")
-
 /**
  * \brief CREATEPROCESS syscall implementation (SYSCALL -1)
  * \return Control preserved on current process
@@ -50,8 +48,8 @@ static inline scheduler_control_t syscall_create_process()
 
 /**
  * \brief TERMPROCESS syscall implementation (SYSCALL -2)
- * \return Control blocked if caller's `pid` is 0 or if current process has been killed,
- *         control reschedule othewise
+ * \return Control blocked if caller's `pid` is 0 or if current process has been
+ * killed, control reschedule othewise
  */
 static inline scheduler_control_t syscall_terminate_process()
 {
@@ -73,7 +71,6 @@ static inline scheduler_control_t syscall_terminate_process()
     return (pid == 0 || active_process->p_pid == NULL_PID) ? CONTROL_BLOCK
                                                            : CONTROL_RESCHEDULE;
 }
-
 
 /**
  * \brief PASSEREN syscall implementation (SYSCALL -3)
@@ -101,9 +98,9 @@ static inline scheduler_control_t syscall_verhogen()
 }
 
 /**
- * \brief DOIO syscall implementation (SYSCALL -5), writes command to targeted address memory,
- *        both passed as parameters 
- * \return Control depends on device's semaphore passed as parameter
+ * \brief DOIO syscall implementation (SYSCALL -5), writes command to targeted
+ * address memory, both passed as parameters \return Control depends on device's
+ * semaphore passed as parameter
  */
 static inline scheduler_control_t syscall_do_io()
 {
@@ -151,9 +148,8 @@ static inline scheduler_control_t syscall_wait_for_clock()
 }
 
 /**
- * \brief GETSUPPORTPTR syscall implementation (SYSCALL -8) , blocks current process
- *        in clock semaphore
- * \return Control reschedule
+ * \brief GETSUPPORTPTR syscall implementation (SYSCALL -8) , blocks current
+ * process in clock semaphore \return Control reschedule
  */
 static inline scheduler_control_t syscall_get_support_data()
 {
@@ -163,7 +159,7 @@ static inline scheduler_control_t syscall_get_support_data()
 
 /**
  * \brief GETPROCESSID syscall implementation (SYSCALL -9)
- * \return Control reschedule 
+ * \return Control reschedule
  */
 static inline scheduler_control_t syscall_get_process_id()
 {
@@ -183,16 +179,15 @@ static inline scheduler_control_t syscall_get_process_id()
 }
 
 /**
- * \brief YIELD syscall implementation (SYSCALL -10), current process 
+ * \brief YIELD syscall implementation (SYSCALL -10), current process
  *        release processor's control
- * \return Control blocked 
+ * \return Control blocked
  */
 static inline scheduler_control_t syscall_yield()
 {
     yield_process = active_process;
     return CONTROL_BLOCK;
 }
-
 
 /**
  * \brief Syscall handler
@@ -203,57 +198,36 @@ inline scheduler_control_t syscall_handler()
 {
     if (active_process == NULL)
         scheduler_panic("Syscall recieved while active_process was NULL");
+
     const int id = (int)active_process->p_s.reg_a0;
     if (id <= 0 && is_user_mode()) {
         cause_clean(&active_process->p_s.cause);
         cause_reserved_instruction(&active_process->p_s.cause);
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
+
     switch (id) {
         case CREATEPROCESS:
-            pandos_syscall("CREATEPROCESS");
             return syscall_create_process();
-            break;
         case TERMPROCESS:
-            pandos_syscall("TERMPROCESS");
             return syscall_terminate_process();
-            break;
         case PASSEREN:
-            pandos_syscall("PASSEREN");
             return syscall_passeren();
-            break;
         case VERHOGEN:
-            pandos_syscall("VERHOGEN");
             return syscall_verhogen();
-            break;
         case DOIO:
-            pandos_syscall("DOIO");
             return syscall_do_io();
-            break;
         case GETTIME:
-            pandos_syscall("GETTIME");
             return syscall_get_cpu_time();
-            break;
         case CLOCKWAIT:
-            pandos_syscall("CLOCKWAIT");
             return syscall_wait_for_clock();
-            break;
         case GETSUPPORTPTR:
-            pandos_syscall("GETSUPPORTPTR");
             return syscall_get_support_data();
-            break;
         case GETPROCESSID:
-            pandos_syscall("GETPROCESSID");
             return syscall_get_process_id();
-            break;
         case YIELD:
-            pandos_syscall("YIELD");
             return syscall_yield();
-            break;
         default:
             return pass_up_or_die((memaddr)GENERALEXCEPT);
-            break;
     }
-
-    return CONTROL_RESCHEDULE;
 }

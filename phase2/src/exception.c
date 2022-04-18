@@ -21,12 +21,10 @@
 #include <umps/cp0.h>
 #include <umps/libumps.h>
 
-#define pandos_interrupt(str) pandos_kprintf("<< INTERRUPT(" str ")\n")
-
 /**
  * \brief Finds device number of device that generated an interrupt.
- * \param[in] bitmap Bitmap of the interrupt line where device has to be looked for.
- * \return Device number that generated an interrupt.
+ * \param[in] bitmap Bitmap of the interrupt line where device has to be looked
+ * for. \return Device number that generated an interrupt.
  */
 int find_device_number(memaddr *bitmap)
 {
@@ -45,9 +43,7 @@ int find_device_number(memaddr *bitmap)
  */
 static inline scheduler_control_t interrupt_ipi()
 {
-    /* Could be safetly ignored */
-    pandos_interrupt("IL_IPI");
-
+    /* Could be safely ignored */
     return CONTROL_PRESERVE(active_process);
 }
 
@@ -57,7 +53,6 @@ static inline scheduler_control_t interrupt_ipi()
  */
 static inline scheduler_control_t interrupt_local_timer()
 {
-    pandos_interrupt("LOCAL_TIMER");
     reset_local_timer();
     return CONTROL_RESCHEDULE;
 }
@@ -68,7 +63,6 @@ static inline scheduler_control_t interrupt_local_timer()
  */
 static inline scheduler_control_t interrupt_timer()
 {
-    pandos_interrupt("TIMER");
     reset_timer();
     while (*get_timer_semaphore() != 1)
         V(get_timer_semaphore());
@@ -81,7 +75,6 @@ static inline scheduler_control_t interrupt_timer()
  */
 static inline scheduler_control_t interrupt_generic(int cause)
 {
-    pandos_interrupt("GENERIC");
     int il = IL_DISK;
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
@@ -127,7 +120,6 @@ static inline scheduler_control_t interrupt_generic(int cause)
  */
 static inline scheduler_control_t interrupt_terminal()
 {
-    pandos_interrupt("TERMINAL");
     int devicenumber =
         find_device_number((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
@@ -185,8 +177,6 @@ static inline scheduler_control_t interrupt_handler(size_t cause)
         return interrupt_generic(cause);
     else if (cause & CAUSE_IP(IL_TERMINAL))
         return interrupt_terminal();
-    else
-        pandos_interrupt("UNKNOWN");
 
     /* The newly unblocked pcb is enqueued back on the Ready Queue and
      * control is returned to the Current Process unless the newly unblocked
