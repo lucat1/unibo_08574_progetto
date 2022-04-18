@@ -192,15 +192,24 @@ void schedule(pcb_t *pcb, bool enqueue)
         scheduler_takeover();
 }
 
+#ifndef __x86_64__
+#include <umps/arch.h>
+#define __p(...)                                                               \
+    __pandos_printf((termreg_t *)DEV_REG_ADDR(IL_TERMINAL, 0), serial_writer,  \
+                    __VA_ARGS__)
+#endif
 void scheduler_panic(const char *fmt, ...)
 {
 #ifndef __x86_64__
-    pandos_kfprintf(&kstderr, "!! PANIC: ");
+    __p("!! PANIC: ", NULL);
     va_list varg;
     va_start(varg, fmt);
-    __pandos_printf(&kstderr, memory_writer, fmt, varg);
+    __p(fmt, varg);
     va_end();
-    __pandos_printf(&kstderr, memory_writer, "\n", NULL);
+    __p("\n", NULL);
 #endif
     panic();
 }
+#ifndef __x86_64__
+#undef __p
+#endif
