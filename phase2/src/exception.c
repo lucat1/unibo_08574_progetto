@@ -26,9 +26,9 @@
  * \param[in] bitmap Bitmap of the interrupt line where device has to be looked
  * for. \return Device number that generated an interrupt.
  */
-int find_device_number(memaddr *bitmap)
+size_t find_device_number(memaddr *bitmap)
 {
-    int device_n = 0;
+    size_t device_n = 0;
 
     while (*bitmap > 1 && device_n < N_DEV_PER_IL) {
         ++device_n;
@@ -83,7 +83,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
             break;
         }
     }
-    int devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
+    size_t devicenumber = find_device_number((memaddr *)CDEV_BITMAP_ADDR(il));
     int *sem = get_semaphore(il, devicenumber, false);
 
     devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
@@ -98,12 +98,10 @@ static inline scheduler_control_t interrupt_generic(int cause)
 
     pcb_t *p = V(sem);
     if (p == NULL || p == active_process) {
-        if (active_process != NULL) {
-            active_process->p_s.reg_v0 = status;
-            ctrl = CONTROL_RESCHEDULE;
-        } else {
+        if (active_process == NULL)
             scheduler_panic("No active process (Interrupt Generic)\n");
-        }
+        active_process->p_s.reg_v0 = status;
+        ctrl = CONTROL_RESCHEDULE;
     } else {
         p->p_s.reg_v0 = status;
         ctrl = CONTROL_PRESERVE(active_process);
@@ -120,7 +118,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
  */
 static inline scheduler_control_t interrupt_terminal()
 {
-    int devicenumber =
+    size_t devicenumber =
         find_device_number((memaddr *)CDEV_BITMAP_ADDR(IL_TERMINAL));
 
     devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
