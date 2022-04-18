@@ -85,7 +85,7 @@ static inline
     if (p == NULL)
         return 1;
 
-    if (p->p_parent != NULL && !out_child(p))
+    if (p->p_parent != NULL && out_child(p) != p)
         return 2;
 
     --process_count;
