@@ -15,7 +15,8 @@
 
 /**
  * \brief Runs the syscall requested by the active process.
- * \return Always CONTROL_RESCHEDULE.
+ * \return The control structure for the scheduler to manage the calling
+ * process.
  */
 extern scheduler_control_t syscall_handler();
 
