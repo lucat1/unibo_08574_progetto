@@ -12,7 +12,10 @@
 #define PANDOS_EXCEPTION_H
 
 /**
- * \brief Exception's handler
+ * \brief The handler called by the processor when an exception is raised. Calls
+ * the appropriate handler (be it syscall, interrupt or trap) based on the value
+ * read from the CAUSE register. After the handling of the exception the
+ * scheduler is called explicitly to re-launch the appropriate next process.
  */
 extern void exception_handler();
 
