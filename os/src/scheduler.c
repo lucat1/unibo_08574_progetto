@@ -90,9 +90,13 @@ static inline
 
     --process_count;
 
-    /* Decrease the amount of processes blocked if one of them is killed */
-    if (out_blocked(p) == p)
-        --softblock_count;
+    if (!list_null(&p->p_list)) {
+        /* Decrease the amount of processes blocked if one of them is killed */
+        if (p->p_sem_add != NULL && out_blocked(p) == p)
+            --softblock_count;
+        else
+            dequeue_process(p);
+    }
 
     /* The removal of the process from any queue is handled by the free_pcb */
     free_pcb(p);

@@ -11,109 +11,95 @@
 #include "test/mock_iodev.h"
 #include "test/mock_syscall.h"
 #include "test/test.h"
+#include <stdlib.h>
+#include <time.h>
 
 int main()
 {
     state_t p_s;
     pcb_t *new_process;
 
+    srand(time(NULL));
     mock_init();
     null_state(&p_s);
-    active_process = spawn_process(false);
-    int pids[19];
 
-    it("creates a new high priority process")
+    ensure("create_process sanitizes the input")
     {
-        assert(active_process->p_pid != NULL_PID);
-        SYSCALL(CREATEPROCESS, (size_t)&p_s, true, 0);
-        assert(!panic_count);
-        assert(active_process->p_s.reg_v0 != NULL_PID);
-        assert(process_count == 2);
-        assert((new_process = find_process(
-                    (pandos_pid_t)active_process->p_s.reg_v0)) != NULL);
-        assert((pandos_pid_t)active_process->p_s.reg_v0 == new_process->p_pid);
-        assert(new_process->p_prio == true);
-        printf("active_process: %d\n",
-               head_proc_q(&active_process->p_child)->p_pid);
-        printf("new_process: %d\n", &new_process->p_list);
-        list_print(&active_process->p_child);
-        assert(list_size(&active_process->p_child) == 1);
-        assert(head_proc_q(&active_process->p_child)->p_pid ==
-               new_process->p_pid);
-        assert(!list_empty(&ready_queue_hi));
-    }
-    it("properly terminates the newly created process")
-    {
-        SYSCALL(TERMPROCESS, new_process->p_pid, 0, 0);
-        assert(!panic_count);
-        assert(process_count == 1);
-        assert(new_process->p_pid == NULL_PID);
-        assert(list_empty(&active_process->p_child));
-        assert(list_empty(&ready_queue_hi));
-    }
-    it("correctly creates a new low priority process")
-    {
-        assert(active_process->p_pid != NULL_PID);
-        SYSCALL(CREATEPROCESS, (size_t)&p_s, true, 0);
-        assert(!panic_count);
-        assert(active_process->p_s.reg_v0 != NULL_PID);
-        assert(process_count == 2);
-        assert((new_process = find_process(
-                    (pandos_pid_t)active_process->p_s.reg_v0)) != NULL);
-        assert((pandos_pid_t)active_process->p_s.reg_v0 == new_process->p_pid);
-        assert(head_proc_q(&active_process->p_child) == new_process);
-        assert(!list_empty(&ready_queue_lo));
-    }
-    it("correctly terminates the newly created process")
-    {
-        SYSCALL(TERMPROCESS, new_process->p_pid, 0, 0);
-        assert(!panic_count);
-        assert(process_count == 1);
-        assert(new_process->p_pid == NULL_PID);
-        assert(list_empty(&active_process->p_child));
-        assert(list_size(&ready_queue_hi) == 1);
-    }
-    it("correctly gets out of memory and returns NULL_PID")
-    {
-        /* There is already 1 process allocated from previous code, so we need
-         * To add at least 19 more processes to get out of memory
-         */
-        for (int i = 0; i < 19; i++) {
-            SYSCALL(CREATEPROCESS, (size_t)rand(), true, 0);
-            assert(list_size(&active_process->p_child) == i + 1);
-            assert(process_count == i + 2);
-            pids[i] = active_process->p_s.reg_v0;
-        }
-        assert(active_process->p_s.reg_v0 != NULL_PID);
-        SYSCALL(CREATEPROCESS, (size_t)rand(), true, 0);
-        assert(list_size(&active_process->p_child) == 19);
-        assert(process_count == 20);
-        assert(active_process->p_s.reg_v0 == NULL_PID);
-    }
-    ensure("create_process does not break if the input is broken")
-    {
-        /* Remove some processes to make space */
-        for (int i = 1; i < 15; i++) {
-            SYSCALL(TERMPROCESS, pids[i], 0, 0);
-        }
-        /* Ensure that it does not accept values except for true and false for
-         * priority */
-        SYSCALL(CREATEPROCESS, (size_t)rand(), 2, 0);
-        assert(process_count == 0);
+        active_process = spawn_process(false);
+        SYSCALL(CREATEPROCESS, (size_t)&p_s, 2, 0);
+        assert(active_process->p_pid == NULL_PID);
+
+        active_process = spawn_process(false);
+        SYSCALL(CREATEPROCESS, (size_t)NULL, true, 0);
+        assert(active_process->p_pid == NULL_PID);
     }
     ensure("terminate_process does not break if the input is broken")
     {
+        pandos_pid_t pid;
+        while ((pid = rand()) == active_process->p_pid)
+            ;
+
         active_process = spawn_process(false);
-        state_t proc2;
-        SYSCALL(CREATEPROCESS, (size_t)&proc2, true, 0);
-        /* Test with a broken process id*/
-        SYSCALL(TERMPROCESS, 99, 0, 0);
-        assert(process_count == 0);
+        SYSCALL(TERMPROCESS, pid, 0, 0);
+        assert(active_process->p_pid == NULL_PID);
+    }
+    active_process = NULL;
+
+    it("creates and kills a new high/low priority process")
+    {
+        for (bool i = 0; i < 2; ++i) {
+            active_process = spawn_process(i);
+            assert(process_count == 1);
+            assert(active_process->p_pid != NULL_PID);
+            SYSCALL(CREATEPROCESS, (size_t)&p_s, i, 0);
+            assert(!panic_count);
+            assert(process_count == 2);
+            assert(list_size(i ? &ready_queue_hi : &ready_queue_lo) == 2);
+            assert(active_process->p_s.reg_v0 != NULL_PID);
+            assert((new_process = find_process(
+                        (pandos_pid_t)active_process->p_s.reg_v0)) != NULL);
+            assert((pandos_pid_t)active_process->p_s.reg_v0 ==
+                   new_process->p_pid);
+            assert(new_process->p_prio == i);
+            assert(list_size(&active_process->p_child) == 1);
+            assert(container_of(list_next(&active_process->p_child), pcb_t,
+                                p_sib) == new_process);
+            SYSCALL(TERMPROCESS, new_process->p_pid, 0, 0);
+            assert(!panic_count);
+            assert(process_count == 1);
+            assert(list_size(i ? &ready_queue_hi : &ready_queue_lo) == 1);
+            assert(new_process->p_pid == NULL_PID);
+            assert(list_empty(&active_process->p_child));
+            assert(head_proc_q(i ? &ready_queue_hi : &ready_queue_lo) ==
+                   active_process);
+            kill_progeny(active_process);
+        }
+        active_process = NULL;
+    }
+    it("correctly runs out of memory and returns NULL_PID")
+    {
+        active_process = spawn_process(false);
+        /* There is already one process allocated to call the NSYS, so we need
+         * MAX_PROC-1 more processes to run out of memory. */
+        for (size_t i = 0; i < MAX_PROC - 1; ++i) {
+            SYSCALL(CREATEPROCESS, (size_t)&p_s, false, 0);
+            assert(active_process->p_s.reg_v0 != NULL_PID);
+            assert(list_size(&active_process->p_child) == i + 1);
+            assert(process_count == i + 2);
+        }
+        assert(process_count == 20);
+        SYSCALL(CREATEPROCESS, (size_t)&p_s, false, 0);
+        assert(process_count == 20);
+        assert(list_size(&active_process->p_child) == 19);
+        assert(active_process->p_s.reg_v0 == NULL_PID);
+        kill_progeny(active_process);
+        active_process = NULL;
     }
     it("correctly terminates the active_process")
     {
         active_process = spawn_process(false);
         SYSCALL(TERMPROCESS, 0, 0, 0);
+        assert(active_process->p_pid == NULL_PID);
         assert(list_empty(&ready_queue_hi));
         assert(list_empty(&ready_queue_lo));
         assert(softblock_count == 0);
