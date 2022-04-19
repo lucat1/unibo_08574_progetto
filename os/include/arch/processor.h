@@ -15,7 +15,7 @@
 
 #ifdef __x86_64__
 #define STATE_GPR_LEN 7
-/* Mock a generic processor state with the bare mimum register for the nucleus
+/** Mock a generic processor state with the bare mimum register for the nucleus
  */
 typedef struct state {
     size_t cause;
@@ -31,26 +31,26 @@ typedef struct state {
 #define reg_t9 gpr[5]
 #define reg_sp gpr[6]
 #else
-/* Use the architecture-provided state_t */
+/** Use the architecture-provided state_t */
 #include <umps/types.h>
 #endif
 
 typedef signed int cpu_t;
 
-/* Page Table Entry descriptor */
+/** Page Table Entry descriptor */
 typedef struct pte_entry_t {
     unsigned int pte_entry_hi;
     unsigned int pte_entry_lo;
 } pte_entry_t;
 
-/* Support level context */
+/** Support level context */
 typedef struct context_t {
     unsigned int stack_ptr;
     unsigned int status;
     unsigned int pc;
 } context_t;
 
-/* Support level descriptor */
+/** Support level descriptor */
 typedef struct support_t {
     int sup_asid;                    /* process ID */
     state_t sup_except_state[2];     /* old state exceptions */

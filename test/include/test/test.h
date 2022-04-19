@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Name of the current test. */
+/** Name of the current test. */
 char *test = NULL;
 
 /** \brief Runs the following test with an "ensure" prefix in the message

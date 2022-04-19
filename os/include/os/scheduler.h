@@ -14,15 +14,25 @@
 #include "os/pcb.h"
 #include "os/types.h"
 
+/** Keeps track of the total number of processes. */
 extern size_t process_count;
+/** Keeps track of the number of processes in the BLOCKED state. */
 extern size_t softblock_count;
-extern list_head ready_queue_lo, ready_queue_hi;
+/** Low priority process queue. */
+extern list_head ready_queue_lo;
+/** High priority process queue. */
+extern list_head ready_queue_hi;
+/** A pointer to the current running process. */
 extern pcb_t *active_process;
+/** A pointer to the process who just requested a yield operation. */
 extern pcb_t *yield_process;
+/** Initializer for the time of day. */
 extern cpu_t start_tod;
-extern state_t *wait_state;
 
 #ifdef PANDOS_TESTING
+/** \brief Getter for the current value of the PIDs' recycle count.
+ * \return The current value of the PIDs' recycle count.
+ */
 size_t get_recycle_count();
 #endif
 

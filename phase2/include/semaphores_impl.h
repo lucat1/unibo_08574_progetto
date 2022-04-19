@@ -12,6 +12,10 @@
 
 #define SEMAPHORES_NUM (DEVINTNUM + 1) * DEVPERINT + 1
 
+/**
+ * \brief Provides a pointer to the first element of the semaphores array.
+ * \return A pointer to the first element of the semaphores array.
+ */
 extern int *get_semaphores();
 
 #endif /* PANDOS_SEMAPHORE_IMPL_H */

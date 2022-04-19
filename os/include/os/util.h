@@ -23,7 +23,7 @@
 
 /**
  * \brief Checks whether both fields of a list head are NULL.
- * \param[in] l The list head to be checked.
+ * \param[in] head The list head to be checked.
  * \return true if both fields are NULL, or false otherwise.
  */
 static inline int list_null(const list_head *head)
