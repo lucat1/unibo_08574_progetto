@@ -20,10 +20,10 @@ sub-directories:
 
 The identifier for a new born process (pid for short) is generated in a
 semi-unique way, which provides a good balance between raw performance and
-roboustness. The 32 bits of the pid are initially subdivided into two sections:
+robustness. The 32 bits of the pid are initially subdivided into two sections:
 
 - the lower `MAX_PROC_BITS` bits identify the index of the underlying `pcb_t`
-  structure in the table of al `pcb_t`s;
+  structure in the table of all `pcb_t`s;
 - the remaining `WORD_BITS - MAX_PROC_BITS` bits are set to the lower bits of
   the `recycle_count` counter.
 
