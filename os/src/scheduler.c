@@ -19,7 +19,7 @@
 #include "os/util.h"
 #include "os/util_impl.h"
 
-#define process_queue(p) (p)->p_prio ? &ready_queue_hi : &ready_queue_lo
+#define process_queue(p) ((p)->p_prio ? &ready_queue_hi : &ready_queue_lo)
 
 size_t process_count;
 size_t softblock_count;
