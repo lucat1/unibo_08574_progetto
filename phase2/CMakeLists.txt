@@ -19,6 +19,7 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)
 target_link_libraries(${PROJECT_NAME}
     sub::os
+    sub::phase3
     sub::libumps
     sub::crtso
 )

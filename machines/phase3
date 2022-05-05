@@ -1,0 +1,115 @@
+{
+    "boot": {
+        "core-file": "../build/phase2/phase2.core.umps",
+        "load-core-file": true
+    },
+    "bootstrap-rom": "/usr/share/umps3/coreboot.rom.umps",
+    "clock-rate": 1,
+    "devices": {
+        "flash0": {
+            "enabled": true,
+            "file": "../build/phase3/strConcat.umps"
+        },
+        "flash1": {
+            "enabled": true,
+            "file": "../build/phase3/terminalTest2.umps"
+        },
+        "flash2": {
+            "enabled": true,
+            "file": "../build/phase3/terminalTest3.umps"
+        },
+        "flash3": {
+            "enabled": true,
+            "file": "../build/phase3/terminalTest4.umps"
+        },
+        "flash4": {
+            "enabled": true,
+            "file": "../build/phase3/terminalTest5.umps"
+        },
+        "flash5": {
+            "enabled": true,
+            "file": "../build/phase3/fibEight.umps"
+        },
+        "flash6": {
+            "enabled": true,
+            "file": "../build/phase3/printerTest.umps"
+        },
+        "flash7": {
+            "enabled": true,
+            "file": "../build/phase3/fibEleven.umps"
+        },
+        "printer0": {
+            "enabled": true,
+            "file": "printer0.umps"
+        },
+        "printer1": {
+            "enabled": true,
+            "file": "printer1.umps"
+        },
+        "printer2": {
+            "enabled": true,
+            "file": "printer2.umps"
+        },
+        "printer3": {
+            "enabled": true,
+            "file": "printer3.umps"
+        },
+        "printer4": {
+            "enabled": true,
+            "file": "printer4.umps"
+        },
+        "printer5": {
+            "enabled": true,
+            "file": "printer5.umps"
+        },
+        "printer6": {
+            "enabled": true,
+            "file": "printer6.umps"
+        },
+        "printer7": {
+            "enabled": true,
+            "file": "printer7.umps"
+        },
+        "terminal0": {
+            "enabled": true,
+            "file": "term0.umps"
+        },
+        "terminal1": {
+            "enabled": true,
+            "file": "term1.umps"
+        },
+        "terminal2": {
+            "enabled": true,
+            "file": "term2.umps"
+        },
+        "terminal3": {
+            "enabled": true,
+            "file": "term3.umps"
+        },
+        "terminal4": {
+            "enabled": true,
+            "file": "term4.umps"
+        },
+        "terminal5": {
+            "enabled": true,
+            "file": "term5.umps"
+        },
+        "terminal6": {
+            "enabled": true,
+            "file": "term6.umps"
+        },
+        "terminal7": {
+            "enabled": true,
+            "file": "term7.umps"
+        }
+    },
+    "execution-rom": "/usr/share/umps3/exec.rom.umps",
+    "num-processors": 1,
+    "num-ram-frames": 128,
+    "symbol-table": {
+        "asid": 64,
+        "file": "../build/phase2/phase2.stab.umps"
+    },
+    "tlb-floor-address": "0x80000000",
+    "tlb-size": 16
+}
