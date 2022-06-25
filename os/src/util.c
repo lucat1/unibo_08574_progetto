@@ -1,5 +1,4 @@
 #include "os/util.h"
-#include "os/util_impl.h"
 #include <umps/arch.h>
 #include <umps/libumps.h>
 

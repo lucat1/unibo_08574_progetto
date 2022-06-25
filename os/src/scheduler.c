@@ -133,7 +133,7 @@ static inline void scheduler_wait()
 
     size_t status = get_status();
     status_interrupts_on_nucleus(&status);
-    status_toggle_local_timer(&status);
+    status_local_timer_toggle(&status);
     // status_il_on_all(&status);
     set_status(status);
 
@@ -147,7 +147,7 @@ static inline void scheduler_takeover()
     reset_local_timer();
     /* Disable the processor Local Timer on hi processes */
     if (active_process->p_prio)
-        status_toggle_local_timer(&active_process->p_s.status);
+        status_local_timer_toggle(&active_process->p_s.status);
     store_tod(&start_tod);
     load_state(&active_process->p_s);
 }

@@ -1,8 +1,8 @@
 #ifndef PANDOS_SUPPORT_H
 #define PANDOS_SUPPORT_H
 
-int support_tbl();
+extern void support_tbl();
 
-int support_generic();
+extern void support_generic();
 
 #endif /* PANDOS_SUPPORT_H */

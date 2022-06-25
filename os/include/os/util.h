@@ -13,6 +13,7 @@
 
 #include "os/list.h"
 #include "os/types.h"
+#include "os/util_impl.h"
 
 /**
  * \brief Set both fields of a single list head to NULL.
@@ -124,6 +125,11 @@ static inline void pandos_memcpy(void *dest, void *src, size_t len)
  * \return Returns the result of the exponentiation.
  */
 int pandos_pow(int base, unsigned int exp);
+
+// TODO
+size_t __pandos_printf(void *target,
+                       size_t (*writer)(void *, const char *, size_t len),
+                       const char *fmt, va_list varg);
 
 /**
  * \brief Computes a string representation of a given integer.

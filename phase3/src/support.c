@@ -1,10 +1,8 @@
 #include "support/support.h"
 #include "os/util.h"
 
-int support_tbl() { return 0; }
+// TODO
+void support_tbl() {}
 
-int support_generic()
-{
-    pandos_kprintf("here");
-    return 0;
-}
+// TODO
+inline void support_generic() { pandos_kprintf("here"); }

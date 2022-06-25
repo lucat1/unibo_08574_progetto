@@ -1,6 +1,10 @@
 project(phase3)
 add_library(${PROJECT_NAME}
     src/support.c
+    src/test.c
+    src/print.c
+    src/memory.c
+    src/storage.c
 )
 
 add_library(sub::${PROJECT_NAME} ALIAS ${PROJECT_NAME})

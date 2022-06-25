@@ -52,6 +52,13 @@ typedef struct semd_t {
     list_head s_link;
 } semd_t;
 
+/* Page swap pool information structure type */
+typedef struct swap_t {
+    int sw_asid;         /* ASID number			*/
+    int sw_page_no;      /* page's virt page no.	*/
+    pte_entry_t *sw_pte; /* page's PTE entry.	*/
+} swap_t;
+
 typedef struct scheduler_control {
     pcb_t *pcb;
     bool enqueue;

@@ -59,9 +59,15 @@ inline void status_interrupts_on_process(size_t *prev)
 {
     *prev |= STATUS_IEp | STATUS_TE;
 }
-inline void status_toggle_local_timer(size_t *prev) { *prev ^= STATUS_TE; }
+inline void status_local_timer_toggle(size_t *prev) { *prev ^= STATUS_TE; }
+inline void status_local_timer_on(size_t *prev) { *prev |= STATUS_TE; }
+inline void status_local_timer_on_process(size_t *prev) { *prev ^= STATUS_TE; }
 inline void status_kernel_mode_on_nucleus(size_t *prev) { *prev |= STATUS_KUc; }
 inline void status_kernel_mode_on_process(size_t *prev) { *prev |= STATUS_KUp; }
+inline void status_kernel_mode_off_process(size_t *prev)
+{
+    *prev &= !STATUS_KUc;
+}
 
 inline void cause_clean(size_t *prev) { *prev &= CLEAREXECCODE; }
 inline void cause_reserved_instruction(size_t *prev)
