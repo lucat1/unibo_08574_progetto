@@ -15,9 +15,8 @@ void test()
     memaddr ramtop;
     sysprintf("Initializing...\n");
     swap_pool_sem = 1;
-    swap_pool = (swap_t *)(KSEG1 + (32 * PAGESIZE));
     for (size_t i = 0; i < POOLSIZE; ++i)
-        swap_pool[i].sw_asid = -1;
+        swap_pool_table[i].sw_asid = -1;
 
     store_state(&pstate);
     pstate.pc_epc = pstate.reg_t9 = UPROCSTARTADDR;

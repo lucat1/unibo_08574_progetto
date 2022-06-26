@@ -4,7 +4,7 @@
 #define PAGE_TABLE_ENTRY_LOW 5
 
 int swap_pool_sem;
-swap_t *swap_pool = NULL;
+swap_t swap_pool_table[POOLSIZE];
 
 inline bool init_page_table(pte_entry_table page_table, int asid)
 {

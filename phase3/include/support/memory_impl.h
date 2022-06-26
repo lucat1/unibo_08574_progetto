@@ -7,7 +7,7 @@
 typedef pte_entry_t pte_entry_table[MAXPAGES];
 
 typedef swap_t swap_table_t[MAXPAGES];
-extern swap_t *swap_pool;
+extern swap_t swap_pool_table[POOLSIZE];
 
 extern int swap_pool_sem;
 
