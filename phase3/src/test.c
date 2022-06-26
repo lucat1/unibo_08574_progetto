@@ -42,6 +42,8 @@ void test()
         support_structures[i].sup_except_context[0].stack_ptr =
             ramtop - 2 * (asid - 1) * PAGESIZE;
         support_structures[i].sup_except_context[0].status = support_status;
+        support_structures[i].sup_except_context[0].pc =
+            (memaddr)support_generic;
         support_structures[i].sup_except_context[0].stack_ptr =
             ramtop - 2 * asid * PAGESIZE;
         support_structures[i].sup_except_context[1].status = support_status;
