@@ -1,8 +1,60 @@
 #include "support/support.h"
+#include "os/scheduler.h"
 #include "os/util.h"
 
-// TODO
-void support_tbl() {}
+#define GETTOD 1
+#define TERMINATE 2
+#define WRITEPRINTER 3
+#define WRITETERMINAL 4
+#define READTERMINAL 5
 
 // TODO
-inline void support_generic() { pandos_kprintf("here"); }
+void support_tbl()
+{
+
+}
+
+inline void support_trap()
+{
+
+}
+
+inline void sys_get_tod()
+{
+    STCK(&(cpu_t)active_process->p_s.reg_v0);
+}
+
+
+
+inline void support_syscall()
+{
+    switch(active_process->p_s.reg_a0){
+        case GETTOD:
+            sys_get_tod();
+            break;
+        case TERMINATE:
+            syscall_terminate_process();
+            break;
+        case WRITEPRINTER:
+            break;
+        case WRITETERMINAL:
+            break;
+        case READTERMINAL:
+            break;
+        default:
+            /*idk*/
+    }
+}
+
+
+inline void support_generic()
+{
+    switch(CAUSE_GET_EXCCODE(active_process->p_support->sup_except_state->cause)){
+        case 8: /*Syscall*/
+            support_syscall();
+            break;
+        default:
+            support_trap();
+    }
+
+}
