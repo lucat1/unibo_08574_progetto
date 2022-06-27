@@ -1,6 +1,8 @@
 #include "support/support.h"
 #include "os/scheduler.h"
+#include "os/syscall.h"
 #include "os/util.h"
+#include <umps/cp0.h>
 
 #define GETTOD 1
 #define TERMINATE 2
@@ -14,26 +16,28 @@ void support_tbl()
 
 }
 
-inline void support_trap()
+void support_trap()
 {
 
 }
 
-inline void sys_get_tod()
+void sys_get_tod()
 {
-    STCK(&(cpu_t)active_process->p_s.reg_v0);
+    cpu_t time;
+    STCK(time);
+    active_process->p_s.reg_v0 = time;
 }
 
 
 
-inline void support_syscall()
+void support_syscall()
 {
     switch(active_process->p_s.reg_a0){
         case GETTOD:
             sys_get_tod();
             break;
         case TERMINATE:
-            syscall_terminate_process();
+            //syscall_terminate_process();
             break;
         case WRITEPRINTER:
             break;
@@ -43,6 +47,7 @@ inline void support_syscall()
             break;
         default:
             /*idk*/
+            break;
     }
 }
 
