@@ -11,7 +11,7 @@
 
 #include "os/syscall.h"
 
-size_t SYSCALL(size_t a0, size_t a1, size_t a2, size_t a3)
+unsigned int SYSCALL(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
     active_process->p_s.reg_a0 = a0;
     active_process->p_s.reg_a1 = a1;

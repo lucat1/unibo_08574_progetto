@@ -25,9 +25,14 @@ void sys_get_tod()
 {
     cpu_t time;
     STCK(time);
-    active_process->p_s.reg_v0 = time;
+    /* Points to the current state POPS 8.5*/
+    ((state_t *)BIOSDATAPAGE)->reg_v0 = time;
 }
 
+void sys_write_printer()
+{
+    
+}
 
 
 void support_syscall()
@@ -37,7 +42,7 @@ void support_syscall()
             sys_get_tod();
             break;
         case TERMINATE:
-            //syscall_terminate_process();
+            SYSCALL(TERMPROCESS, 0, 0, 0);
             break;
         case WRITEPRINTER:
             break;
@@ -54,7 +59,9 @@ void support_syscall()
 
 inline void support_generic()
 {
-    switch(CAUSE_GET_EXCCODE(active_process->p_support->sup_except_state->cause)){
+    SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    support_t *current_support = (support_t *)(((state_t *)BIOSDATAPAGE)->reg_v0);
+    switch(CAUSE_GET_EXCCODE(current_support->sup_except_state->cause)){
         case 8: /*Syscall*/
             support_syscall();
             break;

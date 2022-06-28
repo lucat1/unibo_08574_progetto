@@ -64,7 +64,7 @@ void status_interrupts_on_process(size_t *prev)
 {
     *prev |= MOCK_INTERRUPTS_ON_PROCESS;
 }
-void status_toggle_local_timer(size_t *prev)
+void status_local_timer_toggle(size_t *prev)
 {
     *prev ^= MOCK_INTERRUPTS_LOCAL_TIMER;
 }
