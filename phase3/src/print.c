@@ -1,6 +1,7 @@
 #include "support/print.h"
 #include "os/util.h"
 #include "os/util_impl.h"
+#include "os/semaphores.h"
 #include <umps/arch.h>
 
 /* hardware constants */
@@ -8,13 +9,13 @@
 #define RECVD 5
 #define TERM0ADDR 0x10000254
 
-int sem_term_mut = 1; /* for mutual exclusion on terminal */
+int *sem_term_mut; /* for mutual exclusion on terminal */
 
 size_t syscall_writer(void *termid, const char *msg, size_t len)
 {
     typedef unsigned int devregtr;
     const char *s = msg;
-    devregtr *base = (devregtr *)(TERM0ADDR);
+    devregtr *base = (devregtr *)(DEV_REG_ADDR(IL_TERMINAL, termid));
     devregtr *command = base + 3;
     devregtr status;
 
@@ -34,6 +35,7 @@ size_t syscall_writer(void *termid, const char *msg, size_t len)
 size_t fsysprintf(int termid, const char *fmt, ...)
 {
     termreg_t *term = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, termid);
+    sem_term_mut = get_semaphore(IL_TERMINAL, termid, false);
     va_list varg;
     va_start(varg, fmt);
     size_t res = __pandos_printf(term, syscall_writer, fmt, varg);

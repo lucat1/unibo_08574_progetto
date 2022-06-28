@@ -2,6 +2,8 @@
 #include "os/scheduler.h"
 #include "os/syscall.h"
 #include "os/util.h"
+#include "os/semaphores.h"
+#include "support/print.h"
 #include <umps/cp0.h>
 
 #define GETTOD 1
@@ -16,6 +18,7 @@ void support_tbl()
 
 }
 
+// TODO
 void support_trap()
 {
 
@@ -31,13 +34,40 @@ void sys_get_tod()
 
 void sys_write_printer()
 {
-    
+    /* TODO: Check for all the possible error causes*/
+
+    state_t *current_state = ((state_t *)BIOSDATAPAGE);
+    char *s = current_state->reg_a1;
+    SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    int asid = ((support_t *)current_state->reg_v0)->sup_asid;
+    dtpreg_t *base = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, asid);
+    int *sem_term_mut = get_semaphore(IL_PRINTER, asid, false);
+    SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
+    while (*s != EOS) {
+        base->data0 = &s;
+        base->command = TRANSMITCHAR;
+        while(base->status == DEV_STATUS_BUSY);
+        if (base->status!= DEV_STATUS_READY) {
+            PANIC();
+        }
+        base->command = DEV_C_ACK;
+        s++;
+    }
+    SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0);
+    current_state->reg_v0 = current_state->reg_a2;
 }
 
+void sys_write_terminal()
+{
+    /* TODO: Check for all the possible error causes*/
+    state_t *current_state = ((state_t *)BIOSDATAPAGE);
+    SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    current_state->reg_v0 = fsysprintf(((support_t *)current_state->reg_v0)->sup_asid, current_state->reg_a1);
+}
 
 void support_syscall()
 {
-    switch(active_process->p_s.reg_a0){
+    switch(((state_t *)BIOSDATAPAGE)->reg_a0){
         case GETTOD:
             sys_get_tod();
             break;
@@ -45,8 +75,10 @@ void support_syscall()
             SYSCALL(TERMPROCESS, 0, 0, 0);
             break;
         case WRITEPRINTER:
+            sys_write_printer();
             break;
         case WRITETERMINAL:
+            sys_write_terminal();
             break;
         case READTERMINAL:
             break;
@@ -54,6 +86,12 @@ void support_syscall()
             /*idk*/
             break;
     }
+    load_state(((state_t *)BIOSDATAPAGE));
+    /*
+        TODO:   the Support Level’s SYSCALL exception handler must also incre-
+                ment the PC by 4 in order to return control to the instruction after the
+                SYSCALL instruction.
+    */
 }
 
 
