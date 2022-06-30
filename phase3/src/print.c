@@ -15,7 +15,7 @@ size_t syscall_writer(void *termid, const char *msg, size_t len)
 {
     typedef unsigned int devregtr;
     const char *s = msg;
-    devregtr *base = (devregtr *)(DEV_REG_ADDR(IL_TERMINAL, termid));
+    devregtr *base = (devregtr *)(DEV_REG_ADDR(IL_TERMINAL, (int)termid));
     devregtr *command = base + 3;
     devregtr status;
 
