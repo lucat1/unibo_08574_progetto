@@ -193,15 +193,17 @@ static inline scheduler_control_t interrupt_handler(size_t cause)
  */
 inline void exception_handler()
 {
+    pandos_kprintf("exception_handler\n");
     int now_tod;
     if (active_process != NULL) {
         store_tod(&now_tod);
         active_process->p_time += (now_tod - start_tod);
     }
     scheduler_control_t ctrl;
-    if (active_process != NULL)
+    if (active_process != NULL) {
         pandos_memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE,
                       sizeof(state_t));
+    }
 
     switch (CAUSE_GET_EXCCODE(get_cause())) {
         case 0:
@@ -225,6 +227,8 @@ inline void exception_handler()
             active_process->p_s.reg_t9 += WORD_SIZE;
             break;
         default: /* 4-7, 9-12 */
+            
+            pandos_kprintf("default %d\n", CAUSE_GET_EXCCODE(get_cause()));
             ctrl = pass_up_or_die((memaddr)GENERALEXCEPT);
             break;
     }

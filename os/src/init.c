@@ -26,10 +26,10 @@ static inline void init_process(memaddr init_pc)
     status_kernel_mode_on_nucleus(&p->p_s.status);
 }
 
-inline void init(memaddr tbl_refill_handler, memaddr exception_handler,
+inline void init(memaddr tlb_refill_handler, memaddr exception_handler,
                  memaddr init_pc)
 {
-    init_puv(tbl_refill_handler, exception_handler);
+    init_puv(tlb_refill_handler, exception_handler);
     init_scheduler();
     init_semaphores();
     init_pcbs();

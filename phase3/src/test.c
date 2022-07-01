@@ -13,7 +13,7 @@ void test()
     state_t pstate;
     size_t support_status;
     memaddr ramtop;
-    sysprintf("Initializing...\n");
+   // sysprintf("Initializing...\n");
     swap_pool_sem = 1;
     for (size_t i = 0; i < POOLSIZE; ++i)
         swap_pool_table[i].sw_asid = -1;
@@ -29,7 +29,7 @@ void test()
     status_interrupts_on_process(&support_status);
     status_kernel_mode_on_process(&support_status);
     RAMTOP(ramtop);
-    for (size_t i = 0; i < UPROCMAX; ++i) {
+    for (size_t i = 0; i < 1/*UPROCMAX*/; ++i) {
         // NOTE: the ASID of the process is i+1
         const size_t asid = i + 1;
 
@@ -37,18 +37,21 @@ void test()
 
         support_structures[i].sup_asid = asid;
         init_page_table(support_structures[i].sup_private_page_table, asid);
-        support_structures[i].sup_except_context[0].pc = (memaddr)support_tbl;
-        support_structures[i].sup_except_context[0].stack_ptr =
+        support_structures[i].sup_except_context[PGFAULTEXCEPT].pc = (memaddr)support_tlb;
+        support_structures[i].sup_except_context[PGFAULTEXCEPT].stack_ptr =
             ramtop - 2 * (asid - 1) * PAGESIZE;
-        support_structures[i].sup_except_context[0].status = support_status;
-        support_structures[i].sup_except_context[1].pc =
+        support_structures[i].sup_except_context[PGFAULTEXCEPT].status = support_status;
+        support_structures[i].sup_except_context[GENERALEXCEPT].pc =
             (memaddr)support_generic;
-        support_structures[i].sup_except_context[1].stack_ptr =
+        support_structures[i].sup_except_context[GENERALEXCEPT].stack_ptr =
             ramtop - 2 * asid * PAGESIZE;
-        support_structures[i].sup_except_context[1].status = support_status;
+        support_structures[i].sup_except_context[GENERALEXCEPT].status = support_status;
 
         SYSCALL(CREATEPROCESS, (int)&pstate, PROCESS_PRIO_LOW,
                 (int)(support_structures + i));
     }
-    SYSCALL(TERMPROCESS, 0, 0, 0);
+    //SYSCALL(TERMPROCESS, 0, 0, 0);
+    sysprintf("cyaaa");
+    int block = 0;
+    SYSCALL(PASSEREN, (unsigned int)&block, 0,0);
 }

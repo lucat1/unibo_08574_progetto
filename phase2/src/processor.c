@@ -12,10 +12,10 @@
 #include <umps/libumps.h>
 #include <umps/types.h>
 
-inline void init_puv(memaddr tbl_refill_handler, memaddr exception_handler)
+inline void init_puv(memaddr tlb_refill_handler, memaddr exception_handler)
 {
     passupvector_t *const pv = (passupvector_t *)PASSUPVECTOR;
-    pv->tlb_refill_handler = tbl_refill_handler;
+    pv->tlb_refill_handler = tlb_refill_handler;
     pv->tlb_refill_stackPtr = KERNELSTACK;
     pv->exception_handler = exception_handler;
     pv->exception_stackPtr = KERNELSTACK;
@@ -54,6 +54,11 @@ inline size_t get_cause() { return getCAUSE(); }
 inline void status_interrupts_on_nucleus(size_t *prev)
 {
     *prev |= STATUS_IEc | STATUS_TE;
+}
+inline void status_interrupts_off_nucleus(size_t *prev)
+{
+    *prev |= STATUS_IEc | STATUS_TE;
+    *prev ^= STATUS_IEc | STATUS_TE;
 }
 inline void status_interrupts_on_process(size_t *prev)
 {

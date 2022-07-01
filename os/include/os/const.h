@@ -121,6 +121,7 @@
 #define DIRTYON 0x00000400
 #define VALIDON 0x00000200
 #define GLOBALON 0x00000100
+#define PFNSHIFT 12
 
 /* EntryHI register constants */
 #define GETPAGENO 0x3FFFF000
@@ -128,6 +129,7 @@
 #define VPNSHIFT 12
 #define ASIDSHIFT 6
 #define SHAREDSEGFLAG 30
+
 
 /* Index register constants */
 #define PRESENTFLAG 0x80000000

@@ -11,6 +11,7 @@
 
 inline scheduler_control_t pass_up_or_die(memaddr type)
 {
+    pandos_kprintf("pass_up_or_die %d\n", type);
     if (active_process == NULL)
         return CONTROL_BLOCK;
 

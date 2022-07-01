@@ -1,10 +1,24 @@
 #include "support/storage.h"
+#include "os/const.h"
+#include "os/ctypes.h"
 #include "os/util.h"
 #include <umps/arch.h>
 
-bool read_flash(unsigned int dev, unsigned int block, void *dest)
+#define FLASHCMDSHIFT 8
+
+bool read_flash(unsigned int dev, size_t block, void *dest)
 {
     dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, dev);
+    size_t cmd = FLASHREAD | ((block) << FLASHCMDSHIFT);
     reg->data0 = (memaddr)dest;
-    return SYSCALL(DOIO, (int)&reg->command, FLASHREAD, 0) != DEV_STATUS_RERROR;
+    return SYSCALL(DOIO, (int)&reg->command, cmd, 0) != DEV_STATUS_RERROR;
+}
+
+
+bool write_flash(unsigned int dev, size_t block, void *src)
+{
+    dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(FLASHINT, dev);
+    size_t cmd = FLASHWRITE | ((block) << FLASHCMDSHIFT);
+    reg->data0 = (memaddr)src;
+    return SYSCALL(DOIO, (int)&reg->command, cmd, 0) != DEV_STATUS_RERROR;
 }
