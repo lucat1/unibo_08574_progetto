@@ -31,8 +31,9 @@ void test()
     support_status = pstate.status;
     status_local_timer_on(&support_status);
     status_interrupts_on_process(&support_status);
-    status_il_on_all(&pstate.status);
+    // status_il_on_all(&support_status);
     status_kernel_mode_on_nucleus(&support_status);
+
     RAMTOP(ramtop);
     for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
         // NOTE: the ASID of the process is i+1

@@ -18,6 +18,7 @@
 #include "os/scheduler_impl.h"
 #include "os/util.h"
 #include "os/util_impl.h"
+#include "umps/arch.h"
 
 #define process_queue(p) ((p)->p_prio ? &ready_queue_hi : &ready_queue_lo)
 
@@ -134,7 +135,7 @@ static inline void scheduler_wait()
     size_t status = get_status();
     status_interrupts_on_nucleus(&status);
     status_local_timer_toggle(&status);
-    // status_il_on_all(&status);
+    status_il_on_all(&status);
     set_status(status);
 
     pandos_kprintf("WAIT\n");
