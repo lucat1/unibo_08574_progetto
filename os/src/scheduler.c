@@ -143,13 +143,13 @@ static inline void scheduler_wait()
 
 static inline void scheduler_takeover()
 {
-    pandos_kprintf("%d\n", active_process->p_pid);
     status_interrupts_on_process(&active_process->p_s.status);
     reset_local_timer();
     /* Disable the processor Local Timer on hi processes */
     if (active_process->p_prio)
         status_local_timer_toggle(&active_process->p_s.status);
     store_tod(&start_tod);
+    pandos_kprintf("TAKEOVER %d\n", active_process->p_pid);
     load_state(&active_process->p_s);
 }
 

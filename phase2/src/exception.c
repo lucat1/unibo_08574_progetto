@@ -88,6 +88,7 @@ static inline scheduler_control_t return_status(pcb_t *p, int status)
  */
 static inline scheduler_control_t interrupt_generic(int cause)
 {
+    pandos_kprintf("interrupt generated\n");
     int il = IL_DISK;
     /* inverse priority */
     for (int i = IL_DISK; i < IL_PRINTER; i++) {
@@ -193,7 +194,6 @@ static inline scheduler_control_t interrupt_handler(size_t cause)
  */
 inline void exception_handler()
 {
-    pandos_kprintf("exception_handler\n");
     int now_tod;
     if (active_process != NULL) {
         store_tod(&now_tod);
@@ -212,6 +212,7 @@ inline void exception_handler()
         case 1:
         case 2:
         case 3:
+            pandos_kprintf("PGFAULT %d\n", CAUSE_GET_EXCCODE(get_cause()));
             ctrl = pass_up_or_die((memaddr)PGFAULTEXCEPT);
             break;
         case 8:
@@ -227,8 +228,8 @@ inline void exception_handler()
             active_process->p_s.reg_t9 += WORD_SIZE;
             break;
         default: /* 4-7, 9-12 */
-            
-            pandos_kprintf("default %d\n", CAUSE_GET_EXCCODE(get_cause()));
+
+            pandos_kprintf("EXCP %d\n", CAUSE_GET_EXCCODE(get_cause()));
             ctrl = pass_up_or_die((memaddr)GENERALEXCEPT);
             break;
     }

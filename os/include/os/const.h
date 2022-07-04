@@ -130,7 +130,6 @@
 #define ASIDSHIFT 6
 #define SHAREDSEGFLAG 30
 
-
 /* Index register constants */
 #define PRESENTFLAG 0x80000000
 
