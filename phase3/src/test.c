@@ -1,3 +1,4 @@
+#include "arch/devices.h"
 #include "arch/processor.h"
 #include "os/const.h"
 #include "os/types.h"
@@ -24,11 +25,13 @@ void test()
     pstate.pc_epc = pstate.reg_t9 = (memaddr)UPROCSTARTADDR;
     status_local_timer_on(&pstate.status);
     status_interrupts_on_process(&pstate.status);
+    status_il_on_all(&pstate.status);
     status_kernel_mode_off_process(&pstate.status);
 
     support_status = pstate.status;
     status_local_timer_on(&support_status);
     status_interrupts_on_process(&support_status);
+    status_il_on_all(&pstate.status);
     status_kernel_mode_on_nucleus(&support_status);
     RAMTOP(ramtop);
     for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
