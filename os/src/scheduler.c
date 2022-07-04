@@ -137,6 +137,7 @@ static inline void scheduler_wait()
     // status_il_on_all(&status);
     set_status(status);
 
+    pandos_kprintf("WAIT\n");
     wait();
     schedule(NULL, false);
 }
@@ -155,6 +156,7 @@ static inline void scheduler_takeover()
 
 static inline void wait_or_die()
 {
+    pandos_kprintf("wait or die\n");
     if (!process_count)
         halt();
     else if (softblock_count)
@@ -165,6 +167,7 @@ static inline void wait_or_die()
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
+    pandos_kprintf("schedule\n");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
     }
@@ -186,6 +189,7 @@ void schedule(pcb_t *pcb, bool enqueue)
         insert_proc_q(process_queue(yield_process), yield_process);
         yield_process = NULL;
     }
+
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )
      */

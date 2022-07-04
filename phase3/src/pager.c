@@ -2,6 +2,7 @@
 #include "arch/processor.h"
 #include "os/const.h"
 #include "os/ctypes.h"
+#include "os/util.h"
 #include "support/memory.h"
 #include "support/memory_impl.h"
 #include "support/storage.h"
@@ -130,7 +131,7 @@ inline void tlb_exceptionhandler()
                 // call trap
             }
         }
-
+        
         //  Read the contents of the Current Process’s backing store/flash
         //  device logical page p into frame i.
         if (!read_flash(support->sup_asid, p, (void *)page_addr(i))) {

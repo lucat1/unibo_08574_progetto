@@ -23,6 +23,8 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
 
     for (cpy = i, digits = 0; cpy != 0; ++digits, cpy /= base)
         ;
+    if (i == 0)
+        ++digits;
 
     wrote = 0;
     if (i < 0) {
@@ -32,6 +34,7 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
     }
 
     int wr = 1;
+
     for (exp = pandos_pow(base, digits - 1); digits && wr;
          --digits, i %= exp, exp /= base, wrote += wr) {
         int r = (i / exp); /* remainder */
@@ -41,8 +44,7 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
 
     /* always write the string termination char (but don't count it as string
      * length) */
-    writer(target, end, 1);
-    return wrote;
+    return wrote + writer(target, end, 1);
 }
 
 size_t __bin(void *target, size_t (*writer)(void *, const char *, size_t len),

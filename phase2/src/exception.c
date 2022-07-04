@@ -226,6 +226,7 @@ inline void exception_handler()
             /* ALWAYS increment the PC to prevent system call loops */
             active_process->p_s.pc_epc += WORD_SIZE;
             active_process->p_s.reg_t9 += WORD_SIZE;
+            pandos_kprintf("fine della syscall\n");
             break;
         default: /* 4-7, 9-12 */
 
