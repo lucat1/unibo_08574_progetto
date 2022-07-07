@@ -77,6 +77,7 @@ extern void status_interrupts_off_nucleus(size_t *prev);
 extern void status_interrupts_on_process(size_t *prev);
 extern void status_local_timer_toggle(size_t *prev);
 extern void status_local_timer_on(size_t *prev);
+extern void status_local_timer_off(size_t *prev);
 extern void status_kernel_mode_on_nucleus(size_t *prev);
 extern void status_kernel_mode_off_nucleus(size_t *prev);
 extern void status_kernel_mode_on_process(size_t *prev);

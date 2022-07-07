@@ -2,6 +2,7 @@
 #include "arch/processor.h"
 #include "os/const.h"
 #include "os/ctypes.h"
+#include "os/scheduler.h"
 #include "os/util.h"
 #include "support/memory.h"
 #include "support/memory_impl.h"
@@ -18,10 +19,16 @@ size_t i = -1;
 
 inline void update_tlb(size_t index, pte_entry_t pte)
 {
-    setINDEX(index);
-    setENTRYHI(pte.pte_entry_hi);
-    setENTRYLO(pte.pte_entry_lo);
-    TLBWI();
+    // TODO : reactive this one
+    // if (check_in_tlb(pte)) {
+    //     setINDEX(index);
+    //     setENTRYHI(pte.pte_entry_hi);
+    //     setENTRYLO(pte.pte_entry_lo);
+    //     TLBWI();
+    // }
+
+    // TODO : remove this one
+    TLBCLR();
 }
 
 inline bool check_in_tlb(pte_entry_t pte)
@@ -94,60 +101,70 @@ inline void active_interrupts()
     set_status(state);
 }
 
+size_t time = 0;
 inline void tlb_exceptionhandler()
 {
     support_t *support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    size_t cause = support->sup_except_state[0].cause;
+    size_t cause = support->sup_except_state[PGFAULTEXCEPT].cause;
     if (cause == 1 /* TODO : 1 is an example */) {
         // TODO : program trap
     } else {
+        ++time;
+        pandos_kprintf("tlb_exceptionhandler\n");
         // gain mutual exclusion over swap pool table
         SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
-        state_t *saved_state = &support->sup_except_state[0];
+        state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int i = pick_page();
-        size_t p = page_num(support->sup_except_state[0].entry_hi);
+        size_t p = page_num(support->sup_except_state[PGFAULTEXCEPT].entry_hi);
         // checks if frame i is occupied
         swap_t swap = swap_pool_table[i];
         if (check_frame_occupied(swap)) {
+            pandos_kprintf("FRAME OCCUPIED %d\n", time);
+            scheduler_panic("well\n");
             size_t k = page_num(swap.sw_pte->pte_entry_hi);
 
             // ATOMICALLY
             // interrupts need to be disabled ???
             // is there a function ?
-            active_interrupts();
+            deactive_interrupts();
 
             mark_page_not_valid(support->sup_private_page_table, k);
             // TODO : update TLB if needed
             if (check_in_tlb(*swap.sw_pte))
                 update_tlb(k, *swap.sw_pte);
 
-            deactive_interrupts();
+            active_interrupts();
             // END ATOMICALLY
 
             // Write the contents of frame i
             // to the correct location on process x’s backing store/flash device
-            if (!write_flash(support->sup_asid, k, (void *)page_addr(i))) {
+            if (!write_flash(swap.sw_asid, swap.sw_page_no,
+                             (void *)page_addr(i))) {
                 // call trap
+                pandos_kprintf("ERRORE IN SCRITTURA FLASH\n");
             }
         }
-        
+
         //  Read the contents of the Current Process’s backing store/flash
         //  device logical page p into frame i.
         if (!read_flash(support->sup_asid, p, (void *)page_addr(i))) {
             // call trap
+            pandos_kprintf("ERRORE IN LETTURA FLASH\n");
         }
+
+        // ATOMICALLY
+        deactive_interrupts();
 
         add_entry_swap_pool_table(i, support->sup_asid, p,
                                   support->sup_private_page_table);
         update_page_table(support->sup_private_page_table, p, i);
 
-        // ATOMICALLY
-        active_interrupts();
         update_tlb(p, support->sup_private_page_table[p]);
-        deactive_interrupts();
+        active_interrupts();
         // END ATOMICALLY
 
+        pandos_kprintf("rilascio swap_pool\n");
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
 

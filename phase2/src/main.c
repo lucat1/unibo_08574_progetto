@@ -30,6 +30,7 @@ void tlb_refill_handler()
     pte_entry_t pte = active_process->p_support->sup_private_page_table[p];
 
     add_random_in_tlb(pte);
+    pandos_kprintf("tlb_refill of %d done\n", p);
     load_state(saved_state);
 }
 

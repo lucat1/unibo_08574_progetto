@@ -16,6 +16,8 @@
 #include "os/scheduler.h"
 #include "os/semaphores.h"
 #include "os/util.h"
+#include "umps/arch.h"
+#include "umps/cp0.h"
 
 /**
  * \brief CREATEPROCESS syscall implementation (SYSCALL -1)
@@ -108,12 +110,10 @@ static inline scheduler_control_t syscall_do_io()
     size_t *cmd_addr = (size_t *)active_process->p_s.reg_a1;
     size_t cmd_value = (size_t)active_process->p_s.reg_a2;
 
-    pandos_kprintf("sono in do_io\n");
 
     if (cmd_addr == (size_t *)NULL ||
         (dev = get_iodev(cmd_addr)).semaphore == NULL ||
         head_blocked(dev.semaphore) != NULL) {
-        pandos_kprintf("passup in do_io\n");
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
@@ -234,6 +234,7 @@ inline scheduler_control_t syscall_handler()
         case YIELD:
             return syscall_yield();
         default:
+            pandos_kprintf("syscall not handled\n");
             return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 }

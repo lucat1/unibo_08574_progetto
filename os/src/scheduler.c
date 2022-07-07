@@ -19,6 +19,8 @@
 #include "os/util.h"
 #include "os/util_impl.h"
 #include "umps/arch.h"
+#include "umps/cp0.h"
+#include "umps/arch.h"
 
 #define process_queue(p) ((p)->p_prio ? &ready_queue_hi : &ready_queue_lo)
 
@@ -29,6 +31,8 @@ pcb_t *active_process;
 pcb_t *yield_process;
 cpu_t start_tod;
 state_t *wait_state;
+
+size_t w = 0;
 
 /* Always points to the pid of the most recently created process */
 static size_t recycle_count;
@@ -89,6 +93,7 @@ static inline
     if (p->p_parent != NULL && out_child(p) != p)
         return 2;
 
+    pandos_kprintf("kill proc\n");
     --process_count;
 
     if (!list_null(&p->p_list)) {
@@ -134,12 +139,13 @@ static inline void scheduler_wait()
 
     size_t status = get_status();
     status_interrupts_on_nucleus(&status);
-    status_local_timer_toggle(&status);
+    // status_local_timer_toggle(&status);
     status_il_on_all(&status);
     set_status(status);
+    // pandos_kprintf("wait()\n");
 
-    pandos_kprintf("WAIT\n");
     wait();
+    // pandos_kprintf("stop wait()\n");
     schedule(NULL, false);
 }
 
@@ -149,7 +155,7 @@ static inline void scheduler_takeover()
     reset_local_timer();
     /* Disable the processor Local Timer on hi processes */
     if (active_process->p_prio)
-        status_local_timer_toggle(&active_process->p_s.status);
+        status_local_timer_on(&active_process->p_s.status);
     store_tod(&start_tod);
     pandos_kprintf("TAKEOVER %d\n", active_process->p_pid);
     load_state(&active_process->p_s);
@@ -157,7 +163,7 @@ static inline void scheduler_takeover()
 
 static inline void wait_or_die()
 {
-    pandos_kprintf("wait or die\n");
+    // pandos_kprintf("wait or die %d \n", ++w);
     if (!process_count)
         halt();
     else if (softblock_count)
@@ -168,7 +174,7 @@ static inline void wait_or_die()
 
 void schedule(pcb_t *pcb, bool enqueue)
 {
-    pandos_kprintf("schedule\n");
+    // pandos_kprintf("schedule\n");
     if (enqueue && pcb != NULL) {
         enqueue_process(pcb);
     }
@@ -194,6 +200,7 @@ void schedule(pcb_t *pcb, bool enqueue)
     /* This point should never be reached unless processes have been
      * re-scheduled (i.e. when waiting for events in a soft blocked state )
      */
+    //  pandos_kprintf("qua\n");
     if (active_process)
         scheduler_takeover();
 }
