@@ -32,12 +32,15 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
     }
 
     int wr = 1;
-    for (exp = pandos_pow(base, digits - 1); digits && wr;
-         --digits, i %= exp, exp /= base, wrote += wr) {
-        int r = (i / exp); /* remainder */
-        char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
-        wr = writer(target, digit, 1);
-    }
+    if (i)
+        for (exp = pandos_pow(base, digits - 1); digits && wr;
+             --digits, i %= exp, exp /= base, wrote += wr) {
+            int r = (i / exp); /* remainder */
+            char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
+            wr = writer(target, digit, 1);
+        }
+    else
+        wrote += writer(target, "0", 1);
 
     /* always write the string termination char (but don't count it as string
      * length) */
@@ -51,7 +54,7 @@ size_t __bin(void *target, size_t (*writer)(void *, const char *, size_t len),
     char buffer[LEN + 1];
     for (int p = 0; p < LEN; ++p)
         buffer[p] = i >> (LEN - p - 1) & ~(~0 << 1) ? '1' : '0';
-    buffer[LEN] = '0';
+    buffer[LEN] = '\0';
     writer(target, buffer, LEN);
     return LEN;
 }
