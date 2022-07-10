@@ -5,6 +5,7 @@ add_library(${PROJECT_NAME}
     src/print.c
     src/memory.c
     src/storage.c
+    src/pager.c
 )
 
 add_library(sub::${PROJECT_NAME} ALIAS ${PROJECT_NAME})

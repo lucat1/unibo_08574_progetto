@@ -16,6 +16,8 @@
 #include "os/scheduler.h"
 #include "os/semaphores.h"
 #include "os/util.h"
+#include "umps/arch.h"
+#include "umps/cp0.h"
 
 /**
  * \brief CREATEPROCESS syscall implementation (SYSCALL -1)
@@ -108,10 +110,12 @@ static inline scheduler_control_t syscall_do_io()
     size_t *cmd_addr = (size_t *)active_process->p_s.reg_a1;
     size_t cmd_value = (size_t)active_process->p_s.reg_a2;
 
+
     if (cmd_addr == (size_t *)NULL ||
         (dev = get_iodev(cmd_addr)).semaphore == NULL ||
-        head_blocked(dev.semaphore) != NULL)
+        head_blocked(dev.semaphore) != NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
+    }
 
     if (*dev.semaphore > 0)
         scheduler_panic("A device syncronization semaphore has a value > 0");
@@ -124,6 +128,7 @@ static inline scheduler_control_t syscall_do_io()
 
     /* Finally write the data */
     *cmd_addr = cmd_value;
+
     return ctrl;
 }
 
@@ -206,6 +211,7 @@ inline scheduler_control_t syscall_handler()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
+    pandos_kprintf("syscall %d %s\n", id, is_user_mode() ? "user" : "kern");
     switch (id) {
         case CREATEPROCESS:
             return syscall_create_process();
@@ -228,6 +234,7 @@ inline scheduler_control_t syscall_handler()
         case YIELD:
             return syscall_yield();
         default:
+            pandos_kprintf("syscall not handled\n");
             return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 }

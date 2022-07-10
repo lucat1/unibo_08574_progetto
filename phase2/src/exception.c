@@ -11,6 +11,7 @@
 
 #include "exception.h"
 #include "os/asl.h"
+#include "os/ctypes.h"
 #include "os/puod.h"
 #include "os/scheduler.h"
 #include "os/scheduler_impl.h"
@@ -30,9 +31,11 @@ size_t find_device_number(memaddr *bitmap)
 {
     size_t device_n = 0;
 
-    while (*bitmap > 1 && device_n < N_DEV_PER_IL) {
+    // ehhh luca luca 
+    size_t val = *bitmap;
+    while (val > 1 && device_n < N_DEV_PER_IL) {
         ++device_n;
-        *bitmap >>= 1;
+        val >>= 1;
     }
     return device_n;
 }
@@ -100,7 +103,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
     int *sem = get_semaphore(il, devicenumber, false);
 
     devregarea_t *device_regs = (devregarea_t *)RAMBASEADDR;
-    dtpreg_t *dtp_reg = &device_regs->devreg[il - IL_DISK][devicenumber].dtp;
+    dtpreg_t *dtp_reg = &device_regs->devreg[il - DEV_IL_START][devicenumber].dtp;
     int status = dtp_reg->status;
 
     if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
@@ -175,8 +178,8 @@ static inline scheduler_control_t interrupt_handler(size_t cause)
         return interrupt_local_timer();
     else if (cause & CAUSE_IP(IL_TIMER))
         return interrupt_timer();
-    else if (cause & CAUSE_IP(IL_DISK) & CAUSE_IP(IL_FLASH) &
-             CAUSE_IP(IL_ETHERNET) & CAUSE_IP(IL_PRINTER))
+    else if (cause & (CAUSE_IP(IL_DISK) | CAUSE_IP(IL_FLASH) |
+             CAUSE_IP(IL_ETHERNET) | CAUSE_IP(IL_PRINTER)))
         return interrupt_generic(cause);
     else if (cause & CAUSE_IP(IL_TERMINAL))
         return interrupt_terminal();
@@ -199,9 +202,10 @@ inline void exception_handler()
         active_process->p_time += (now_tod - start_tod);
     }
     scheduler_control_t ctrl;
-    if (active_process != NULL)
+    if (active_process != NULL) {
         pandos_memcpy(&active_process->p_s, (state_t *)BIOSDATAPAGE,
                       sizeof(state_t));
+    }
 
     switch (CAUSE_GET_EXCCODE(get_cause())) {
         case 0:
@@ -210,6 +214,7 @@ inline void exception_handler()
         case 1:
         case 2:
         case 3:
+            pandos_kprintf("PGFAULT %d\n", CAUSE_GET_EXCCODE(get_cause()));
             ctrl = pass_up_or_die((memaddr)PGFAULTEXCEPT);
             break;
         case 8:
@@ -225,6 +230,8 @@ inline void exception_handler()
             active_process->p_s.reg_t9 += WORD_SIZE;
             break;
         default: /* 4-7, 9-12 */
+            
+            pandos_kprintf("EXCP %d\n", CAUSE_GET_EXCCODE(get_cause()) + 1);
             ctrl = pass_up_or_die((memaddr)GENERALEXCEPT);
             break;
     }

@@ -58,7 +58,7 @@ typedef struct support_t {
     pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
 } support_t;
 
-extern void init_puv(memaddr tbl_refill_handler, memaddr exception_handler);
+extern void init_puv(memaddr tlb_refill_handler, memaddr exception_handler);
 extern bool is_user_mode();
 extern void null_state(state_t *s);
 extern void load_state(state_t *s);
@@ -73,10 +73,13 @@ extern void set_status(size_t status);
 extern size_t get_status();
 extern size_t get_cause();
 extern void status_interrupts_on_nucleus(size_t *prev);
+extern void status_interrupts_off_nucleus(size_t *prev);
 extern void status_interrupts_on_process(size_t *prev);
 extern void status_local_timer_toggle(size_t *prev);
 extern void status_local_timer_on(size_t *prev);
+extern void status_local_timer_off(size_t *prev);
 extern void status_kernel_mode_on_nucleus(size_t *prev);
+extern void status_kernel_mode_off_nucleus(size_t *prev);
 extern void status_kernel_mode_on_process(size_t *prev);
 extern void status_kernel_mode_off_process(size_t *prev);
 
