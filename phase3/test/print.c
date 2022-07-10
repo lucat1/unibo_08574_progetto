@@ -6,7 +6,6 @@
 
 void print(int device, char *str)
 {
-
     char *s = "Bad device write status\n";
     int leng, status;
 

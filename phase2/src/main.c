@@ -17,6 +17,7 @@
 #include "support/pager.h"
 #include "support/support.h"
 #include "support/test.h"
+#include "umps/arch.h"
 #include <umps/libumps.h>
 
 #define STACK_PAGE_NUMBER ((GETPAGENO - KUSEG) >> VPNSHIFT)
@@ -24,13 +25,13 @@
 void tlb_refill_handler()
 {
     state_t *saved_state = (state_t *)BIOSDATAPAGE;
-    size_t p = (saved_state->entry_hi - KUSEG) >> VPNSHIFT;
+    size_t p = page_num(saved_state->entry_hi);
+    pandos_kprintf("tlb_refill of %d -> %p done\n", p, saved_state);
     if (p == STACK_PAGE_NUMBER)
         p = MAXPAGES - 1;
     pte_entry_t pte = active_process->p_support->sup_private_page_table[p];
 
     add_random_in_tlb(pte);
-    pandos_kprintf("tlb_refill of %d done\n", p);
     load_state(saved_state);
 }
 
