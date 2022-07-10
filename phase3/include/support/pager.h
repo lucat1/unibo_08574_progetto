@@ -15,7 +15,7 @@ extern void update_tlb(size_t index, pte_entry_t pte);
 extern bool check_in_tlb(pte_entry_t pte);
 extern size_t page_num(memaddr entryhi);
 extern void update_page_table(pte_entry_t page_table[], size_t page_no,
-                              size_t frame_no);
+                              memaddr frame_addr);
 extern bool check_frame_occupied(swap_t frame);
 extern void mark_page_not_valid(pte_entry_t page_table[], size_t page_no);
 extern void add_entry_swap_pool_table(size_t frame_no, size_t asid,

@@ -20,21 +20,27 @@ void test()
     for (size_t i = 0; i < POOLSIZE; ++i)
         swap_pool_table[i].sw_asid = -1;
 
-    store_state(&pstate);
+    // store_state(&pstate);
     pstate.reg_sp = (memaddr)USERSTACKTOP;
     pstate.pc_epc = pstate.reg_t9 = (memaddr)UPROCSTARTADDR;
     // status_local_timer_on(&pstate.status);
     // status_interrupts_on_process(&pstate.status);
     // status_il_on_all(&pstate.status);
     status_local_timer_off(&pstate.status);
-    status_kernel_mode_on_process(&pstate.status);
+    status_kernel_mode_off_process(&pstate.status);
+    status_kernel_mode_off_nucleus(&pstate.status);
+
+    pstate.status = IMON | IEPON | USERPON ;
 
     support_status = pstate.status;
     // status_local_timer_on(&support_status);
     // status_interrupts_on_process(&support_status);
     // status_il_on_all(&support_status);
     status_local_timer_off(&support_status);
+    status_kernel_mode_on_process(&support_status);
     status_kernel_mode_on_nucleus(&support_status);
+
+    support_status = IMON | IEPON ;
 
     RAMTOP(ramtop);
     for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
@@ -48,13 +54,13 @@ void test()
         support_structures[i].sup_except_context[PGFAULTEXCEPT].pc =
             (memaddr)support_tlb;
         support_structures[i].sup_except_context[PGFAULTEXCEPT].stack_ptr =
-            ramtop - 2 * (asid - 1) * PAGESIZE;
+            ramtop - 2 * (asid) * PAGESIZE ;
         support_structures[i].sup_except_context[PGFAULTEXCEPT].status =
             support_status;
         support_structures[i].sup_except_context[GENERALEXCEPT].pc =
             (memaddr)support_generic;
         support_structures[i].sup_except_context[GENERALEXCEPT].stack_ptr =
-            ramtop - 2 * asid * PAGESIZE;
+            ramtop - 2 * asid * PAGESIZE + PAGESIZE;
         support_structures[i].sup_except_context[GENERALEXCEPT].status =
             support_status;
 

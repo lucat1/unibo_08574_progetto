@@ -8,6 +8,9 @@
 #include "support/memory_impl.h"
 #include "support/storage.h"
 #include "support/support.h"
+#include "umps/arch.h"
+#include "umps/const.h"
+#include "umps/cp0.h"
 #include "umps/libumps.h"
 
 #define SWAP_POOL_ADDR (KSEG1 + (32 * PAGESIZE))
@@ -20,22 +23,21 @@ size_t i = -1;
 inline void update_tlb(size_t index, pte_entry_t pte)
 {
     // TODO : reactive this one
-    // if (check_in_tlb(pte)) {
-    //     setINDEX(index);
-    //     setENTRYHI(pte.pte_entry_hi);
-    //     setENTRYLO(pte.pte_entry_lo);
-    //     TLBWI();
-    // }
+    if (check_in_tlb(pte)) {
+        // TODO : to remove prob
+        // setINDEX(index);
+        setENTRYHI(pte.pte_entry_hi);
+        setENTRYLO(pte.pte_entry_lo);
+        TLBWI();
+    }
 
     // TODO : remove this one
-    TLBCLR();
+    // TLBCLR();
 }
 
 inline bool check_in_tlb(pte_entry_t pte)
 {
     setENTRYHI(pte.pte_entry_hi);
-    // maybe useless this one
-    setENTRYLO(pte.pte_entry_lo);
     TLBP();
     // hardcoded now
     size_t index = (getINDEX() >> 8) & 63;
@@ -81,10 +83,10 @@ inline void add_entry_swap_pool_table(size_t frame_no, size_t asid,
 }
 
 inline void update_page_table(pte_entry_t page_table[], size_t page_no,
-                              size_t frame_no)
+                              memaddr frame_addr)
 {
-    page_table[page_no].pte_entry_lo |= VALIDON;
-    page_table[page_no].pte_entry_lo |= (frame_no << PFNSHIFT);
+    page_table[page_no].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
+    pandos_kprintf("entry lo %b\n", page_table[page_no].pte_entry_lo);
 }
 
 inline void deactive_interrupts()
@@ -101,7 +103,6 @@ inline void active_interrupts()
     set_status(state);
 }
 
-size_t time = 0;
 inline void tlb_exceptionhandler()
 {
     support_t *support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
@@ -109,19 +110,18 @@ inline void tlb_exceptionhandler()
     if (cause == 1 /* TODO : 1 is an example */) {
         // TODO : program trap
     } else {
-        ++time;
-        pandos_kprintf("tlb_exceptionhandler\n");
+        pandos_kprintf("tlb_exceptionhandler %p\n", SWAP_POOL_ADDR);
         // gain mutual exclusion over swap pool table
         SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
-        int i = pick_page();
-        size_t p = page_num(support->sup_except_state[PGFAULTEXCEPT].entry_hi);
-        // checks if frame i is occupied
-        swap_t swap = swap_pool_table[i];
+        int victim_frame = pick_page();
+        size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
+        size_t p = page_num(saved_state->entry_hi);
+        pandos_kprintf("page num %d\n", p);
+        // checks if frame victim_frame is occupied
+        swap_t swap = swap_pool_table[victim_frame];
         if (check_frame_occupied(swap)) {
-            pandos_kprintf("FRAME OCCUPIED %d\n", time);
-            scheduler_panic("well\n");
             size_t k = page_num(swap.sw_pte->pte_entry_hi);
 
             // ATOMICALLY
@@ -131,43 +131,44 @@ inline void tlb_exceptionhandler()
 
             mark_page_not_valid(support->sup_private_page_table, k);
             // TODO : update TLB if needed
-            if (check_in_tlb(*swap.sw_pte))
-                update_tlb(k, *swap.sw_pte);
+            update_tlb(k, *swap.sw_pte);
 
             active_interrupts();
             // END ATOMICALLY
 
-            // Write the contents of frame i
+            // Write the contents of frame victim_frame
             // to the correct location on process x’s backing store/flash device
-            if (!write_flash(swap.sw_asid, swap.sw_page_no,
-                             (void *)page_addr(i))) {
+            if (!write_flash(swap.sw_asid, k,
+                             (void *)page_addr(victim_frame))) {
                 // call trap
                 pandos_kprintf("ERRORE IN SCRITTURA FLASH\n");
             }
         }
 
         //  Read the contents of the Current Process’s backing store/flash
-        //  device logical page p into frame i.
-        if (!read_flash(support->sup_asid, p, (void *)page_addr(i))) {
+        //  device logical page p into frame victim_frame.
+        if (!read_flash(support->sup_asid, p, (void *)victim_frame_addr)) {
             // call trap
             pandos_kprintf("ERRORE IN LETTURA FLASH\n");
         }
 
+        pandos_kprintf("frame addr %b\n", victim_frame_addr & 0xFFFFF000);
+
         // ATOMICALLY
         deactive_interrupts();
 
-        add_entry_swap_pool_table(i, support->sup_asid, p,
+        add_entry_swap_pool_table(victim_frame, support->sup_asid, p,
                                   support->sup_private_page_table);
-        update_page_table(support->sup_private_page_table, p, i);
-
+        update_page_table(support->sup_private_page_table, p, victim_frame_addr);
         update_tlb(p, support->sup_private_page_table[p]);
+
         active_interrupts();
         // END ATOMICALLY
 
-        pandos_kprintf("rilascio swap_pool\n");
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
 
-        LDST(saved_state);
+        pandos_kprintf("fine tlb_handler %d\n", page_num(saved_state->entry_hi));
+        load_state(saved_state);
     }
 }
