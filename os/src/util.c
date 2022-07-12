@@ -4,6 +4,8 @@
 
 #define LEN 32
 
+#define SIGNED_BASE 10
+
 static char *end = "", *neg = "-";
 
 int pandos_pow(int base, unsigned int exp)
@@ -20,24 +22,26 @@ size_t __itoa(void *target, size_t (*writer)(void *, const char *, size_t len),
               int i, int base)
 {
     int cpy, digits, wrote, exp;
+    unsigned unsigned_i;
+
+    wrote = 0;
+
+    if (base == SIGNED_BASE && i < 0) {
+        /* Ignore an error here as it'll crop up later either way */
+        wrote += writer(target, neg, 1);
+        i = -i;
+    }
 
     for (cpy = i, digits = 0; cpy != 0; ++digits, cpy /= base)
         ;
     if (i == 0)
         ++digits;
 
-    wrote = 0;
-    if (i < 0) {
-        /* Ignore an error here as it'll crop up later either way */
-        wrote += writer(target, neg, 1);
-        i = -i;
-    }
-
     int wr = 1;
     if (i)
-        for (exp = pandos_pow(base, digits - 1); digits && wr;
-             --digits, i %= exp, exp /= base, wrote += wr) {
-            int r = (i / exp); /* remainder */
+        for (unsigned_i = i, exp = pandos_pow(base, digits - 1); digits && wr;
+             --digits, unsigned_i %= exp, exp /= base, wrote += wr) {
+            int r = (unsigned_i / exp); /* remainder */
             char digit[2] = {r > 9 ? 'a' + r - 10 : '0' + r, '\0'};
             wr = writer(target, digit, 1);
         }
