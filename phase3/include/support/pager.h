@@ -5,6 +5,8 @@
 #include "os/ctypes.h"
 #include "os/types.h"
 
+#define STACK_PAGE_NUMBER (GETPAGENO >> VPNSHIFT)
+
 // la roba che va utilizzata da altre parti deve essere non static tipo
 // page_addr
 

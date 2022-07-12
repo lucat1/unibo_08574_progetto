@@ -63,7 +63,10 @@ inline memaddr page_addr(size_t i)
 inline size_t page_num(memaddr entryhi)
 {
     // reverse operation done in memory.c
-    return (entryhi - KUSEG) >> VPNSHIFT;
+    size_t vpn = (entryhi - KUSEG) >> VPNSHIFT;
+    if (vpn > MAXPAGES - 2 && vpn != STACK_PAGE_NUMBER)
+        pandos_kprintf("Error: vpn = %d?\n", vpn);
+    return vpn;
 }
 
 inline bool check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
@@ -159,7 +162,8 @@ inline void tlb_exceptionhandler()
 
         add_entry_swap_pool_table(victim_frame, support->sup_asid, p,
                                   support->sup_private_page_table);
-        update_page_table(support->sup_private_page_table, p, victim_frame_addr);
+        update_page_table(support->sup_private_page_table, p,
+                          victim_frame_addr);
         update_tlb(p, support->sup_private_page_table[p]);
 
         active_interrupts();
@@ -168,7 +172,8 @@ inline void tlb_exceptionhandler()
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
 
-        pandos_kprintf("fine tlb_handler %d\n", page_num(saved_state->entry_hi));
+        pandos_kprintf("fine tlb_handler %d\n",
+                       page_num(saved_state->entry_hi));
         load_state(saved_state);
     }
 }

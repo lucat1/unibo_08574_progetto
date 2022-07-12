@@ -20,8 +20,6 @@
 #include "umps/arch.h"
 #include <umps/libumps.h>
 
-#define STACK_PAGE_NUMBER ((GETPAGENO - KUSEG) >> VPNSHIFT)
-
 void tlb_refill_handler()
 {
     state_t *saved_state = (state_t *)BIOSDATAPAGE;
