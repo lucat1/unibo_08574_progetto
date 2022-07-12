@@ -18,7 +18,8 @@ inline bool init_page_table(pte_entry_table page_table, int asid)
             KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
         page_table[i].pte_entry_lo = DIRTYON;
     }
-    page_table[last_page_index].pte_entry_hi = GETPAGENO + (asid << ASIDSHIFT);
+    page_table[last_page_index].pte_entry_hi =
+        KUSEG + GETPAGENO + (asid << ASIDSHIFT);
     page_table[last_page_index].pte_entry_lo = DIRTYON;
 
     return true;

@@ -20,6 +20,55 @@ int sem_swap_pool_table = 1;
 // TODO: use another algorithm
 size_t i = -1;
 
+inline size_t index_to_vpn(size_t index)
+{
+    if (index >= MAXPAGES) {
+        pandos_kprintf("pager: index_to_vpn: index = %d >= %d = MAXPAGES\n",
+                       index, MAXPAGES);
+        panic();
+    }
+    return index == MAXPAGES - 1 ? GETPAGENO >> VPNSHIFT : index;
+}
+
+inline size_t vpn_to_index(size_t vpn)
+{
+    if (vpn < KUSEG >> VPNSHIFT) {
+        pandos_kprintf(
+            "pager: vpn_to_index: vpn = %p < %p = KUSEG >> VPNSHIFT\n", vpn,
+            KUSEG >> VPNSHIFT);
+        panic();
+    }
+    if (vpn == (KUSEG + GETPAGENO) >> VPNSHIFT)
+        return MAXPAGES - 1;
+    if (vpn >= (KUSEG >> VPNSHIFT) + MAXPAGES) {
+        pandos_kprintf("pager: vpn_to_index: invalid vpn %p\n", vpn);
+        panic();
+    }
+    return vpn - (KUSEG >> VPNSHIFT);
+}
+
+inline size_t entryhi_to_vpn(memaddr entryhi)
+{
+    // reverse operation done in memory.c
+    if (entryhi < KUSEG) {
+        pandos_kprintf("pager: entryhi_to_vpn: entryhi = %p < %p = KUSEG\n",
+                       entryhi, KUSEG);
+        panic();
+    }
+    if (entryhi >= KUSEG + (MAXPAGES - 1) * PAGESIZE &&
+        (entryhi >> VPNSHIFT) != (KUSEG + GETPAGENO) >> VPNSHIFT) {
+        pandos_kprintf("pager: entryhi_to_vpn: invalid entryhi %p\n", entryhi,
+                       KUSEG);
+        panic();
+    }
+    return entryhi >> VPNSHIFT;
+}
+
+inline size_t entryhi_to_index(memaddr entryhi)
+{
+    return vpn_to_index(entryhi_to_vpn(entryhi));
+}
+
 inline void update_tlb(size_t index, pte_entry_t pte)
 {
     // TODO : reactive this one
@@ -60,36 +109,28 @@ inline memaddr page_addr(size_t i)
     return (memaddr)(SWAP_POOL_ADDR + i * PAGESIZE);
 }
 
-inline size_t page_num(memaddr entryhi)
-{
-    // reverse operation done in memory.c
-    size_t vpn = (entryhi - KUSEG) >> VPNSHIFT;
-    if (vpn > MAXPAGES - 2 && vpn != STACK_PAGE_NUMBER)
-        pandos_kprintf("Error: vpn = %d?\n", vpn);
-    return vpn;
-}
-
 inline bool check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
 
-inline void mark_page_not_valid(pte_entry_t page_table[], size_t page_no)
+inline void mark_page_not_valid(pte_entry_t page_table[], size_t index)
 {
-    page_table[page_no].pte_entry_lo |= VALIDON;
-    page_table[page_no].pte_entry_lo ^= VALIDON;
+    page_table[index].pte_entry_lo |= VALIDON;
+    page_table[index].pte_entry_lo ^= VALIDON;
 }
 
-inline void add_entry_swap_pool_table(size_t frame_no, size_t asid,
-                                      size_t page_no, pte_entry_t page_table[])
+inline void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
+                                      pte_entry_t page_table[])
 {
+    const size_t index = vpn_to_index(vpn);
     swap_pool_table[frame_no].sw_asid = asid;
-    swap_pool_table[frame_no].sw_page_no = page_no;
-    swap_pool_table[frame_no].sw_pte = &page_table[page_no];
+    swap_pool_table[frame_no].sw_page_no = vpn;
+    swap_pool_table[frame_no].sw_pte = &page_table[index];
 }
 
-inline void update_page_table(pte_entry_t page_table[], size_t page_no,
+inline void update_page_table(pte_entry_t page_table[], size_t index,
                               memaddr frame_addr)
 {
-    page_table[page_no].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
-    pandos_kprintf("entry lo %b\n", page_table[page_no].pte_entry_lo);
+    page_table[index].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
+    pandos_kprintf("entrylo %b\n", page_table[index].pte_entry_lo);
 }
 
 inline void deactive_interrupts()
@@ -120,28 +161,30 @@ inline void tlb_exceptionhandler()
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int victim_frame = pick_page();
         size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
-        size_t p = page_num(saved_state->entry_hi);
-        pandos_kprintf("page num %d\n", p);
+        const size_t vpn = entryhi_to_vpn(saved_state->entry_hi),
+                     index = vpn_to_index(vpn);
+        pandos_kprintf("vpn %p\n", vpn);
         // checks if frame victim_frame is occupied
         swap_t swap = swap_pool_table[victim_frame];
         if (check_frame_occupied(swap)) {
-            size_t k = page_num(swap.sw_pte->pte_entry_hi);
+            size_t k_vpn = entryhi_to_vpn(swap.sw_pte->pte_entry_hi),
+                   k_index = vpn_to_index(k_vpn);
 
             // ATOMICALLY
             // interrupts need to be disabled ???
             // is there a function ?
             deactive_interrupts();
 
-            mark_page_not_valid(support->sup_private_page_table, k);
+            mark_page_not_valid(support->sup_private_page_table, k_index);
             // TODO : update TLB if needed
-            update_tlb(k, *swap.sw_pte);
+            update_tlb(k_index, *swap.sw_pte);
 
             active_interrupts();
             // END ATOMICALLY
 
             // Write the contents of frame victim_frame
             // to the correct location on process x’s backing store/flash device
-            if (!write_flash(swap.sw_asid, k,
+            if (!write_flash(swap.sw_asid, k_vpn,
                              (void *)page_addr(victim_frame))) {
                 // call trap
                 pandos_kprintf("ERRORE IN SCRITTURA FLASH\n");
@@ -150,21 +193,21 @@ inline void tlb_exceptionhandler()
 
         //  Read the contents of the Current Process’s backing store/flash
         //  device logical page p into frame victim_frame.
-        if (!read_flash(support->sup_asid, p, (void *)victim_frame_addr)) {
+        if (!read_flash(support->sup_asid, vpn, (void *)victim_frame_addr)) {
             // call trap
             pandos_kprintf("ERRORE IN LETTURA FLASH\n");
         }
 
-        pandos_kprintf("frame addr %b\n", victim_frame_addr & 0xFFFFF000);
+        pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
 
         // ATOMICALLY
         deactive_interrupts();
 
-        add_entry_swap_pool_table(victim_frame, support->sup_asid, p,
+        add_entry_swap_pool_table(victim_frame, support->sup_asid, vpn,
                                   support->sup_private_page_table);
-        update_page_table(support->sup_private_page_table, p,
+        update_page_table(support->sup_private_page_table, index,
                           victim_frame_addr);
-        update_tlb(p, support->sup_private_page_table[p]);
+        update_tlb(index, support->sup_private_page_table[index]);
 
         active_interrupts();
         // END ATOMICALLY
@@ -172,8 +215,8 @@ inline void tlb_exceptionhandler()
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
 
-        pandos_kprintf("fine tlb_handler %d\n",
-                       page_num(saved_state->entry_hi));
+        pandos_kprintf("fine tlb_handler %p\n",
+                       entryhi_to_vpn(saved_state->entry_hi));
         load_state(saved_state);
     }
 }

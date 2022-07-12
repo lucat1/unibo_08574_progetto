@@ -10,12 +10,15 @@
 // la roba che va utilizzata da altre parti deve essere non static tipo
 // page_addr
 
+extern size_t index_to_vpn(size_t index);
+extern size_t vpn_to_index(size_t vpn);
+extern size_t entryhi_to_vpn(memaddr entryhi);
+extern size_t entryhi_to_index(memaddr entryhi);
 extern size_t pick_page();
 extern memaddr page_addr(size_t i);
 extern void add_random_in_tlb(pte_entry_t pte);
 extern void update_tlb(size_t index, pte_entry_t pte);
 extern bool check_in_tlb(pte_entry_t pte);
-extern size_t page_num(memaddr entryhi);
 extern void update_page_table(pte_entry_t page_table[], size_t page_no,
                               memaddr frame_addr);
 extern bool check_frame_occupied(swap_t frame);

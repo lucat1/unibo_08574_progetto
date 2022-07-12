@@ -23,11 +23,9 @@
 void tlb_refill_handler()
 {
     state_t *saved_state = (state_t *)BIOSDATAPAGE;
-    size_t p = page_num(saved_state->entry_hi);
-    pandos_kprintf("tlb_refill of %d -> %p done\n", p, saved_state);
-    if (p == STACK_PAGE_NUMBER)
-        p = MAXPAGES - 1;
-    pte_entry_t pte = active_process->p_support->sup_private_page_table[p];
+    size_t index = entryhi_to_index(saved_state->entry_hi);
+    pandos_kprintf("tlb_refill of #%d -> %p done\n", index, saved_state);
+    pte_entry_t pte = active_process->p_support->sup_private_page_table[index];
 
     add_random_in_tlb(pte);
     load_state(saved_state);
