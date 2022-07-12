@@ -183,19 +183,25 @@ inline void tlb_exceptionhandler()
 
             // Write the contents of frame victim_frame
             // to the correct location on process x’s backing store/flash device
-            if (!write_flash(swap.sw_asid, k_index,
-                             (void *)page_addr(victim_frame))) {
+            const int write_status = write_flash(
+                swap.sw_asid, k_index, (void *)page_addr(victim_frame));
+            if (write_status != DEV_STATUS_READY) {
                 // call trap
-                pandos_kprintf("ERR: SCRITTURA FLASH (k_index=%p)\n", k_index);
+                pandos_kprintf("ERR: WRITE_FLASH (k_index=%d, status=%d)\n",
+                               k_index, write_status);
+                panic();
             }
         }
 
         //  Read the contents of the Current Process’s backing store/flash
         //  device logical page p into frame victim_frame.
-        if (!read_flash(support->sup_asid, p_index,
-                        (void *)victim_frame_addr)) {
+        const int read_status =
+            read_flash(support->sup_asid, p_index, (void *)victim_frame_addr);
+        if (read_status != DEV_STATUS_READY) {
             // call trap
-            pandos_kprintf("ERR: LETTURA FLASH (p_index=%p)\n", p_index);
+            pandos_kprintf("ERR: READ_FLASH (p_index=%d, status=%d)\n", p_index,
+                           read_status);
+            panic();
         }
 
         pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);

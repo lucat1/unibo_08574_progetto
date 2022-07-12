@@ -23,8 +23,7 @@
 void tlb_refill_handler()
 {
     state_t *saved_state = (state_t *)BIOSDATAPAGE;
-    pandos_kprintf("tlb_refill_handler saved_state %p\n",
-                   saved_state->entry_hi);
+    pandos_kprintf("tlb_refill_handler %p\n", saved_state->entry_hi);
     size_t index = entryhi_to_index(saved_state->entry_hi);
     pandos_kprintf("tlb_refill of #%d -> %p done\n", index, saved_state);
     pte_entry_t pte = active_process->p_support->sup_private_page_table[index];
