@@ -57,8 +57,7 @@ inline size_t entryhi_to_vpn(memaddr entryhi)
     }
     if (entryhi >= KUSEG + (MAXPAGES - 1) * PAGESIZE &&
         (entryhi >> VPNSHIFT) != (KUSEG + GETPAGENO) >> VPNSHIFT) {
-        pandos_kprintf("pager: entryhi_to_vpn: invalid entryhi %p\n", entryhi,
-                       KUSEG);
+        pandos_kprintf("pager: entryhi_to_vpn: %p?\n", entryhi, KUSEG);
         panic();
     }
     return entryhi >> VPNSHIFT;
@@ -161,9 +160,9 @@ inline void tlb_exceptionhandler()
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int victim_frame = pick_page();
         size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
-        const size_t vpn = entryhi_to_vpn(saved_state->entry_hi),
-                     index = vpn_to_index(vpn);
-        pandos_kprintf("vpn %p\n", vpn);
+        const size_t p_vpn = entryhi_to_vpn(saved_state->entry_hi),
+                     p_index = vpn_to_index(p_vpn);
+        pandos_kprintf("p_vpn %p\n", p_vpn);
         // checks if frame victim_frame is occupied
         swap_t swap = swap_pool_table[victim_frame];
         if (check_frame_occupied(swap)) {
@@ -184,18 +183,19 @@ inline void tlb_exceptionhandler()
 
             // Write the contents of frame victim_frame
             // to the correct location on process x’s backing store/flash device
-            if (!write_flash(swap.sw_asid, k_vpn,
+            if (!write_flash(swap.sw_asid, k_index,
                              (void *)page_addr(victim_frame))) {
                 // call trap
-                pandos_kprintf("ERRORE IN SCRITTURA FLASH\n");
+                pandos_kprintf("ERR: SCRITTURA FLASH (k_index=%p)\n", k_index);
             }
         }
 
         //  Read the contents of the Current Process’s backing store/flash
         //  device logical page p into frame victim_frame.
-        if (!read_flash(support->sup_asid, vpn, (void *)victim_frame_addr)) {
+        if (!read_flash(support->sup_asid, p_index,
+                        (void *)victim_frame_addr)) {
             // call trap
-            pandos_kprintf("ERRORE IN LETTURA FLASH\n");
+            pandos_kprintf("ERR: LETTURA FLASH (p_index=%p)\n", p_index);
         }
 
         pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
@@ -203,11 +203,11 @@ inline void tlb_exceptionhandler()
         // ATOMICALLY
         deactive_interrupts();
 
-        add_entry_swap_pool_table(victim_frame, support->sup_asid, vpn,
+        add_entry_swap_pool_table(victim_frame, support->sup_asid, p_vpn,
                                   support->sup_private_page_table);
-        update_page_table(support->sup_private_page_table, index,
+        update_page_table(support->sup_private_page_table, p_index,
                           victim_frame_addr);
-        update_tlb(index, support->sup_private_page_table[index]);
+        update_tlb(p_index, support->sup_private_page_table[p_index]);
 
         active_interrupts();
         // END ATOMICALLY
