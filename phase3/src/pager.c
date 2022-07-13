@@ -135,15 +135,14 @@ inline void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
 {
     const size_t index = vpn_to_index(vpn);
     swap_pool_table[frame_no].sw_asid = asid;
-    swap_pool_table[frame_no].sw_page_no = index;
+    swap_pool_table[frame_no].sw_page_no = vpn;
     swap_pool_table[frame_no].sw_pte = &page_table[index];
 }
 
 inline void update_page_table(pte_entry_t page_table[], size_t index,
                               memaddr frame_addr)
 {
-    page_table[index].pte_entry_lo =
-        (SWAP_POOL_ADDR) | VALIDON | DIRTYON;
+    page_table[index].pte_entry_lo = (SWAP_POOL_ADDR) | VALIDON | DIRTYON;
 }
 
 inline void deactive_interrupts()
@@ -237,8 +236,6 @@ inline void tlb_exceptionhandler()
                 0); /* P(sem_swap_pool_table) */
 
         // pandos_kprintf("fine tlb_handler %p\n", saved_state->pc_epc);
-        // saved_state->pc_epc = saved_state->reg_t9 = 0x800000b0;
-        // saved_state->reg_sp = 0x800000b0;
         load_state(saved_state);
     }
 }
