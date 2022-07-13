@@ -23,12 +23,14 @@
 void tlb_refill_handler()
 {
     state_t *saved_state = (state_t *)BIOSDATAPAGE;
-    pandos_kprintf("tlb_refill_handler %p\n", saved_state->entry_hi);
+    // pandos_kprintf("tlb_refill_handler %p\n", saved_state->entry_hi);
     size_t index = entryhi_to_index(saved_state->entry_hi);
-    pandos_kprintf("tlb_refill of #%d -> %p done\n", index, saved_state);
+    // pandos_kprintf("tlb_refill of #%d -> %p done\n", index, saved_state);
     pte_entry_t pte = active_process->p_support->sup_private_page_table[index];
 
     add_random_in_tlb(pte);
+    // saved_state->pc_epc = saved_state->reg_t9 = 0x800000b0;
+    // saved_state->reg_sp = 0x800000b0;
     load_state(saved_state);
 }
 

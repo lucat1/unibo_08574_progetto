@@ -211,7 +211,7 @@ inline scheduler_control_t syscall_handler()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
-    pandos_kprintf("syscall %d %s\n", id, is_user_mode() ? "user" : "kern");
+    // pandos_kprintf("syscall %d %s\n", id, is_user_mode() ? "user" : "kern");
     switch (id) {
         case CREATEPROCESS:
             return syscall_create_process();
@@ -234,7 +234,7 @@ inline scheduler_control_t syscall_handler()
         case YIELD:
             return syscall_yield();
         default:
-            pandos_kprintf("syscall not handled\n");
+            pandos_kprintf("syscall not handled %d\n", id);
             return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 }

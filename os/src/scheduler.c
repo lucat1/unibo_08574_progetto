@@ -157,7 +157,7 @@ static inline void scheduler_takeover()
     if (active_process->p_prio)
         status_local_timer_on(&active_process->p_s.status);
     store_tod(&start_tod);
-    pandos_kprintf("TAKEOVER %d\n", active_process->p_pid);
+    // pandos_kprintf("TAKEOVER %d\n", active_process->p_pid);
     load_state(&active_process->p_s);
 }
 

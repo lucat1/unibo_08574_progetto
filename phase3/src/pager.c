@@ -73,11 +73,27 @@ inline void update_tlb(size_t index, pte_entry_t pte)
     // TODO : reactive this one
     if (check_in_tlb(pte)) {
         // TODO : to remove prob
-        // setINDEX(index);
+        // setINDEX((getINDEX() >> 14) << 14 | (index << 8));
         setENTRYHI(pte.pte_entry_hi);
         setENTRYLO(pte.pte_entry_lo);
         TLBWI();
     }
+
+    // setENTRYHI(pte.pte_entry_hi);
+    // TLBP(); // examine the TLB to search if the TLB entry is in the TLB.
+    //         // TLBP() searches for a TLB entry that matches the current
+    //         values of the entryHI register in the CPU.
+    //         // The return value of the probing is then place into the Index
+    //         register of the CPU.
+
+    // if((getINDEX() & PRESENTFLAG) == 0) // If TLB entry is present, returns 0
+    // into the P value of the Index reg.
+    // {
+    //     setENTRYLO(pte.pte_entry_lo); // If it's present, we update the
+    //     entry. TLBWI(); // EntryHI is already set, so we can write the whole
+    //     pte into the TLB.
+    //     // TLBWI writes using the information in the Index register.
+    // }
 
     // TODO : remove this one
     // TLBCLR();
@@ -87,9 +103,7 @@ inline bool check_in_tlb(pte_entry_t pte)
 {
     setENTRYHI(pte.pte_entry_hi);
     TLBP();
-    // hardcoded now
-    size_t index = (getINDEX() >> 8) & 63;
-    return index != -1;
+    return !(getINDEX() & PRESENTFLAG);
 }
 
 inline void add_random_in_tlb(pte_entry_t pte)
@@ -121,15 +135,15 @@ inline void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
 {
     const size_t index = vpn_to_index(vpn);
     swap_pool_table[frame_no].sw_asid = asid;
-    swap_pool_table[frame_no].sw_page_no = vpn;
+    swap_pool_table[frame_no].sw_page_no = index;
     swap_pool_table[frame_no].sw_pte = &page_table[index];
 }
 
 inline void update_page_table(pte_entry_t page_table[], size_t index,
                               memaddr frame_addr)
 {
-    page_table[index].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
-    pandos_kprintf("entrylo %b\n", page_table[index].pte_entry_lo);
+    page_table[index].pte_entry_lo =
+        (SWAP_POOL_ADDR) | VALIDON | DIRTYON;
 }
 
 inline void deactive_interrupts()
@@ -153,16 +167,17 @@ inline void tlb_exceptionhandler()
     if (cause == 1 /* TODO : 1 is an example */) {
         // TODO : program trap
     } else {
-        pandos_kprintf("tlb_exceptionhandler %p\n", SWAP_POOL_ADDR);
+        // pandos_kprintf("tlb_exceptionhandler\n");
         // gain mutual exclusion over swap pool table
         SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int victim_frame = pick_page();
         size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
+        // pandos_kprintf("ADDR %p\n", victim_frame_addr);
         const size_t p_vpn = entryhi_to_vpn(saved_state->entry_hi),
                      p_index = vpn_to_index(p_vpn);
-        pandos_kprintf("p_vpn %p\n", p_vpn);
+        // pandos_kprintf("p_vpn %p\n", p_vpn);
         // checks if frame victim_frame is occupied
         swap_t swap = swap_pool_table[victim_frame];
         if (check_frame_occupied(swap)) {
@@ -204,7 +219,7 @@ inline void tlb_exceptionhandler()
             panic();
         }
 
-        pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
+        // pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
 
         // ATOMICALLY
         deactive_interrupts();
@@ -221,8 +236,9 @@ inline void tlb_exceptionhandler()
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
 
-        pandos_kprintf("fine tlb_handler %p\n",
-                       entryhi_to_vpn(saved_state->entry_hi));
+        // pandos_kprintf("fine tlb_handler %p\n", saved_state->pc_epc);
+        // saved_state->pc_epc = saved_state->reg_t9 = 0x800000b0;
+        // saved_state->reg_sp = 0x800000b0;
         load_state(saved_state);
     }
 }

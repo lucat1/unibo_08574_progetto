@@ -8,7 +8,7 @@
     "devices": {
         "flash0": {
             "enabled": true,
-            "file": "../build/phase3/strConcat.umps"
+            "file": "/tmp/testers/strConcat.umps"
         },
         "flash1": {
             "enabled": true,
