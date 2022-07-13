@@ -1,8 +1,18 @@
 #include "support/support.h"
 #include "os/scheduler.h"
+#include "os/semaphores.h"
 #include "os/syscall.h"
 #include "os/util.h"
 #include "support/pager.h"
+#include "support/print.h"
+#include <umps/arch.h>
+#include <umps/cp0.h>
+
+#define GETTOD 1
+#define TERMINATE 2
+#define WRITEPRINTER 3
+#define WRITETERMINAL 4
+#define READTERMINAL 5
 
 // TODO : uTLB RefillHandler
 void support_tlb()
@@ -121,5 +131,3 @@ inline void support_generic()
             support_trap();
     }
 }
-
-inline void support_generic() { pandos_kprintf("here\n"); }
