@@ -3,7 +3,7 @@
 #include "os/const.h"
 #include "os/types.h"
 #include "os/util.h"
-#include "support/memory_impl.h"
+#include "support/pager.h"
 #include "support/print.h"
 #include "support/support.h"
 #include <umps/libumps.h>

@@ -20,8 +20,11 @@ extern swap_t swap_pool_table[POOLSIZE];
 extern int swap_pool_sem;
 
 extern bool init_page_table(pte_entry_table page_table, int asid);
+extern void set_swap_pool_baton(int asid, bool value);
+extern bool get_swap_pool_baton(int asid);
 extern void support_tlb();
 extern void tlb_refill_handler();
+extern void release_sem_swap_pool_table();
 
 // controllare l'utilita' di questi export
 extern size_t index_to_vpn(size_t index);

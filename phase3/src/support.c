@@ -40,7 +40,12 @@ inline void support_generic()
     load_state(saved_state);
 }
 
-void support_trap() { pandos_kprintf("!!!!!support_trap\n"); }
+void support_trap()
+{
+    pandos_kprintf("!!!!!support_trap\n");
+    release_sem_swap_pool_table();
+    SYSCALL(TERMPROCESS, 0, 0, 0);
+}
 
 void sys_get_tod()
 {
