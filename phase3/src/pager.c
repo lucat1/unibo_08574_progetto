@@ -4,8 +4,6 @@
 #include "os/ctypes.h"
 #include "os/scheduler.h"
 #include "os/util.h"
-#include "support/memory.h"
-#include "support/memory_impl.h"
 #include "support/storage.h"
 #include "support/support.h"
 #include "umps/arch.h"

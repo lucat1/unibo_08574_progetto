@@ -92,10 +92,10 @@ void sys_write_printer()
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
     while (*s != EOS) {
-        device->data0 = s;
-        pandos_kfprintf(&kdebug, "About to print %c\n", value);
+        device->data0 = (unsigned int)s;
+        pandos_kfprintf(&kdebug, "About to print %c\n", s);
         status = SYSCALL(DOIO, (int)&device->command, (int)PRINTCHR, 0);
-        pandos_kfprintf(&kdebug, "Printed %c\n", value);
+        pandos_kfprintf(&kdebug, "Printed %c\n", s);
         if ((status & TERMSTATMASK) != RECVD) {
             current_support->sup_except_state[GENERALEXCEPT].reg_v0 =
                 -(status & TERMSTATMASK);
