@@ -27,6 +27,7 @@ extern void add_entry_swap_pool_table(size_t frame_no, size_t asid,
                                       size_t page_no, pte_entry_t page_table[]);
 extern void active_interrupts();
 extern void deactive_interrupts();
+extern void release_sem_swap_pool_table();
 
 extern void tlb_exceptionhandler();
 

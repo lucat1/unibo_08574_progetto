@@ -14,6 +14,7 @@
 #include "umps/libumps.h"
 
 #define SWAP_POOL_ADDR (KSEG1 + (32 * PAGESIZE))
+#define CAUSE_TLB_MOD 1
 
 int sem_swap_pool_table = 1;
 
@@ -159,13 +160,19 @@ inline void active_interrupts()
     set_status(state);
 }
 
+inline void release_sem_swap_pool_table()
+{
+    if (true) // TODO: ho il possesso della risorsa?
+        SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
+}
+
 inline void tlb_exceptionhandler()
 {
     support_t *support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     size_t cause = support->sup_except_state[PGFAULTEXCEPT].cause;
-    if (cause == 1 /* TODO : 1 is an example */) {
-        // TODO : program trap
-    } else {
+    if (cause == CAUSE_TLB_MOD)
+        support_trap();
+    else {
         // pandos_kprintf("tlb_exceptionhandler\n");
         // gain mutual exclusion over swap pool table
         SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
@@ -200,10 +207,9 @@ inline void tlb_exceptionhandler()
             const int write_status = write_flash(
                 swap.sw_asid, k_index, (void *)page_addr(victim_frame));
             if (write_status != DEV_STATUS_READY) {
-                // call trap
+                support_trap();
                 pandos_kprintf("ERR: WRITE_FLASH (k_index=%d, status=%d)\n",
                                k_index, write_status);
-                panic();
             }
         }
 
@@ -212,10 +218,9 @@ inline void tlb_exceptionhandler()
         const int read_status =
             read_flash(support->sup_asid, p_index, (void *)victim_frame_addr);
         if (read_status != DEV_STATUS_READY) {
-            // call trap
+            support_trap();
             pandos_kprintf("ERR: READ_FLASH (p_index=%d, status=%d)\n", p_index,
                            read_status);
-            panic();
         }
 
         // pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
@@ -233,7 +238,7 @@ inline void tlb_exceptionhandler()
         // END ATOMICALLY
 
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
-                0); /* P(sem_swap_pool_table) */
+                0); /* V(sem_swap_pool_table) */
 
         // pandos_kprintf("fine tlb_handler %p\n", saved_state->pc_epc);
         load_state(saved_state);
