@@ -18,21 +18,17 @@
 #define WRITETERMINAL 4
 #define READTERMINAL 5
 
-// TODO : uTLB RefillHandler
 void support_tlb()
 {
-    pandos_kprintf("!!!!!support_tlb\n");
     tlb_exceptionhandler();
 }
 
-// TODO
 inline void support_generic()
 {
-    pandos_kprintf("!!!!!support_generic\n");
+    // pandos_kprintf("Start of support generic\n");
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     state_t *saved_state = &current_support->sup_except_state[GENERALEXCEPT];
-    int id = CAUSE_GET_EXCCODE(
-        current_support->sup_except_state[GENERALEXCEPT].cause);
+    int id = CAUSE_GET_EXCCODE(current_support->sup_except_state[GENERALEXCEPT].cause);
     switch (id) {
         case 8: /*Syscall*/
             support_syscall(current_support);
@@ -41,12 +37,13 @@ inline void support_generic()
             support_trap();
     }
 
-    pandos_kprintf("!!!!!support_generic fine\n");
+    // pandos_kprintf("End of support generic\n");
     saved_state->pc_epc += WORD_SIZE;
     saved_state->reg_t9 += WORD_SIZE;
     load_state(saved_state);
 }
 
+/* TODO: */
 void support_trap() { pandos_kprintf("!!!!!support_trap\n"); }
 
 void sys_get_tod()
@@ -57,30 +54,58 @@ void sys_get_tod()
     ((state_t *)BIOSDATAPAGE)->reg_v0 = time;
 }
 
+/* hardware constants */
+#define PRINTCHR 2
+#define RECVD 5
+
 void sys_write_printer()
 {
     /* TODO: Check for all the possible error causes*/
-
-    state_t *current_state = ((state_t *)BIOSDATAPAGE);
-    char *s = (char *)current_state->reg_a1;
-    support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    /*support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
     int asid = current_support->sup_asid;
     dtpreg_t *base = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, asid);
     int *sem_term_mut = get_semaphore(IL_PRINTER, asid, false);
+    
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
     while (*s != EOS) {
-        base->data0 = (unsigned int)s;
+        base->data0 = (char)s;
+        pandos_kfprintf(&kdebug, "About to print %c\n", base->data0);
         base->command = TRANSMITCHAR;
-        while (base->status == DEV_STATUS_BUSY)
-            ;
+        while (base->status == DEV_STATUS_BUSY);
         if (base->status != DEV_STATUS_READY) {
             PANIC();
         }
+        pandos_kfprintf(&kdebug, "printed a thing\n");
         base->command = DEV_C_ACK;
         s++;
     }
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0);
-    current_state->reg_v0 = current_state->reg_a2;
+    current_support->sup_except_state[GENERALEXCEPT].reg_v0 = current_support->sup_except_state[GENERALEXCEPT].reg_a2;*/
+    support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    size_t termid = current_support->sup_asid;
+    char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
+    size_t len = (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
+    
+    int *sem_term_mut = get_semaphore(IL_PRINTER, (int)termid, true);
+
+    dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, (int)termid);
+    unsigned int status;
+
+    SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
+    while (*s != EOS) {
+        unsigned int value = PRINTCHR | (((unsigned int)*s) << 8);
+        pandos_kfprintf(&kdebug, "About to print %c\n", value);
+        status = SYSCALL(DOIO, (int)&device->command, (int)value, 0);
+        pandos_kfprintf(&kdebug, "Printed %c\n", value);
+        if ((status & TERMSTATMASK) != RECVD) {
+            current_support->sup_except_state[GENERALEXCEPT].reg_v0 = -(status & TERMSTATMASK);
+            return;
+        }
+        s++;
+    }
+    SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); 
+    current_support->sup_except_state[GENERALEXCEPT].reg_v0 = len;
 }
 
 size_t sys_write_terminal()
@@ -88,9 +113,7 @@ size_t sys_write_terminal()
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     size_t asid = current_support->sup_asid;
     char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
-    size_t len =
-        (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
-
+    size_t len = (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
     return syscall_writer((void *)(asid), s, len);
 }
 
@@ -149,9 +172,7 @@ void support_syscall(support_t *current_support)
     */
 }
 
-/* hardware constants */
-#define PRINTCHR 2
-#define RECVD 5
+
 
 size_t syscall_writer(void *termid, char *msg, size_t len)
 {
