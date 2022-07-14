@@ -27,6 +27,13 @@ inline void support_generic()
     int id = CAUSE_GET_EXCCODE(
         current_support->sup_except_state[GENERALEXCEPT].cause);
     switch (id) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            pandos_kfprintf(&kstderr, "Invalid cause %d for Support Level's "
+                                      "general exception handler\n");
+            PANIC();
         case 8: /*Syscall*/
             support_syscall(current_support);
             break;
@@ -81,7 +88,7 @@ void sys_write_printer()
     current_state->reg_v0 = current_state->reg_a2;
 }
 
-size_t sys_write_terminal()
+void sys_write_terminal()
 {
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     size_t asid = current_support->sup_asid;
@@ -89,7 +96,7 @@ size_t sys_write_terminal()
     size_t len =
         (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
 
-    return syscall_writer((void *)(asid), s, len);
+    syscall_writer((void *)(asid), s, len);
 }
 
 #define RECEIVE_CHAR 2
@@ -113,45 +120,11 @@ void sys_read_terminal_v2()
     current_state->reg_a1 = (unsigned int)msg;
 }
 
-void support_syscall(support_t *current_support)
-{
-    pandos_kprintf("!!!!!support_syscall\n");
-    // state_t *saved_state = (state_t *)BIOSDATAPAGE;
-    const int id = (int)current_support->sup_except_state[GENERALEXCEPT].reg_a0;
-    pandos_kprintf("Code %d\n", id);
-    size_t res = -1;
-    switch (id) {
-        case GETTOD:
-            sys_get_tod();
-            break;
-        case TERMINATE:
-            SYSCALL(TERMPROCESS, 0, 0, 0);
-            break;
-        case WRITEPRINTER:
-            sys_write_printer();
-            break;
-        case WRITETERMINAL:
-            res = sys_write_terminal();
-            break;
-        case READTERMINAL:
-            break;
-        default:
-            /*idk*/
-            break;
-    }
-    current_support->sup_except_state[GENERALEXCEPT].reg_v0 = res;
-    /*
-        TODO:   the Support Level’s SYSCALL exception handler must also incre-
-                ment the PC by 4 in order to return control to the instruction
-       after the SYSCALL instruction.
-    */
-}
-
 /* hardware constants */
 #define PRINTCHR 2
 #define RECVD 5
 
-size_t syscall_writer(void *termid, char *msg, size_t len)
+void syscall_writer(void *termid, char *msg, size_t len)
 {
 
     int *sem_term_mut = get_semaphore(IL_TERMINAL, (int)termid, true);
@@ -165,12 +138,12 @@ size_t syscall_writer(void *termid, char *msg, size_t len)
         unsigned int value = PRINTCHR | (((unsigned int)*s) << 8);
         status = SYSCALL(DOIO, (int)&device->transm_command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
-            return -(status & TERMSTATMASK);
+            ((state_t *)BIOSDATAPAGE)->reg_a1 = -(status & TERMSTATMASK);
         }
         s++;
     }
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
-    return len;
+    ((state_t *)BIOSDATAPAGE)->reg_v0 = len;
 }
 
 size_t syscall_reader(void *termid, char *s)
@@ -194,4 +167,30 @@ size_t syscall_reader(void *termid, char *s)
     } while (*s++ != EOS);
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
     return len;
+}
+
+void support_syscall(support_t *current_support)
+{
+    pandos_kprintf("!!!!!support_syscall\n");
+    const int id = (int)current_support->sup_except_state[GENERALEXCEPT].reg_a0;
+    pandos_kprintf("Code %d\n", id);
+    switch (id) {
+        case GETTOD:
+            sys_get_tod();
+            break;
+        case WRITEPRINTER:
+            sys_write_printer();
+            break;
+        case WRITETERMINAL:
+            sys_write_terminal();
+            break;
+        case READTERMINAL:
+            sys_read_terminal_v2();
+            break;
+        case TERMINATE:
+        default:
+            SYSCALL(TERMPROCESS, 0, 0, 0);
+            return;
+    }
+    active_process->p_s.pc_epc = active_process->p_s.reg_t9 += WORD_SIZE;
 }

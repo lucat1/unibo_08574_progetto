@@ -12,11 +12,13 @@
 #include "umps/libumps.h"
 
 #define SWAP_POOL_ADDR (KSEG1 + (32 * PAGESIZE))
+#define CAUSE_TLB_MOD 1
 #define PAGE_TABLE_ENTRY_LOW 5
 #define CAUSE_TLB_MOD 1
 
 int sem_swap_pool_table = 1;
 int swap_pool_sem;
+static bool swap_pool_batons[UPROCMAX];
 swap_t swap_pool_table[POOLSIZE];
 static bool swap_pool_batons[UPROCMAX];
 
@@ -35,6 +37,8 @@ inline bool init_page_table(pte_entry_table page_table, int asid)
     page_table[last_page_index].pte_entry_hi =
         KUSEG + GETPAGENO + (asid << ASIDSHIFT);
     page_table[last_page_index].pte_entry_lo = DIRTYON;
+
+    swap_pool_batons[asid - 1] = false;
 
     return true;
 }
@@ -238,6 +242,7 @@ inline void support_tlb()
         // gain mutual exclusion over swap pool table
         SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
+        set_swap_pool_baton(support->sup_asid, true);
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int victim_frame = pick_page();
         size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
@@ -271,7 +276,6 @@ inline void support_tlb()
                 support_trap();
                 pandos_kprintf("ERR: WRITE_FLASH (k_index=%d, status=%d)\n",
                                k_index, write_status);
-                panic();
             }
         }
 
@@ -283,7 +287,6 @@ inline void support_tlb()
             support_trap();
             pandos_kprintf("ERR: READ_FLASH (p_index=%d, status=%d)\n", p_index,
                            read_status);
-            panic();
         }
 
         // pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
@@ -301,7 +304,8 @@ inline void support_tlb()
         // END ATOMICALLY
 
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
-                0); /* P(sem_swap_pool_table) */
+                0); /* V(sem_swap_pool_table) */
+        set_swap_pool_baton(support->sup_asid, false);
 
         // pandos_kprintf("fine tlb_handler %p\n", saved_state->pc_epc);
         load_state(saved_state);
