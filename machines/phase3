@@ -8,35 +8,35 @@
     "devices": {
         "flash0": {
             "enabled": true,
-            "file": "../build/phase3/strConcat.umps"
+            "file": "/root/pandosplus/build/phase3/strConcat.umps"
         },
         "flash1": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest2.umps"
+            "file": "/root/pandosplus/build/phase3/terminalTest2.umps"
         },
         "flash2": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest3.umps"
+            "file": "/root/pandosplus/build/phase3/terminalTest3.umps"
         },
         "flash3": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest4.umps"
+            "file": "/root/pandosplus/build/phase3/terminalTest4.umps"
         },
         "flash4": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest5.umps"
+            "file": "/root/pandosplus/build/phase3/terminalTest5.umps"
         },
         "flash5": {
             "enabled": true,
-            "file": "../build/phase3/fibEight.umps"
+            "file": "/root/pandosplus/build/phase3/fibEight.umps"
         },
         "flash6": {
             "enabled": true,
-            "file": "../build/phase3/printerTest.umps"
+            "file": "/root/pandosplus/build/phase3/terminalReader.umps"
         },
         "flash7": {
             "enabled": true,
-            "file": "../build/phase3/fibEleven.umps"
+            "file": "/root/pandosplus/build/phase3/fibEleven.umps"
         },
         "printer0": {
             "enabled": true,
