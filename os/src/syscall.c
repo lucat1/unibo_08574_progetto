@@ -110,7 +110,6 @@ static inline scheduler_control_t syscall_do_io()
     size_t *cmd_addr = (size_t *)active_process->p_s.reg_a1;
     size_t cmd_value = (size_t)active_process->p_s.reg_a2;
 
-
     if (cmd_addr == (size_t *)NULL ||
         (dev = get_iodev(cmd_addr)).semaphore == NULL ||
         head_blocked(dev.semaphore) != NULL) {
@@ -234,7 +233,7 @@ inline scheduler_control_t syscall_handler()
         case YIELD:
             return syscall_yield();
         default:
-            pandos_kprintf("syscall not handled %d\n", id);
+            pandos_kprintf("-----syscall not handled %d\n", id);
             return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 }

@@ -30,7 +30,7 @@ void test()
     status_kernel_mode_off_process(&pstate.status);
     status_kernel_mode_off_nucleus(&pstate.status);
 
-    pstate.status = IMON | IEPON | USERPON ;
+    pstate.status = IMON | IEPON | USERPON;
 
     support_status = pstate.status;
     // status_local_timer_on(&support_status);
@@ -40,7 +40,7 @@ void test()
     status_kernel_mode_on_process(&support_status);
     status_kernel_mode_on_nucleus(&support_status);
 
-    support_status = IMON | IEPON ;
+    support_status = IMON | IEPON;
 
     RAMTOP(ramtop);
     for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
@@ -54,7 +54,7 @@ void test()
         support_structures[i].sup_except_context[PGFAULTEXCEPT].pc =
             (memaddr)support_tlb;
         support_structures[i].sup_except_context[PGFAULTEXCEPT].stack_ptr =
-            ramtop - 2 * (asid) * PAGESIZE ;
+            ramtop - 2 * (asid)*PAGESIZE;
         support_structures[i].sup_except_context[PGFAULTEXCEPT].status =
             support_status;
         support_structures[i].sup_except_context[GENERALEXCEPT].pc =
