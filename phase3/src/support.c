@@ -175,7 +175,7 @@ size_t syscall_writer(void *termid, char *msg, size_t len)
     return len;
 }
 
-size_t syscall_reader(void *termid)
+size_t syscall_reader(void *termid, char *s)
 {
 
     int *sem_term_mut = get_semaphore(IL_TERMINAL, (int)termid, false);
@@ -183,16 +183,17 @@ size_t syscall_reader(void *termid)
     termreg_t *device = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, (int)termid);
     device->recv_command = RECEIVE_CHAR;
     unsigned int status;
+    size_t len = 0;
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    while (*s != EOS) {
+    do {
         unsigned int value = PRINTCHR | (((unsigned int)*s) << 8);
         status = SYSCALL(DOIO, (int)&device->transm_command, (int)value, 0);
+        ++len;
         if ((status & TERMSTATMASK) != RECVD) {
             return -(status & TERMSTATMASK);
         }
-        s++;
-    }
+    } while (*s++ != EOS);
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
     return len;
 }
