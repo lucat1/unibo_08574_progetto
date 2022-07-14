@@ -13,8 +13,12 @@
 #include "umps/const.h"
 #include "umps/cp0.h"
 
-/* TODO: */
-static inline void support_trap() { pandos_kprintf("!!!!!support_trap\n"); }
+inline void support_trap()
+{
+    pandos_kprintf("!!!!!support_trap\n");
+    release_sem_swap_pool_table();
+    SYSCALL(TERMPROCESS, 0, 0, 0);
+}
 
 static inline size_t sys_get_tod()
 {
@@ -135,38 +139,27 @@ static inline size_t sys_write_terminal()
 static inline void support_syscall(support_t *current_support)
 {
     pandos_kprintf("!!!!!support_syscall\n");
-    // state_t *saved_state = (state_t *)BIOSDATAPAGE;
     const int id = (int)current_support->sup_except_state[GENERALEXCEPT].reg_a0;
     pandos_kprintf("Code %d\n", id);
-    size_t res = -1;
     switch (id) {
         case GET_TOD:
-            res = sys_get_tod();
-            break;
-        case TERMINATE:
-            pandos_kfprintf(&kdebug, "SS killing asid: %d\n",
-                            current_support->sup_asid);
-            SYSCALL(TERMPROCESS, 0, 0, 0);
+            sys_get_tod();
             break;
         case WRITEPRINTER:
-            res = sys_write_printer();
+            sys_write_printer();
             break;
         case WRITETERMINAL:
-            res = sys_write_terminal();
+            sys_write_terminal();
             break;
         case READTERMINAL:
-            res = sys_read_terminal_v2();
+            sys_read_terminal_v2();
             break;
+        case TERMINATE:
         default:
-            /*idk*/
-            break;
+            SYSCALL(TERMPROCESS, 0, 0, 0);
+            return;
     }
-    current_support->sup_except_state[GENERALEXCEPT].reg_v0 = res;
-    /*
-        TODO:   the Support Level’s SYSCALL exception handler must also incre-
-                ment the PC by 4 in order to return control to the instruction
-       after the SYSCALL instruction.
-    */
+    active_process->p_s.pc_epc = active_process->p_s.reg_t9 += WORD_SIZE;
 }
 
 inline void support_generic()

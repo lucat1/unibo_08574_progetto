@@ -31,6 +31,7 @@ size_t find_device_number(memaddr *bitmap)
 {
     size_t device_n = 0;
 
+    // ehhh luca luca
     size_t val = *bitmap;
     while (val > 1 && device_n < N_DEV_PER_IL) {
         ++device_n;
