@@ -8,15 +8,10 @@
 #include "os/util.h"
 #include "support/pager.h"
 #include "support/print.h"
+#include "test/tconst.h"
 #include "umps/arch.h"
 #include "umps/const.h"
 #include "umps/cp0.h"
-
-#define GETTOD 1
-#define TERMINATE 2
-#define WRITEPRINTER 3
-#define WRITETERMINAL 4
-#define READTERMINAL 5
 
 inline void support_generic()
 {
@@ -126,7 +121,7 @@ void support_syscall(support_t *current_support)
     pandos_kprintf("Code %d\n", id);
     size_t res = -1;
     switch (id) {
-        case GETTOD:
+        case GET_TOD:
             sys_get_tod();
             break;
         case TERMINATE:
