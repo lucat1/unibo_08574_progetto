@@ -18,6 +18,15 @@ int sem_swap_pool_table = 1;
 int swap_pool_sem;
 swap_t swap_pool_table[POOLSIZE];
 
+#define PFN_MASK 0xFFFFF000
+inline memaddr virtual_to_physical(support_t *sup, memaddr m)
+{
+    size_t page_no = (m - KUSEG) / PAGESIZE;
+    memaddr pool_base =
+        sup->sup_private_page_table[page_no].pte_entry_lo & PFN_MASK;
+    return pool_base + ((m - KUSEG) % PAGESIZE);
+}
+
 inline bool init_page_table(pte_entry_table page_table, int asid)
 {
     if (page_table == NULL || asid <= 0 || asid > UPROCMAX)

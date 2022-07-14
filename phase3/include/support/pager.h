@@ -19,6 +19,8 @@ extern swap_t swap_pool_table[POOLSIZE];
 
 extern int swap_pool_sem;
 
+extern memaddr virtual_to_physical(support_t *sup, memaddr m);
+
 extern bool init_page_table(pte_entry_table page_table, int asid);
 extern void support_tlb();
 extern void tlb_refill_handler();

@@ -115,7 +115,6 @@ static inline scheduler_control_t syscall_do_io()
         head_blocked(dev.semaphore) != NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
-    pandos_kfprintf(&kdebug, "(0) sem %p\n", dev.semaphore);
 
     if (*dev.semaphore > 0)
         scheduler_panic("A device syncronization semaphore has a value > 0");

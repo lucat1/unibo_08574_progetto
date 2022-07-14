@@ -98,8 +98,9 @@ size_t sys_read_terminal_v2()
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     termreg_t *base = (termreg_t *)(DEV_REG_ADDR(
         IL_TERMINAL, (int)current_support->sup_asid));
-    // char *buf = (char
-    // *)current_support->sup_except_state[GENERALEXCEPT].reg_v1;
+    char *vbuf =
+        (char *)current_support->sup_except_state[GENERALEXCEPT].reg_v1;
+    char *buf = (char *)virtual_to_physical(current_support, (memaddr)vbuf);
     while (r != '\n') {
         size_t status =
             SYSCALL(DOIO, (int)&base->recv_command, (int)RECEIVE_CHAR, 0);
@@ -107,9 +108,11 @@ size_t sys_read_terminal_v2()
             return -RECEIVE_STATUS(status);
         }
         r = RECEIVE_VALUE(status);
-        // TODO:
-        // *(buf + read++) = r;
+        pandos_kfprintf(&kdebug, "wiring %c to %p\n", r, (buf + read));
+        *(buf + read++) = r;
     }
+    *(buf + read++) = EOS;
+    pandos_kfprintf(&kdebug, "read: %d\n", read);
     return read;
 }
 
@@ -134,7 +137,7 @@ void support_syscall(support_t *current_support)
             res = sys_write_terminal();
             break;
         case READTERMINAL:
-            res = sys_read_terminal_v2();
+
             break;
         default:
             /*idk*/
