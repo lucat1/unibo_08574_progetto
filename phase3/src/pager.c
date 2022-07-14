@@ -5,7 +5,6 @@
 #include "os/scheduler.h"
 #include "os/util.h"
 #include "support/memory.h"
-#include "support/memory_impl.h"
 #include "support/storage.h"
 #include "support/support.h"
 #include "umps/arch.h"
@@ -162,7 +161,8 @@ inline void active_interrupts()
 
 inline void release_sem_swap_pool_table()
 {
-    if (true) // TODO: ho il possesso della risorsa?
+    if (get_swap_pool_baton(
+            ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0))->sup_asid))
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
 }
 
@@ -177,6 +177,7 @@ inline void tlb_exceptionhandler()
         // gain mutual exclusion over swap pool table
         SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
                 0); /* P(sem_swap_pool_table) */
+        set_swap_pool_baton(support->sup_asid, true);
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int victim_frame = pick_page();
         size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
@@ -239,6 +240,7 @@ inline void tlb_exceptionhandler()
 
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
                 0); /* V(sem_swap_pool_table) */
+        set_swap_pool_baton(support->sup_asid, false);
 
         // pandos_kprintf("fine tlb_handler %p\n", saved_state->pc_epc);
         load_state(saved_state);
