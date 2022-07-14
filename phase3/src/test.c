@@ -35,9 +35,11 @@ void test()
     status_kernel_mode_on_process(&support_status);
 
     RAMTOP(ramtop);
-    for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
+    for (size_t i = 0; i < UPROCMAX; ++i) {
         // NOTE: the ASID of the process is i+1
         const size_t asid = i + 1;
+        if (i == 1)
+            continue;
 
         pstate.entry_hi = asid << ASIDSHIFT;
 

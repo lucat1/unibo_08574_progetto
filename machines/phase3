@@ -8,35 +8,35 @@
     "devices": {
         "flash0": {
             "enabled": true,
-            "file": "../build/phase3/strConcat.umps"
+            "file": "/home/luca/Downloads/testers/strConcat.umps"
         },
         "flash1": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest2.umps"
+            "file": "/home/luca/Downloads/testers/terminalTest2.umps"
         },
         "flash2": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest3.umps"
+            "file": "/home/luca/Downloads/testers/terminalTest3.umps"
         },
         "flash3": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest4.umps"
+            "file": "/home/luca/Downloads/testers/terminalTest4.umps"
         },
         "flash4": {
             "enabled": true,
-            "file": "../build/phase3/terminalTest5.umps"
+            "file": "/home/luca/Downloads/testers/terminalTest5.umps"
         },
         "flash5": {
             "enabled": true,
-            "file": "../build/phase3/fibEight.umps"
+            "file": "/home/luca/Downloads/testers/fibEight.umps"
         },
         "flash6": {
             "enabled": true,
-            "file": "../build/phase3/printerTest.umps"
+            "file": "/home/luca/Downloads/testers/printerTest.umps"
         },
         "flash7": {
             "enabled": true,
-            "file": "../build/phase3/fibEleven.umps"
+            "file": "/home/luca/Downloads/testers/fibEleven.umps"
         },
         "printer0": {
             "enabled": true,
@@ -111,5 +111,5 @@
         "file": "../build/phase2/phase2.stab.umps"
     },
     "tlb-floor-address": "0x80000000",
-    "tlb-size": 16
-}
+      "tlb-size": 16
+  }

@@ -26,7 +26,7 @@ inline int *get_semaphore(int int_l, int dev_n, bool is_w)
 
     sem = (int_l - IL_DISK) * DEVPERINT;
     if (int_l == IL_TERMINAL) {
-        sem += 2 * dev_n + (int)is_w;
+        sem += 2 * dev_n + (is_w ? 1 : 0);
     } else {
         sem += dev_n;
     }

@@ -9,6 +9,7 @@
 #ifndef PANDOS_ARCH_DEVICES_H
 #define PANDOS_ARCH_DEVICES_H
 
+#include "arch/processor.h"
 #include "os/ctypes.h"
 
 #ifdef __x86_64__
@@ -52,7 +53,7 @@ extern void status_il_on(size_t *prev, int line);
  * \param[out] time The address of the variable where the time of day is to be
  * stored.
  */
-extern void store_tod(int *time);
+extern void store_tod(cpu_t *time);
 
 /**
  * \brief Loads a new value for the interval timer.

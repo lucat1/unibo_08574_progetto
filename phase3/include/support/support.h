@@ -5,18 +5,4 @@
 
 extern void support_generic();
 
-void support_trap();
-
-void support_syscall(support_t *current_support);
-
-void sys_read_terminal();
-
-size_t sys_write_terminal();
-
-size_t sys_write_printer();
-
-void sys_get_tod();
-
-size_t syscall_writer(void *termid, char *msg, size_t len);
-
 #endif /* PANDOS_SUPPORT_H */

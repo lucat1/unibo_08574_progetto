@@ -37,6 +37,6 @@ inline iodev_t get_iodev(size_t *cmd_addr)
 inline void status_il_on_all(size_t *prev) { *prev |= STATUS_IM_MASK; }
 inline void status_il_on(size_t *prev, int line) { *prev |= STATUS_IM(line); }
 
-inline void store_tod(int *time) { STCK(*time); }
+inline void store_tod(cpu_t *time) { STCK(*time); }
 inline void load_interval_timer(int time) { LDIT(time); }
 inline void load_local_timer(int time) { setTIMER(TRANSLATE_TIME(time)); }
