@@ -93,7 +93,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
 {
     int il = IL_DISK;
     /* inverse priority */
-    for (int i = IL_DISK; i < IL_PRINTER; i++) {
+    for (int i = IL_DISK; i < IL_PRINTER+1; i++) {
         if (cause & CAUSE_IP(i)) {
             il = i;
             break;
