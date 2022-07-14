@@ -68,6 +68,15 @@ void status_local_timer_toggle(size_t *prev)
 {
     *prev ^= MOCK_INTERRUPTS_LOCAL_TIMER;
 }
+void status_local_timer_on(size_t *prev)
+{
+    *prev |= MOCK_INTERRUPTS_LOCAL_TIMER;
+}
+void status_local_timer_off(size_t *prev)
+{
+    *prev |= MOCK_INTERRUPTS_LOCAL_TIMER;
+    *prev ^= MOCK_INTERRUPTS_LOCAL_TIMER;
+}
 void status_kernel_mode_on_nucleus(size_t *prev)
 {
     *prev |= MOCK_KERNEL_MODE_ON_NUCLEUS;

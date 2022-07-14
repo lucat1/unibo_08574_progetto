@@ -3,10 +3,8 @@
 
 #include <umps/libumps.h>
 
-#include "os/util.h"
 #include "test/print.h"
 #include "test/tconst.h"
-
 
 void main()
 {

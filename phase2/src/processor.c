@@ -52,29 +52,41 @@ inline void wait() { WAIT(); }
 inline void set_status(size_t status) { setSTATUS(status); }
 inline size_t get_status() { return getSTATUS(); }
 inline size_t get_cause() { return getCAUSE(); }
-inline void status_interrupts_on_nucleus(size_t *prev)
-{
-    *prev |= STATUS_IEc;
-}
+inline void status_interrupts_on_nucleus(size_t *prev) { *prev |= STATUS_IEc; }
 inline void status_interrupts_off_nucleus(size_t *prev)
 {
-    *prev |= STATUS_IEc ;
+    *prev |= STATUS_IEc;
     *prev ^= STATUS_IEc;
 }
-inline void status_interrupts_on_process(size_t *prev)
-{
-    *prev |= STATUS_IEp;
-}
+inline void status_interrupts_on_process(size_t *prev) { *prev |= STATUS_IEp; }
 inline void status_local_timer_toggle(size_t *prev) { *prev ^= STATUS_TE; }
-inline void status_local_timer_on(size_t *prev) { *prev |= STATUS_TE | STATUS_IM(IL_TIMER); }
-inline void status_local_timer_off(size_t *prev) { *prev |= STATUS_TE | STATUS_IM(IL_TIMER);; *prev ^= STATUS_TE | STATUS_IM(IL_TIMER);; }
-inline void status_local_timer_on_process(size_t *prev) { *prev |= STATUS_TE | STATUS_IM(IL_TIMER); }
-inline void status_kernel_mode_on_nucleus(size_t *prev) { *prev |= STATUS_KUc; *prev ^= STATUS_KUc; }
+inline void status_local_timer_on(size_t *prev)
+{
+    *prev |= STATUS_TE | STATUS_IM(IL_TIMER);
+}
+inline void status_local_timer_off(size_t *prev)
+{
+    *prev |= STATUS_TE | STATUS_IM(IL_TIMER);
+    *prev ^= STATUS_TE | STATUS_IM(IL_TIMER);
+}
+inline void status_local_timer_on_process(size_t *prev)
+{
+    *prev |= STATUS_TE | STATUS_IM(IL_TIMER);
+}
+inline void status_kernel_mode_on_nucleus(size_t *prev)
+{
+    *prev |= STATUS_KUc;
+    *prev ^= STATUS_KUc;
+}
 inline void status_kernel_mode_off_nucleus(size_t *prev)
 {
     *prev |= STATUS_KUc;
 }
-inline void status_kernel_mode_on_process(size_t *prev) { *prev |= STATUS_KUp; *prev ^= STATUS_KUp; }
+inline void status_kernel_mode_on_process(size_t *prev)
+{
+    *prev |= STATUS_KUp;
+    *prev ^= STATUS_KUp;
+}
 inline void status_kernel_mode_off_process(size_t *prev)
 {
     *prev |= STATUS_KUc;

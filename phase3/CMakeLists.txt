@@ -3,7 +3,6 @@ add_library(${PROJECT_NAME}
     src/support.c
     src/test.c
     src/print.c
-    src/memory.c
     src/storage.c
     src/pager.c
 )
@@ -39,14 +38,13 @@ foreach(TST ${TEST_FILES})
     add_test(${TST} ${TST})
 
     target_compile_options(${TST} PRIVATE ${CFLAGS_ALL})
-    target_link_options(${TST} PRIVATE ${LDFLAGS_ALL})
+    target_link_options(${TST} PRIVATE -G0 -nostdlib -T ${UMPS3_DIR_PREFIX}/share/umps3/umpsaout.ldscript)
     target_include_directories(${TST}
       PUBLIC ${PROJECT_SOURCE_DIR}/include
-      PUBLIC ${PROJECT_SOURCE_DIR}/test
       PUBLIC ${UMPS3_DIR_PREFIX}/include/umps3)
     target_link_libraries(${TST}
         sub::libumps
-        sub::crtso
+        sub::crti
     )
     add_custom_command(TARGET ${TST} POST_BUILD
         COMMAND umps3-elf2umps -a ${TST}

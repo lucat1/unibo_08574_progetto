@@ -1,5 +1,5 @@
 project (os)
-list(APPEND ASMS crtso libumps)
+list(APPEND ASMS crtso crti libumps)
 list(APPEND TRGTS ${PROJECT_NAME})
 
 add_library(${PROJECT_NAME}

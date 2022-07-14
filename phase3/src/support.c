@@ -18,8 +18,6 @@
 #define WRITETERMINAL 4
 #define READTERMINAL 5
 
-void support_tlb() { tlb_exceptionhandler(); }
-
 inline void support_generic()
 {
     // pandos_kprintf("Start of support generic\n");

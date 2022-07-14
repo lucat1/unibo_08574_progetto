@@ -14,7 +14,7 @@
 
 bool pcb_free_contains(pcb_t *p)
 {
-    if (p == NULL || &p->p_list == NULL) {
+    if (p == NULL) {
         return false;
     }
     return list_contains(&p->p_list, get_pcb_free());
