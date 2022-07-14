@@ -2,14 +2,25 @@
 #define PANDOS_PAGER_H
 
 #include "arch/processor.h"
-#include "os/ctypes.h"
+#include "os/const.h"
 #include "os/types.h"
 
 #define STACK_PAGE_NUMBER (GETPAGENO >> VPNSHIFT)
 
-// la roba che va utilizzata da altre parti deve essere non static tipo
-// page_addr
+typedef swap_t swap_table_t[MAXPAGES];
+typedef pte_entry_t pte_entry_table[MAXPAGES];
 
+extern swap_t swap_pool_table[POOLSIZE];
+extern int swap_pool_sem;
+
+extern bool init_page_table(pte_entry_table page_table, int asid);
+extern void support_tlb();
+extern void tlb_refill_handler();
+
+extern void set_swap_pool_baton(int asid, bool value);
+extern bool get_swap_pool_baton(int asid);
+
+// controllare l'utilita' di questi export
 extern size_t index_to_vpn(size_t index);
 extern size_t vpn_to_index(size_t vpn);
 extern size_t entryhi_to_vpn(memaddr entryhi);

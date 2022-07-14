@@ -3,7 +3,7 @@
 #include "os/const.h"
 #include "os/types.h"
 #include "os/util.h"
-#include "support/memory.h"
+#include "support/pager.h"
 #include "support/print.h"
 #include "support/support.h"
 #include <umps/libumps.h>
@@ -23,24 +23,16 @@ void test()
     // store_state(&pstate);
     pstate.reg_sp = (memaddr)USERSTACKTOP;
     pstate.pc_epc = pstate.reg_t9 = (memaddr)UPROCSTARTADDR;
-    // status_local_timer_on(&pstate.status);
-    // status_interrupts_on_process(&pstate.status);
-    // status_il_on_all(&pstate.status);
-    status_local_timer_off(&pstate.status);
+    status_local_timer_on(&pstate.status);
+    status_interrupts_on_process(&pstate.status);
+    status_il_on_all(&pstate.status);
     status_kernel_mode_off_process(&pstate.status);
-    status_kernel_mode_off_nucleus(&pstate.status);
-
-    pstate.status = IMON | IEPON | USERPON;
 
     support_status = pstate.status;
-    // status_local_timer_on(&support_status);
-    // status_interrupts_on_process(&support_status);
-    // status_il_on_all(&support_status);
-    status_local_timer_off(&support_status);
+    status_local_timer_on(&support_status);
+    status_interrupts_on_process(&support_status);
+    status_il_on_all(&support_status);
     status_kernel_mode_on_process(&support_status);
-    status_kernel_mode_on_nucleus(&support_status);
-
-    support_status = IMON | IEPON;
 
     RAMTOP(ramtop);
     for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
@@ -64,9 +56,6 @@ void test()
         support_structures[i].sup_except_context[GENERALEXCEPT].status =
             support_status;
 
-        // TODO
-        // passare per riferimento qualcosa che cambia in un for non e'
-        // rischioso??
         SYSCALL(CREATEPROCESS, (int)&pstate, PROCESS_PRIO_LOW,
                 (int)(support_structures + i));
     }

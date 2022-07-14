@@ -4,7 +4,6 @@
 #include "os/ctypes.h"
 #include "os/scheduler.h"
 #include "os/util.h"
-#include "support/memory.h"
 #include "support/storage.h"
 #include "support/support.h"
 #include "umps/arch.h"
@@ -14,8 +13,58 @@
 
 #define SWAP_POOL_ADDR (KSEG1 + (32 * PAGESIZE))
 #define CAUSE_TLB_MOD 1
+#define PAGE_TABLE_ENTRY_LOW 5
 
 int sem_swap_pool_table = 1;
+int swap_pool_sem;
+static bool swap_pool_batons[UPROCMAX];
+swap_t swap_pool_table[POOLSIZE];
+
+inline bool init_page_table(pte_entry_table page_table, int asid)
+{
+    if (page_table == NULL || asid <= 0 || asid > UPROCMAX)
+        return false;
+
+    const size_t last_page_index = MAXPAGES - 1;
+
+    for (size_t i = 0; i < last_page_index; ++i) {
+        page_table[i].pte_entry_hi =
+            KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
+        page_table[i].pte_entry_lo = DIRTYON;
+    }
+    page_table[last_page_index].pte_entry_hi =
+        KUSEG + GETPAGENO + (asid << ASIDSHIFT);
+    page_table[last_page_index].pte_entry_lo = DIRTYON;
+
+    swap_pool_batons[asid - 1] = false;
+
+    return true;
+}
+
+inline static bool is_valid_asid(int asid)
+{
+    return 0 < asid && asid <= UPROCMAX;
+}
+
+inline void set_swap_pool_baton(int asid, bool value)
+{
+    if (!is_valid_asid(asid)) {
+        pandos_kfprintf(&kstderr,
+                        "memory.c: set_swap_pool_baton: invalid asid\n");
+        PANIC();
+    }
+    swap_pool_batons[asid - 1] = value;
+}
+
+inline bool get_swap_pool_baton(int asid)
+{
+    if (!is_valid_asid(asid)) {
+        pandos_kfprintf(&kstderr,
+                        "memory.c: get_swap_pool_baton: invalid asid\n");
+        PANIC();
+    }
+    return swap_pool_batons[asid - 1];
+}
 
 // TODO: use another algorithm
 size_t i = -1;
@@ -166,7 +215,21 @@ inline void release_sem_swap_pool_table()
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
 }
 
-inline void tlb_exceptionhandler()
+inline void tlb_refill_handler()
+{
+    state_t *saved_state = (state_t *)BIOSDATAPAGE;
+    // pandos_kprintf("tlb_refill_handler %p\n", saved_state->entry_hi);
+    size_t index = entryhi_to_index(saved_state->entry_hi);
+    // pandos_kprintf("tlb_refill of #%d -> %p done\n", index, saved_state);
+    pte_entry_t pte = active_process->p_support->sup_private_page_table[index];
+
+    add_random_in_tlb(pte);
+    // saved_state->pc_epc = saved_state->reg_t9 = 0x800000b0;
+    // saved_state->reg_sp = 0x800000b0;
+    load_state(saved_state);
+}
+
+inline void support_tlb()
 {
     support_t *support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     size_t cause = support->sup_except_state[PGFAULTEXCEPT].cause;

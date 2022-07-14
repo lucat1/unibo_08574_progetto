@@ -2,7 +2,6 @@
 #define PANDOS_SUPPORT_H
 
 #include "arch/processor.h"
-extern void support_tlb();
 
 extern void support_generic();
 

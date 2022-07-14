@@ -18,13 +18,6 @@
 #define WRITETERMINAL 4
 #define READTERMINAL 5
 
-// TODO : uTLB RefillHandler
-void support_tlb()
-{
-    pandos_kprintf("!!!!!support_tlb\n");
-    tlb_exceptionhandler();
-}
-
 // TODO
 inline void support_generic()
 {
