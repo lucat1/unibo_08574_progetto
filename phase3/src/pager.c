@@ -142,7 +142,7 @@ inline void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
 inline void update_page_table(pte_entry_t page_table[], size_t index,
                               memaddr frame_addr)
 {
-    page_table[index].pte_entry_lo = (SWAP_POOL_ADDR) | VALIDON | DIRTYON;
+    page_table[index].pte_entry_lo = (frame_addr) | VALIDON | DIRTYON;
 }
 
 inline void deactive_interrupts()
