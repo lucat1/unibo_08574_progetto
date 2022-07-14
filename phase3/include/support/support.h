@@ -2,7 +2,6 @@
 #define PANDOS_SUPPORT_H
 
 #include "arch/processor.h"
-extern void support_tlb();
 
 extern void support_generic();
 
@@ -19,6 +18,5 @@ void sys_write_printer();
 void sys_get_tod();
 
 size_t syscall_writer(void *termid, char *msg, size_t len);
-
 
 #endif /* PANDOS_SUPPORT_H */

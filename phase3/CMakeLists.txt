@@ -3,7 +3,6 @@ add_library(${PROJECT_NAME}
     src/support.c
     src/test.c
     src/print.c
-    src/memory.c
     src/storage.c
     src/pager.c
 )
