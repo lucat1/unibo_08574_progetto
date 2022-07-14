@@ -13,7 +13,7 @@ void sys_read_terminal();
 
 size_t sys_write_terminal();
 
-void sys_write_printer();
+size_t sys_write_printer();
 
 void sys_get_tod();
 

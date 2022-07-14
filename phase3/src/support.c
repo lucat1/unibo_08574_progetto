@@ -54,7 +54,7 @@ void sys_get_tod()
 #define PRINTCHR 2
 #define RECVD 5
 
-void sys_write_printer()
+size_t sys_write_printer()
 {
     /* TODO: Check for all the possible error causes*/
     /*support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
@@ -90,21 +90,24 @@ void sys_write_printer()
     dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, (int)termid);
     unsigned int status;
 
+    pandos_kfprintf(&kdebug, "string: %s\n", s);
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
-    while (*s != EOS) {
-        device->data0 = *s;
-        pandos_kfprintf(&kdebug, "About to print %c\n", *s);
+    size_t i;
+    for (i = 0; i < len; ++i) {
+        device->data0 = s[i];
+        pandos_kfprintf(&kdebug, "About to print %c\n", s[i]);
         status = SYSCALL(DOIO, (int)&device->command, (int)PRINTCHR, 0);
-        pandos_kfprintf(&kdebug, "Printed %c\n", *s);
-        if ((status & TERMSTATMASK) != RECVD) {
+        pandos_kfprintf(&kdebug, "Printed %c\n", s[i]);
+        if (device->status != DEV_STATUS_READY) {
+            pandos_kfprintf(&kdebug, "status %d\n", device->status);
             current_support->sup_except_state[GENERALEXCEPT].reg_v0 =
                 -(status & TERMSTATMASK);
-            return;
+            return -device->status;
         }
-        s++;
     }
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0);
     current_support->sup_except_state[GENERALEXCEPT].reg_v0 = len;
+    return i;
 }
 
 size_t sys_write_terminal()
@@ -153,7 +156,7 @@ void support_syscall(support_t *current_support)
             SYSCALL(TERMPROCESS, 0, 0, 0);
             break;
         case WRITEPRINTER:
-            sys_write_printer();
+            res = sys_write_printer();
             break;
         case WRITETERMINAL:
             res = sys_write_terminal();

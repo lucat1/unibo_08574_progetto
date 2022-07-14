@@ -35,7 +35,7 @@ void test()
     status_kernel_mode_on_process(&support_status);
 
     RAMTOP(ramtop);
-    for (size_t i = 6; i < 7 /*UPROCMAX*/; ++i) {
+    for (size_t i = 1; i < 2 /*UPROCMAX*/; ++i) {
         // NOTE: the ASID of the process is i+1
         const size_t asid = i + 1;
 
