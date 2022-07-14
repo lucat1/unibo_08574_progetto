@@ -22,7 +22,7 @@ size_t syscall_writer(void *termid, const char *msg, size_t len)
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
-        status = SYSCALL(DOIO, (int)command, (int)value, 0);
+        status = SYSCALL(DOIO, (unsigned int)command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
             PANIC();
         }
