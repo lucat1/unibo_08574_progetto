@@ -56,29 +56,6 @@ void sys_get_tod()
 
 size_t sys_write_printer()
 {
-    /* TODO: Check for all the possible error causes*/
-    /*support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
-    int asid = current_support->sup_asid;
-    dtpreg_t *base = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, asid);
-    int *sem_term_mut = get_semaphore(IL_PRINTER, asid, false);
-
-    SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
-    while (*s != EOS) {
-        base->data0 = (char)s;
-        pandos_kfprintf(&kdebug, "About to print %c\n", base->data0);
-        base->command = TRANSMITCHAR;
-        while (base->status == DEV_STATUS_BUSY);
-        if (base->status != DEV_STATUS_READY) {
-            PANIC();
-        }
-        pandos_kfprintf(&kdebug, "printed a thing\n");
-        base->command = DEV_C_ACK;
-        s++;
-    }
-    SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0);
-    current_support->sup_except_state[GENERALEXCEPT].reg_v0 =
-    current_support->sup_except_state[GENERALEXCEPT].reg_a2;*/
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     size_t termid = current_support->sup_asid;
     char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
@@ -90,16 +67,12 @@ size_t sys_write_printer()
     dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, (int)termid);
     unsigned int status;
 
-    pandos_kfprintf(&kdebug, "string: %s\n", s);
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0);
     size_t i;
     for (i = 0; i < len; ++i) {
         device->data0 = s[i];
-        pandos_kfprintf(&kdebug, "About to print %c\n", s[i]);
         status = SYSCALL(DOIO, (int)&device->command, (int)PRINTCHR, 0);
-        pandos_kfprintf(&kdebug, "Printed %c\n", s[i]);
         if (device->status != DEV_STATUS_READY) {
-            pandos_kfprintf(&kdebug, "status %d\n", device->status);
             current_support->sup_except_state[GENERALEXCEPT].reg_v0 =
                 -(status & TERMSTATMASK);
             return -device->status;
@@ -121,24 +94,28 @@ size_t sys_write_terminal()
 }
 
 #define RECEIVE_CHAR 2
-void sys_read_terminal_v2()
+#define RECEIVE_STATUS(v) ((v)&0xF)
+#define RECEIVE_VALUE(v) ((v) >> 8)
+size_t sys_read_terminal_v2()
 {
-    // typedef unsigned int devregtr;
-    state_t *current_state = ((state_t *)BIOSDATAPAGE);
-    SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    int asid = ((support_t *)current_state->reg_v0)->sup_asid;
-    termreg_t *base = (termreg_t *)(DEV_REG_ADDR(IL_TERMINAL, asid));
-    int *sem_term_mut = get_semaphore(IL_TERMINAL, asid, false);
-    SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    base->recv_command = RECEIVE_CHAR;
-    // status = SYSCALL(DOIO, (int)command, (int)value, 0);
-    if (base->recv_status != DEV_STATUS_TERMINAL_OK) {
-        PANIC();
+    size_t read = 0;
+    char r = EOS;
+    support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    termreg_t *base = (termreg_t *)(DEV_REG_ADDR(
+        IL_TERMINAL, (int)current_support->sup_asid));
+    // char *buf = (char
+    // *)current_support->sup_except_state[GENERALEXCEPT].reg_v1;
+    while (r != '\n') {
+        size_t status =
+            SYSCALL(DOIO, (int)&base->recv_command, (int)RECEIVE_CHAR, 0);
+        if (RECEIVE_STATUS(status) != DEV_STATUS_TERMINAL_OK) {
+            return -RECEIVE_STATUS(status);
+        }
+        r = RECEIVE_VALUE(status);
+        // TODO:
+        // *(buf + read++) = r;
     }
-    char *msg = (char *)base->recv_command;
-    base->recv_command = DEV_C_ACK;
-    SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
-    current_state->reg_a1 = (unsigned int)msg;
+    return read;
 }
 
 void support_syscall(support_t *current_support)
@@ -162,6 +139,7 @@ void support_syscall(support_t *current_support)
             res = sys_write_terminal();
             break;
         case READTERMINAL:
+            res = sys_read_terminal_v2();
             break;
         default:
             /*idk*/

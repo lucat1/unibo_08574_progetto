@@ -79,9 +79,10 @@
 #define GET_DEVICE_NUMBER_FROM_COMMAND(cmd)                                    \
     (((size_t)cmd - DEV_REG_START) / DEV_REG_SIZE)
 #define GET_DEVICE_FROM_COMMAND(cmd)                                           \
-    (int *)(DEV_REG_SIZE * GET_DEVICE_NUMBER_FROM_COMMAND(cmd) + DEV_REG_START)
+    (size_t *)(DEV_REG_SIZE * GET_DEVICE_NUMBER_FROM_COMMAND(cmd) +            \
+               DEV_REG_START)
 #define TERMINAL_GET_COMMAND_TYPE(cmd)                                         \
-    (size_t)(cmd - (size_t)GET_DEVICE_FROM_COMMAND(cmd))
+    (size_t)(cmd - GET_DEVICE_FROM_COMMAND(cmd))
 #define TERMINAL_CHECK_IS_WRITING(cmd)                                         \
     TERMINAL_GET_COMMAND_TYPE(cmd) == 2 || TERMINAL_GET_COMMAND_TYPE(cmd) == 3
 

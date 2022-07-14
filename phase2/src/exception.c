@@ -31,7 +31,6 @@ size_t find_device_number(memaddr *bitmap)
 {
     size_t device_n = 0;
 
-    // ehhh luca luca
     size_t val = *bitmap;
     while (val > 1 && device_n < N_DEV_PER_IL) {
         ++device_n;
@@ -134,8 +133,8 @@ static inline scheduler_control_t interrupt_terminal()
     memaddr(statuses[2]) = {term_reg->transm_status, term_reg->recv_status};
     memaddr(*commands[2]) = {&term_reg->transm_command,
                              &term_reg->recv_command};
-    int *sem[] = {get_semaphore(IL_TERMINAL, devicenumber, false),
-                  get_semaphore(IL_TERMINAL, devicenumber, true)};
+    int *sem[] = {get_semaphore(IL_TERMINAL, devicenumber, true),
+                  get_semaphore(IL_TERMINAL, devicenumber, false)};
 
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
