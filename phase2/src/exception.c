@@ -215,7 +215,7 @@ inline void exception_handler()
         case 1:
         case 2:
         case 3:
-            pandos_kprintf("PGFAULT %d\n", CAUSE_GET_EXCCODE(get_cause()));
+            // pandos_kprintf("PGFAULT %d\n", CAUSE_GET_EXCCODE(get_cause()));
             ctrl = pass_up_or_die((memaddr)PGFAULTEXCEPT);
             break;
         case 8:
