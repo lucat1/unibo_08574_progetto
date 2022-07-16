@@ -95,7 +95,7 @@ static inline size_t syscall_writer(void *termid, char *msg, size_t len)
 
     // if ((size_t)termid == 0)
     //     pandos_kfprintf(&kdebug, "writing from %p\n", s);
-    while (*s != EOS) {
+    for (size_t i = 0; i < len; ++i) {
         unsigned int value = PRINTCHR | (((unsigned int)*s) << 8);
         status = SYSCALL(DOIO, (int)&device->transm_command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
