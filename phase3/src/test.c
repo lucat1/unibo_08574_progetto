@@ -7,12 +7,26 @@
 #include "os/util.h"
 #include "support/pager.h"
 #include "support/print.h"
+#include "support/storage.h"
 #include "support/support.h"
 #include "umps/arch.h"
 #include "umps/types.h"
 #include <umps/libumps.h>
 
 static support_t support_structures[UPROCMAX];
+
+static inline void protect_page_table_entries(int asid)
+{
+    int data[1024], read_status = read_flash(asid, 0, (void *)data);
+    if (read_status != DEV_STATUS_READY) {
+        pandos_kfprintf(&kstderr, "ERR: ppte %d, %d\n", asid, read_status);
+        support_trap();
+    }
+    int text_file_size = data[5] / 1024;
+    for (int i = 0; i < text_file_size; ++i)
+        support_structures[asid - 1].sup_private_page_table[0].pte_entry_lo ^=
+            DIRTYON;
+}
 
 void test()
 {
@@ -81,6 +95,7 @@ void test()
 
         SYSCALL(CREATEPROCESS, (int)&pstate, PROCESS_PRIO_LOW,
                 (int)(support_structures + i));
+        protect_page_table_entries(asid);
     }
     // SYSCALL(TERMPROCESS, 0, 0, 0);
     int block = 0;

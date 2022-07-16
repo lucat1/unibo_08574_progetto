@@ -7,8 +7,6 @@
 
 #define FLASHCMDSHIFT 8
 
-char data[4 * 1024];
-
 int read_flash(unsigned int dev, size_t block, void *dest)
 {
     deactive_interrupts();
