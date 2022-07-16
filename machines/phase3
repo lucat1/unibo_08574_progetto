@@ -8,35 +8,35 @@
     "devices": {
         "flash0": {
             "enabled": true,
-            "file": "/root/pandosplus/strConcat.umps"
+            "file": "../build/phase3/strConcat.umps"
         },
         "flash1": {
             "enabled": true,
-            "file": "/root/pandosplus/terminalTest2.umps"
+            "file": "../build/phase3/terminalTest2.umps"
         },
         "flash2": {
             "enabled": true,
-            "file": "/root/pandosplus/terminalTest3.umps"
+            "file": "../build/phase3/terminalTest3.umps"
         },
         "flash3": {
             "enabled": true,
-            "file": "/root/pandosplus/terminalTest4.umps"
+            "file": "../build/phase3/terminalTest4.umps"
         },
         "flash4": {
             "enabled": true,
-            "file": "/root/pandosplus/terminalTest5.umps"
+            "file": "../build/phase3/terminalTest5.umps"
         },
         "flash5": {
             "enabled": true,
-            "file": "/root/pandosplus/fibEight.umps"
+            "file": "../build/phase3/fibEight.umps"
         },
         "flash6": {
             "enabled": true,
-            "file": "/root/pandosplus/printerTest.umps"
+            "file": "../build/phase3/printerTest.umps"
         },
         "flash7": {
             "enabled": true,
-            "file": "/root/pandosplus/fibEleven.umps"
+            "file": "../build/phase3/fibEleven.umps"
         },
         "printer0": {
             "enabled": true,
