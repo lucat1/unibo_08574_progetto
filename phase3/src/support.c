@@ -17,6 +17,7 @@
 static int sys3_semaphores[UPROCMAX];
 static int sys4_semaphores[UPROCMAX];
 static int sys5_semaphores[UPROCMAX];
+static int master_semaphore = 0;
 
 void init_sys_semaphores()
 {
@@ -29,6 +30,16 @@ inline void support_trap()
     pandos_kprintf("!!!!!support_trap\n");
     release_sem_swap_pool_table();
     SYSCALL(TERMINATE, 0, 0, 0);
+}
+
+static inline void master_semaphore_v()
+{
+    SYSCALL(VERHOGEN, (int)&master_semaphore, 0, 0);
+}
+
+inline void master_semaphore_p()
+{
+    SYSCALL(PASSEREN, (int)&master_semaphore, 0, 0);
 }
 
 static inline size_t sys_get_tod()
@@ -149,6 +160,7 @@ static inline void sys_terminate()
 {
     mark_frames_as_unoccupied(
         ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0))->sup_asid);
+    master_semaphore_v();
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 

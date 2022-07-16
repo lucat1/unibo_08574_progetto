@@ -96,7 +96,7 @@ void test()
                 (int)(support_structures + i));
         protect_page_table_entries(asid);
     }
-    // SYSCALL(TERMPROCESS, 0, 0, 0);
-    int block = 0;
-    SYSCALL(PASSEREN, (unsigned int)&block, 0, 0);
+    for (size_t i = 0; i < UPROCMAX; ++i)
+        master_semaphore_p();
+    SYSCALL(TERMPROCESS, 0, 0, 0);
 }
