@@ -142,7 +142,7 @@ static inline scheduler_control_t interrupt_terminal()
         if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
             scheduler_panic("Device is not installed!\n");
 
-        pandos_kfprintf(&kdebug, "io_ack: %p\n", sem[0]);
+        // pandos_kfprintf(&kdebug, "io_ack: %p\n", sem[0]);
         if ((status & TERMSTATMASK) == DEV_STATUS_TERMINAL_OK) {
             pcb_t *p = V(sem[i]);
             scheduler_control_t ctrl;

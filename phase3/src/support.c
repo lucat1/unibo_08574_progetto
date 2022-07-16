@@ -46,13 +46,9 @@ static inline size_t sys_write_printer()
     for (i = 0; i < len; ++i) {
         device->data0 = s[i];
         status = SYSCALL(DOIO, (int)&device->command, (int)PRINTCHR, 0);
-        if (device->status != DEV_STATUS_READY) {
-            current_support->sup_except_state[GENERALEXCEPT].reg_v0 =
-                -(status & TERMSTATMASK);
-            return -device->status;
-        }
+        if (device->status != DEV_STATUS_READY)
+            return -(status & TERMSTATMASK);
     }
-    current_support->sup_except_state[GENERALEXCEPT].reg_v0 = len;
     return i;
 }
 
@@ -66,7 +62,7 @@ static inline size_t sys_read_terminal_v2()
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     termreg_t *base = (termreg_t *)(DEV_REG_ADDR(
         IL_TERMINAL, (int)current_support->sup_asid - 1));
-    char *buf = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_v1;
+    char *buf = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
     if ((memaddr)buf >= KUSEG + (MAXPAGES - 1) * PAGESIZE &&
         ((memaddr)buf >> VPNSHIFT) != (KUSEG + GETPAGENO) >> VPNSHIFT) {
         support_trap();
@@ -78,30 +74,35 @@ static inline size_t sys_read_terminal_v2()
             return -RECEIVE_STATUS(status);
         }
         r = RECEIVE_VALUE(status);
-        if (r != '\n') {
-            pandos_kfprintf(&kdebug, "writing %c to %p\n", r, (buf + read));
-            *(buf + read++) = r;
-        }
+        // if (r != '\n')
+        //     pandos_kfprintf(&kdebug, "reading %c to %p\n", r, (buf + read));
+        *(buf + read) = r;
+        ++read;
     }
-    *(buf + read++) = EOS;
-    pandos_kfprintf(&kdebug, "read: %d\n", read);
+    *(buf + read) = EOS;
+    // pandos_kfprintf(&kdebug, "read: %d\n", read);
     return read;
 }
 
 static inline size_t syscall_writer(void *termid, char *msg, size_t len)
 {
     termreg_t *device = (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, (int)termid);
-    if ((size_t)termid == 0)
-        pandos_kfprintf(&kdebug, "devregaddr: %p\n", &device->transm_command);
+    // if ((size_t)termid == 0)
+    //     pandos_kfprintf(&kdebug, "devregaddr: %p\n",
+    //     &device->transm_command);
     char *s = msg;
     unsigned int status;
 
+    // if ((size_t)termid == 0)
+    //     pandos_kfprintf(&kdebug, "writing from %p\n", s);
     while (*s != EOS) {
         unsigned int value = PRINTCHR | (((unsigned int)*s) << 8);
         status = SYSCALL(DOIO, (int)&device->transm_command, (int)value, 0);
         if ((status & TERMSTATMASK) != RECVD) {
             return -(status & TERMSTATMASK);
         }
+        // if ((size_t)termid == 0)
+        //     pandos_kfprintf(&kdebug, "writing %c\n", *s);
         s++;
     }
     return len;
@@ -139,27 +140,29 @@ static inline size_t sys_write_terminal()
 static inline void support_syscall(support_t *current_support)
 {
     pandos_kprintf("!!!!!support_syscall\n");
+    active_process->p_s.pc_epc = active_process->p_s.reg_t9 += WORD_SIZE;
     const int id = (int)current_support->sup_except_state[GENERALEXCEPT].reg_a0;
     pandos_kprintf("Code %d\n", id);
+    size_t result;
     switch (id) {
         case GET_TOD:
-            sys_get_tod();
+            result = sys_get_tod();
             break;
         case WRITEPRINTER:
-            sys_write_printer();
+            result = sys_write_printer();
             break;
         case WRITETERMINAL:
-            sys_write_terminal();
+            result = sys_write_terminal();
             break;
         case READTERMINAL:
-            sys_read_terminal_v2();
+            result = sys_read_terminal_v2();
             break;
         case TERMINATE:
         default:
             SYSCALL(TERMPROCESS, 0, 0, 0);
             return;
     }
-    active_process->p_s.pc_epc = active_process->p_s.reg_t9 += WORD_SIZE;
+    current_support->sup_except_state[GENERALEXCEPT].reg_v0 = result;
 }
 
 inline void support_generic()
