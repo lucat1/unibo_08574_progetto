@@ -28,7 +28,7 @@ inline void support_trap()
 {
     pandos_kprintf("!!!!!support_trap\n");
     release_sem_swap_pool_table();
-    SYSCALL(TERMPROCESS, 0, 0, 0);
+    SYSCALL(TERMINATE, 0, 0, 0);
 }
 
 static inline size_t sys_get_tod()
@@ -57,7 +57,7 @@ static inline size_t sys_write_printer()
     int *semaphore = &sys3_semaphores[printerid];
 
     if (len < 0 || len > MAXLEN || (memaddr)s < KUSEG)
-        SYSCALL(TERMPROCESS, 0, 0, 0);
+        SYSCALL(TERMINATE, 0, 0, 0);
     SYSCALL(PASSEREN, (int)semaphore, 0, 0);
     for (size_t i = 0; i < len; ++i) {
         device->data0 = s[i];
@@ -85,7 +85,7 @@ static inline size_t sys_read_terminal_v2()
     int *semaphore = &sys5_semaphores[termid];
 
     if ((memaddr)buf < KUSEG)
-        SYSCALL(TERMPROCESS, 0, 0, 0);
+        SYSCALL(TERMINATE, 0, 0, 0);
     SYSCALL(PASSEREN, (int)semaphore, 0, 0);
     while (r != '\n') {
         size_t status =
@@ -141,8 +141,15 @@ static inline size_t sys_write_terminal()
     size_t len =
         (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
     if (len < 0 || len > MAXLEN || (memaddr)s < KUSEG)
-        SYSCALL(TERMPROCESS, 0, 0, 0);
+        SYSCALL(TERMINATE, 0, 0, 0);
     return syscall_writer((void *)(asid), s, len);
+}
+
+static inline void sys_terminate()
+{
+    mark_frames_as_unoccupied(
+        ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0))->sup_asid);
+    SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
 static inline void support_syscall(support_t *current_support)
@@ -167,7 +174,7 @@ static inline void support_syscall(support_t *current_support)
             break;
         case TERMINATE:
         default:
-            SYSCALL(TERMPROCESS, 0, 0, 0);
+            sys_terminate();
             return;
     }
     current_support->sup_except_state[GENERALEXCEPT].reg_v0 = result;

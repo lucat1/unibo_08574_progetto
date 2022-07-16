@@ -16,6 +16,7 @@ extern int swap_pool_sem;
 extern memaddr virtual_to_physical(support_t *sup, memaddr m);
 
 extern bool init_page_table(pte_entry_table page_table, int asid);
+extern void mark_frames_as_unoccupied(int asid);
 extern void set_swap_pool_baton(int asid, bool value);
 extern bool get_swap_pool_baton(int asid);
 extern void support_tlb();

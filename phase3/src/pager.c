@@ -12,7 +12,6 @@
 #include "umps/libumps.h"
 
 #define SWAP_POOL_ADDR (KSEG1 + (32 * PAGESIZE))
-#define CAUSE_TLB_MOD 1
 #define PAGE_TABLE_ENTRY_LOW 5
 #define CAUSE_TLB_MOD 1
 
@@ -41,6 +40,13 @@ inline bool init_page_table(pte_entry_table page_table, int asid)
     swap_pool_batons[asid - 1] = false;
 
     return true;
+}
+
+void mark_frames_as_unoccupied(int asid)
+{
+    for (size_t i = 0; i < POOLSIZE; ++i)
+        if (swap_pool_table[i].sw_asid == asid)
+            swap_pool_table[i].sw_asid = -1;
 }
 
 inline static bool is_valid_asid(int asid)
@@ -273,9 +279,9 @@ inline void support_tlb()
             const int write_status = write_flash(
                 swap.sw_asid, k_index, (void *)page_addr(victim_frame));
             if (write_status != DEV_STATUS_READY) {
-                support_trap();
                 pandos_kprintf("ERR: WRITE_FLASH (k_index=%d, status=%d)\n",
                                k_index, write_status);
+                support_trap();
             }
         }
 
@@ -284,9 +290,9 @@ inline void support_tlb()
         const int read_status =
             read_flash(support->sup_asid, p_index, (void *)victim_frame_addr);
         if (read_status != DEV_STATUS_READY) {
-            support_trap();
             pandos_kprintf("ERR: READ_FLASH (p_index=%d, status=%d)\n", p_index,
                            read_status);
+            support_trap();
         }
 
         // pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
