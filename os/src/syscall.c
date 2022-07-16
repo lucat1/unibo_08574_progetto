@@ -115,6 +115,10 @@ static inline scheduler_control_t syscall_do_io()
         head_blocked(dev.semaphore) != NULL) {
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
+    // if (active_process->p_support->sup_asid == 1)
+    //     pandos_kfprintf(&kdebug, "do_io %d %p %p\n",
+    //                     active_process->p_support->sup_asid, cmd_addr,
+    //                     dev.semaphore);
 
     if (*dev.semaphore > 0)
         scheduler_panic("A device syncronization semaphore has a value > 0");
@@ -210,7 +214,6 @@ inline scheduler_control_t syscall_handler()
         return pass_up_or_die((memaddr)GENERALEXCEPT);
     }
 
-    pandos_kprintf("syscall %d %s\n", id, is_user_mode() ? "user" : "kern");
     switch (id) {
         case CREATEPROCESS:
             return syscall_create_process();

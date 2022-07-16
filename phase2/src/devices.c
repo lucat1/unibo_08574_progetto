@@ -9,28 +9,41 @@
 
 #include "arch/devices.h"
 #include "os/semaphores.h"
+#include "os/util.h"
 #include "semaphores_impl.h"
+#include "umps/types.h"
 #include <umps/arch.h>
 #include <umps/const.h>
 #include <umps/cp0.h>
 #include <umps/libumps.h>
 
+bool is_in_line(int dev, int il)
+{
+    if (il == IL_TERMINAL)
+        il *= 2;
+    return (dev < ((il + 1 - IL_DISK) * DEVPERINT));
+}
+
 inline iodev_t get_iodev(size_t *cmd_addr)
 {
     iodev_t res = {NULL, 0};
-    int dev_n = GET_DEVICE_NUMBER_FROM_COMMAND(cmd_addr);
-    int int_l = GET_INTERRUPT_LINE_FROM_DEVICE(dev_n);
-    int sem_i = dev_n;
-    /* first devices */
-    const int T = (IL_TERMINAL - IL_DISK) * DEVPERINT;
-    /* if it is terminal */
-    if (dev_n > T)
-        sem_i = (TERMINAL_CHECK_IS_WRITING(cmd_addr) ? dev_n + 1 : dev_n) +
-                (dev_n - T);
-
+    int int_l = -1;
+    int dev_n = ((unsigned int)cmd_addr - DEV_REG_START) / DEV_REG_SIZE;
+    for (int i = IL_DISK; i < IL_TERMINAL + 1; i++) {
+        if (is_in_line(dev_n, i)) {
+            int_l = i;
+            break;
+        }
+    }
+    size_t *base = (size_t *)(DEV_REG_SIZE * dev_n + DEV_REG_START);
+    bool is_w = false;
     res.interrupt_line = int_l;
-    res.semaphore = get_semaphores() + sem_i;
 
+    termreg_t *reg = (termreg_t *)base;
+    if ((int)&reg->transm_command == (int)cmd_addr)
+        is_w = true;
+
+    res.semaphore = get_semaphore(int_l, dev_n % DEVPERINT, is_w);
     return res;
 }
 

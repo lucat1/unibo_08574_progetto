@@ -5,13 +5,7 @@
 #include "test/print.h"
 #include "test/tconst.h"
 
-int fib(int i)
-{
-    if ((i == 1) || (i == 2))
-        return (1);
-
-    return (fib(i - 1) + fib(i - 2));
-}
+int fib(int i);
 
 void main()
 {
@@ -30,4 +24,12 @@ void main()
 
     /* Terminate normally */
     SYSCALL(TERMINATE, 0, 0, 0);
+}
+
+int fib(int i)
+{
+    if ((i == 1) || (i == 2))
+        return (1);
+
+    return (fib(i - 1) + fib(i - 2));
 }

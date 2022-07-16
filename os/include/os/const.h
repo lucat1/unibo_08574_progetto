@@ -75,15 +75,6 @@
 #define TRANSM_STATUS 0x8
 #define TRANSM_COMMAND 0xC
 
-#define GET_INTERRUPT_LINE_FROM_DEVICE(dev_n) ((int)dev_n / DEVINTNUM)
-#define GET_DEVICE_NUMBER_FROM_COMMAND(cmd)                                    \
-    (((size_t)cmd - DEV_REG_START) / DEV_REG_SIZE)
-#define GET_DEVICE_FROM_COMMAND(cmd)                                           \
-    (int *)(DEV_REG_SIZE * GET_DEVICE_NUMBER_FROM_COMMAND(cmd) + DEV_REG_START)
-#define TERMINAL_GET_COMMAND_TYPE(cmd)                                         \
-    (size_t)(cmd - (size_t)GET_DEVICE_FROM_COMMAND(cmd))
-#define TERMINAL_CHECK_IS_WRITING(cmd)                                         \
-    TERMINAL_GET_COMMAND_TYPE(cmd) == 2 || TERMINAL_GET_COMMAND_TYPE(cmd) == 3
 
 /*Devices registers addresses */
 #define DEVICE_STATUS(il_n, dev_n)                                             \

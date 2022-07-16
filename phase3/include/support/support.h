@@ -5,6 +5,6 @@
 
 extern void support_generic();
 
-void support_trap();
+extern void support_trap();
 
 #endif /* PANDOS_SUPPORT_H */

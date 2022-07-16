@@ -1,17 +1,38 @@
 #include "arch/devices.h"
 #include "arch/processor.h"
 #include "os/const.h"
+#include "os/ctypes.h"
+#include "os/semaphores.h"
 #include "os/types.h"
 #include "os/util.h"
 #include "support/pager.h"
 #include "support/print.h"
 #include "support/support.h"
+#include "umps/arch.h"
+#include "umps/types.h"
 #include <umps/libumps.h>
 
 static support_t support_structures[UPROCMAX];
 
 void test()
 {
+    // NON TOCCARE GUAI A TE
+    // for (int j = IL_DISK; j < IL_TERMINAL; j++) {
+    //     for (int i = 0; i < 8; ++i) {
+    //         // pandos_kprintf("DEV N %d - %d\n", j, i);
+    //         int *sem = get_semaphore(j, i, false);
+    //         int addr = DEV_REG_ADDR(j, i);
+    //         dtpreg_t *reg = (dtpreg_t *)addr;
+    //         int dev_n = ((int)&reg->command - DEV_REG_START) / DEV_REG_SIZE % 8;
+    //         iodev_t dev = get_iodev(&reg->command);
+    //         if (sem != dev.semaphore) {
+    //             pandos_kprintf("EQ %d - %p, %p\n", dev_n == i, dev_n, i);
+    //             pandos_kprintf("EQ2 %d - %p, %p\n", sem == dev.semaphore, sem,
+    //                            dev.semaphore);
+    //         }
+    //     }
+    // }
+
     state_t pstate;
     size_t support_status;
     memaddr ramtop;
@@ -35,7 +56,7 @@ void test()
     status_kernel_mode_on_process(&support_status);
 
     RAMTOP(ramtop);
-    for (size_t i = 0; i < 1 /*UPROCMAX*/; ++i) {
+    for (size_t i = 0; i < UPROCMAX; ++i) {
         // NOTE: the ASID of the process is i+1
         const size_t asid = i + 1;
 

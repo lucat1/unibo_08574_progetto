@@ -93,7 +93,7 @@ static inline scheduler_control_t interrupt_generic(int cause)
 {
     int il = IL_DISK;
     /* inverse priority */
-    for (int i = IL_DISK; i < IL_PRINTER; i++) {
+    for (int i = IL_DISK; i < IL_PRINTER + 1; i++) {
         if (cause & CAUSE_IP(i)) {
             il = i;
             break;
@@ -134,14 +134,15 @@ static inline scheduler_control_t interrupt_terminal()
     memaddr(statuses[2]) = {term_reg->transm_status, term_reg->recv_status};
     memaddr(*commands[2]) = {&term_reg->transm_command,
                              &term_reg->recv_command};
-    int *sem[] = {get_semaphore(IL_TERMINAL, devicenumber, false),
-                  get_semaphore(IL_TERMINAL, devicenumber, true)};
+    int *sem[] = {get_semaphore(IL_TERMINAL, devicenumber, true),
+                  get_semaphore(IL_TERMINAL, devicenumber, false)};
 
     for (int i = 0; i < 2; ++i) {
         int status = statuses[i];
         if ((status & TERMSTATMASK) == DEV_STATUS_NOTINSTALLED)
             scheduler_panic("Device is not installed!\n");
 
+        // pandos_kfprintf(&kdebug, "io_ack: %p\n", sem[0]);
         if ((status & TERMSTATMASK) == DEV_STATUS_TERMINAL_OK) {
             pcb_t *p = V(sem[i]);
             scheduler_control_t ctrl;
@@ -215,7 +216,7 @@ inline void exception_handler()
         case 1:
         case 2:
         case 3:
-            pandos_kprintf("PGFAULT %d\n", CAUSE_GET_EXCCODE(get_cause()));
+            // pandos_kprintf("PGFAULT %d\n", CAUSE_GET_EXCCODE(get_cause()));
             ctrl = pass_up_or_die((memaddr)PGFAULTEXCEPT);
             break;
         case 8:
