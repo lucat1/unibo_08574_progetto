@@ -31,6 +31,9 @@ static inline size_t sys_get_tod()
 #define PRINTCHR 2
 #define RECVD 5
 
+// string length constraints
+#define MINLEN 0
+#define MAXLEN 128
 static inline size_t sys_write_printer()
 {
     support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
@@ -42,14 +45,15 @@ static inline size_t sys_write_printer()
     dtpreg_t *device = (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, (int)termid);
     unsigned int status;
 
-    size_t i;
-    for (i = 0; i < len; ++i) {
+    if (len < 0 || len > MAXLEN || (memaddr)s < KUSEG)
+        SYSCALL(TERMPROCESS, 0, 0, 0);
+    for (size_t i = 0; i < len; ++i) {
         device->data0 = s[i];
         status = SYSCALL(DOIO, (int)&device->command, (int)PRINTCHR, 0);
         if (device->status != DEV_STATUS_READY)
             return -(status & TERMSTATMASK);
     }
-    return i;
+    return len;
 }
 
 #define RECEIVE_CHAR 2
@@ -63,10 +67,6 @@ static inline size_t sys_read_terminal_v2()
     termreg_t *base = (termreg_t *)(DEV_REG_ADDR(
         IL_TERMINAL, (int)current_support->sup_asid - 1));
     char *buf = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
-    if ((memaddr)buf >= KUSEG + (MAXPAGES - 1) * PAGESIZE &&
-        ((memaddr)buf >> VPNSHIFT) != (KUSEG + GETPAGENO) >> VPNSHIFT) {
-        support_trap();
-    }
     while (r != '\n') {
         size_t status =
             SYSCALL(DOIO, (int)&base->recv_command, (int)RECEIVE_CHAR, 0);
@@ -134,6 +134,8 @@ static inline size_t sys_write_terminal()
     char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
     size_t len =
         (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
+    if (len < 0 || len > MAXLEN || (memaddr)s < KUSEG)
+        SYSCALL(TERMPROCESS, 0, 0, 0);
     return syscall_writer((void *)(asid), s, len);
 }
 
