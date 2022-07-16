@@ -170,7 +170,15 @@ inline void add_random_in_tlb(pte_entry_t pte)
     TLBWR();
 }
 
-inline size_t pick_page() { return (i = (i + 1) % POOLSIZE); }
+inline bool check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
+
+inline size_t pick_page()
+{
+    for (int index = 0; index < POOLSIZE; ++index)
+        if (!check_frame_occupied(swap_pool_table[index]))
+            return index;
+    return i = (i + 1) % POOLSIZE;
+}
 
 inline memaddr page_addr(size_t i)
 {
@@ -178,8 +186,6 @@ inline memaddr page_addr(size_t i)
         return (memaddr)NULL;
     return (memaddr)(SWAP_POOL_ADDR + i * PAGESIZE);
 }
-
-inline bool check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
 
 inline void mark_page_not_valid(pte_entry_t page_table[], size_t index)
 {
