@@ -23,11 +23,12 @@ void test()
     //         int *sem = get_semaphore(j, i, false);
     //         int addr = DEV_REG_ADDR(j, i);
     //         dtpreg_t *reg = (dtpreg_t *)addr;
-    //         int dev_n = ((int)&reg->command - DEV_REG_START) / DEV_REG_SIZE % 8;
-    //         iodev_t dev = get_iodev(&reg->command);
-    //         if (sem != dev.semaphore) {
+    //         int dev_n = ((int)&reg->command - DEV_REG_START) / DEV_REG_SIZE %
+    //         8; iodev_t dev = get_iodev(&reg->command); if (sem !=
+    //         dev.semaphore) {
     //             pandos_kprintf("EQ %d - %p, %p\n", dev_n == i, dev_n, i);
-    //             pandos_kprintf("EQ2 %d - %p, %p\n", sem == dev.semaphore, sem,
+    //             pandos_kprintf("EQ2 %d - %p, %p\n", sem == dev.semaphore,
+    //             sem,
     //                            dev.semaphore);
     //         }
     //     }
@@ -40,6 +41,7 @@ void test()
     swap_pool_sem = 1;
     for (size_t i = 0; i < POOLSIZE; ++i)
         swap_pool_table[i].sw_asid = -1;
+    init_sys_semaphores();
 
     // store_state(&pstate);
     pstate.reg_sp = (memaddr)USERSTACKTOP;

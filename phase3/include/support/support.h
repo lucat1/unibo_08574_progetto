@@ -3,6 +3,8 @@
 
 #include "arch/processor.h"
 
+extern void init_sys_semaphores();
+
 extern void support_generic();
 
 extern void support_trap();
