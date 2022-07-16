@@ -32,8 +32,8 @@ the value of the conventional `NULL_PID`, which does not describe any valid pid
 at all. The value of `MAX_PROC_BITS` is computed by hand based on the value of
 `MAX_PROC`, preserving the following invariant:
 
-```
-MAX_PROC_BITS \geq \lceil log_2(MAX_PROC) \rceil
+```math
+MAX\_PROC\_BITS \geq \lceil log_2(MAX\_PROC) \rceil
 ```
 
 This approach does not guarantee a complete uniqueness (which cannot be achieved
