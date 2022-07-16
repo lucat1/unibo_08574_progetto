@@ -15,8 +15,8 @@
 #define PAGE_TABLE_ENTRY_LOW 5
 #define CAUSE_TLB_MOD 1
 
+static memaddr swap_pool_addr;
 int sem_swap_pool_table = 1;
-int swap_pool_sem;
 static bool swap_pool_batons[UPROCMAX];
 swap_t swap_pool_table[POOLSIZE];
 static bool swap_pool_batons[UPROCMAX];
@@ -40,6 +40,12 @@ inline bool init_page_table(pte_entry_table page_table, int asid)
     swap_pool_batons[asid - 1] = false;
 
     return true;
+}
+
+void allocate_swap_pool()
+{
+    swap_pool_addr = (*(memaddr *)(KERNELSTACK + 0x0018) +
+                      *(memaddr *)(KERNELSTACK + 0x0024));
 }
 
 void mark_frames_as_unoccupied(int asid)
@@ -184,7 +190,7 @@ inline memaddr page_addr(size_t i)
 {
     if (i < 0 || i >= POOLSIZE)
         return (memaddr)NULL;
-    return (memaddr)(SWAP_POOL_ADDR + i * PAGESIZE);
+    return (memaddr)(swap_pool_addr + i * PAGESIZE);
 }
 
 inline void mark_page_not_valid(pte_entry_t page_table[], size_t index)

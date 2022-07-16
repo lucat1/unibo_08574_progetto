@@ -51,11 +51,10 @@ void test()
     state_t pstate;
     size_t support_status;
     memaddr ramtop;
-    // sysprintf("Initializing...\n");
-    swap_pool_sem = 1;
     for (size_t i = 0; i < POOLSIZE; ++i)
         swap_pool_table[i].sw_asid = -1;
     init_sys_semaphores();
+    allocate_swap_pool();
 
     // store_state(&pstate);
     pstate.reg_sp = (memaddr)USERSTACKTOP;

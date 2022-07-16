@@ -11,11 +11,11 @@ typedef swap_t swap_table_t[MAXPAGES];
 typedef pte_entry_t pte_entry_table[MAXPAGES];
 
 extern swap_t swap_pool_table[POOLSIZE];
-extern int swap_pool_sem;
 
 extern memaddr virtual_to_physical(support_t *sup, memaddr m);
 
 extern bool init_page_table(pte_entry_table page_table, int asid);
+extern void allocate_swap_pool();
 extern void mark_frames_as_unoccupied(int asid);
 extern void set_swap_pool_baton(int asid, bool value);
 extern bool get_swap_pool_baton(int asid);
