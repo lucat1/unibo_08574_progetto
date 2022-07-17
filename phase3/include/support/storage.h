@@ -12,7 +12,6 @@
 #define PANDOS_STORAGE_H
 
 #include "os/ctypes.h"
-#include "os/types.h"
 
 /**
  * \brief Read the specified block from a given flash device.

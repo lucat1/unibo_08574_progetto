@@ -11,7 +11,7 @@
 #ifndef PANDOS_PRINT_H
 #define PANDOS_PRINT_H
 
-#include "os/types.h"
+#include "os/ctypes.h"
 
 /**
  * \brief A well-behaved utility for formatted printing on terminal 0,

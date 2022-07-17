@@ -13,7 +13,6 @@
 
 #include "arch/processor.h"
 #include "os/const.h"
-#include "os/types.h"
 
 /** Type describing a Page Table as an array of Page Table Entries. */
 typedef pte_entry_t pte_entry_table[MAXPAGES];

@@ -11,8 +11,6 @@
 #ifndef PANDOS_SUPPORT_H
 #define PANDOS_SUPPORT_H
 
-#include "arch/processor.h"
-
 /**
  * \briefs Initialize all mutex for uninterrupted streaming devices sequential
  * access.
