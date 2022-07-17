@@ -1,7 +1,6 @@
 project(phase3)
 add_library(${PROJECT_NAME}
     src/pager.c
-    src/print.c
     src/storage.c
     src/support.c
     src/test.c
