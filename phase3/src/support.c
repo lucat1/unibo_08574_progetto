@@ -9,6 +9,7 @@
 #include "os/util.h"
 #include "support/pager.h"
 #include "support/print.h"
+#include "support/test.h"
 #include "test/tconst.h"
 #include "umps/arch.h"
 #include "umps/const.h"
@@ -158,8 +159,9 @@ static inline size_t sys_write_terminal()
 
 static inline void sys_terminate()
 {
-    mark_frames_as_unoccupied(
-        ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0))->sup_asid);
+    support_t *s = ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0));
+    mark_frames_as_unoccupied(s->sup_asid);
+    deallocate_support(s);
     master_semaphore_v();
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }

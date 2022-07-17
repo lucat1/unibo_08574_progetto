@@ -12,6 +12,7 @@
 
 #include "os/const.h"
 #include "os/ctypes.h"
+#include "os/list.h"
 
 #ifdef __x86_64__
 #define STATE_GPR_LEN 7
@@ -56,6 +57,7 @@ typedef struct support_t {
     state_t sup_except_state[2];     /* old state exceptions */
     context_t sup_except_context[2]; /* new contexts for passing up	*/
     pte_entry_t sup_private_page_table[USERPGTBLSIZE]; /* user page table */
+    list_head p_list;
 } support_t;
 
 extern void init_puv(memaddr tlb_refill_handler, memaddr exception_handler);

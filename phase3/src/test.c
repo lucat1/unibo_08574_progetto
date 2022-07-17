@@ -2,6 +2,7 @@
 #include "arch/processor.h"
 #include "os/const.h"
 #include "os/ctypes.h"
+#include "os/list.h"
 #include "os/semaphores.h"
 #include "os/types.h"
 #include "os/util.h"
@@ -13,9 +14,49 @@
 #include "umps/types.h"
 #include <umps/libumps.h>
 
-static support_t support_structures[UPROCMAX];
+static support_t support_table[UPROCMAX];
+static list_head support_free;
 
-static inline void protect_page_table_entries(int asid)
+static inline support_t *allocate()
+{
+    list_head *res = list_next(&support_free);
+    if (res == NULL) {
+        pandos_kfprintf(&kstderr, "Out of support_t\n");
+        PANIC();
+    }
+    list_del(res);
+    pandos_kfprintf(&kdebug, "Allocating #%d...\n",
+                    container_of(res, support_t, p_list) - support_table);
+    pandos_kfprintf(&kdebug, "|support_free| = %d\n", list_size(&support_free));
+    return container_of(res, support_t, p_list);
+}
+
+static inline void deallocate(support_t *s)
+{
+    if (s == NULL) {
+        pandos_kfprintf(&kstderr, "NULL deallocation.\n");
+        PANIC();
+    }
+    if (list_contains(&s->p_list, &support_free)) {
+        pandos_kfprintf(&kstderr, "Double support_t %p deallocation.\n", s);
+        PANIC();
+    }
+    pandos_kfprintf(&kdebug, "Deallocating #%d...\n", s - support_table);
+    list_add(&s->p_list, &support_free);
+    pandos_kfprintf(&kdebug, "|support_free| = %d\n", list_size(&support_free));
+}
+
+void deallocate_support(support_t *s) { deallocate(s); }
+
+static inline void init_supports()
+{
+    INIT_LIST_HEAD(&support_free);
+    for (size_t i = 0; i < UPROCMAX; ++i)
+        deallocate(support_table + i);
+}
+
+static inline void protect_page_table_entries(int asid,
+                                              support_t *support_structure)
 {
     int data[1024], read_status = read_flash(asid, 0, (void *)data);
     if (read_status != DEV_STATUS_READY) {
@@ -24,8 +65,7 @@ static inline void protect_page_table_entries(int asid)
     }
     int text_file_size = data[5] / 1024;
     for (int i = 0; i < text_file_size; ++i)
-        support_structures[asid - 1].sup_private_page_table[0].pte_entry_lo ^=
-            DIRTYON;
+        support_structure->sup_private_page_table[0].pte_entry_lo ^= DIRTYON;
 }
 
 void test()
@@ -55,6 +95,7 @@ void test()
         swap_pool_table[i].sw_asid = -1;
     init_sys_semaphores();
     allocate_swap_pool();
+    init_supports();
 
     // store_state(&pstate);
     pstate.reg_sp = (memaddr)USERSTACKTOP;
@@ -77,24 +118,25 @@ void test()
 
         pstate.entry_hi = asid << ASIDSHIFT;
 
-        support_structures[i].sup_asid = asid;
-        init_page_table(support_structures[i].sup_private_page_table, asid);
-        support_structures[i].sup_except_context[PGFAULTEXCEPT].pc =
+        support_t *support_structure = allocate();
+        support_structure->sup_asid = asid;
+        init_page_table(support_structure->sup_private_page_table, asid);
+        support_structure->sup_except_context[PGFAULTEXCEPT].pc =
             (memaddr)support_tlb;
-        support_structures[i].sup_except_context[PGFAULTEXCEPT].stack_ptr =
+        support_structure->sup_except_context[PGFAULTEXCEPT].stack_ptr =
             ramtop - 2 * (asid)*PAGESIZE;
-        support_structures[i].sup_except_context[PGFAULTEXCEPT].status =
+        support_structure->sup_except_context[PGFAULTEXCEPT].status =
             support_status;
-        support_structures[i].sup_except_context[GENERALEXCEPT].pc =
+        support_structure->sup_except_context[GENERALEXCEPT].pc =
             (memaddr)support_generic;
-        support_structures[i].sup_except_context[GENERALEXCEPT].stack_ptr =
+        support_structure->sup_except_context[GENERALEXCEPT].stack_ptr =
             ramtop - 2 * asid * PAGESIZE + PAGESIZE;
-        support_structures[i].sup_except_context[GENERALEXCEPT].status =
+        support_structure->sup_except_context[GENERALEXCEPT].status =
             support_status;
 
         SYSCALL(CREATEPROCESS, (int)&pstate, PROCESS_PRIO_LOW,
-                (int)(support_structures + i));
-        protect_page_table_entries(asid);
+                (int)support_structure);
+        protect_page_table_entries(asid, support_structure);
     }
     for (size_t i = 0; i < UPROCMAX; ++i)
         master_semaphore_p();
