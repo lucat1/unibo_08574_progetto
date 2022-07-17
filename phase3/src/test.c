@@ -1,3 +1,14 @@
+/**
+ * \file test.c
+ * \brief Phase 3 test program and helper functions
+ *
+ * \author Alessandro Frau
+ * \author Gianmaria Rovelli
+ * \author Luca Tagliavini
+ * \author Stefano Volpe
+ * \date 25-06-2022
+ */
+
 #include "arch/devices.h"
 #include "arch/processor.h"
 #include "os/const.h"
@@ -8,9 +19,15 @@
 #include "support/pager.h"
 #include "support/support.h"
 
+/** A table from which Support Structures can be allocated. */
 static support_t support_table[UPROCMAX];
+/** The Support Structures which are currently not allocated. */
 static list_head support_free;
 
+/**
+ * \brief Allocate a new Support Structure.
+ * \return The newly allocated Support Structure.
+ */
 static inline support_t *allocate()
 {
     list_head *const lh = list_next(&support_free);
@@ -25,6 +42,11 @@ static inline support_t *allocate()
     return res;
 }
 
+/**
+ * \brief Free a Support Structure which was previously allocated by the test
+ * program.
+ * \param[in,out] s The Support Structure to be deallocated.
+ */
 static inline void deallocate(support_t *s)
 {
     if (s == NULL) {
@@ -41,6 +63,9 @@ static inline void deallocate(support_t *s)
     pandos_kfprintf(&kdebug, "|support_free| = %d\n", list_size(&support_free));
 }
 
+/**
+ * \brief Initialize \ref support_free.
+ */
 static inline void init_supports()
 {
     INIT_LIST_HEAD(&support_free);
@@ -76,6 +101,7 @@ void test()
 
         pstate.entry_hi = asid << ASIDSHIFT;
 
+        // Support Structure initialization
         support_t *support_structure = allocate();
         support_structure->sup_asid = asid;
         if (!init_page_table(support_structure->sup_private_page_table, asid)) {
@@ -97,10 +123,11 @@ void test()
         support_structure->sup_except_context[GENERALEXCEPT].status =
             support_status;
 
+        // Process creation
         SYSCALL(CREATEPROCESS, (int)&pstate, PROCESS_PRIO_LOW,
                 (int)support_structure);
     }
-
+    // Wait for each U-Proc to terminate before terminating yourself
     for (size_t i = 0; i < UPROCMAX; ++i)
         master_semaphore_p();
     SYSCALL(TERMPROCESS, 0, 0, 0);

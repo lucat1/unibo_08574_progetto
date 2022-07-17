@@ -1,6 +1,6 @@
 /**
  * \file pager.h
- * \brief The pager module
+ * \brief The Pager module
  *
  * \author Gianmaria Rovelli
  * \author Luca Tagliavini
@@ -14,7 +14,7 @@
 #include "arch/processor.h"
 #include "os/const.h"
 
-/** Type describing a Page Table as an array of Page Table Entries. */
+/** Type describing a Page Table as an array of Page Table entries. */
 typedef pte_entry_t page_table_t[MAXPAGES];
 
 /**

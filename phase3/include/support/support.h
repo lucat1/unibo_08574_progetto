@@ -12,7 +12,7 @@
 #define PANDOS_SUPPORT_H
 
 /**
- * \briefs Initialize all mutex for uninterrupted streaming devices sequential
+ * \brief Initialize all mutex for uninterrupted streaming devices sequential
  * access.
  */
 extern void init_sys_semaphores();

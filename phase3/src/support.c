@@ -1,3 +1,14 @@
+/**
+ * \file support.c
+ * \brief Non-TLB exceptions handling and Support Level semaphores
+ *
+ * \author Alessandro Frau
+ * \author Gianmaria Rovelli
+ * \author Luca Tagliavini
+ * \author Stefano Volpe
+ * \date 05-05-2022
+ */
+
 #include "support/support.h"
 #include "os/const.h"
 #include "os/ctypes.h"
@@ -12,20 +23,39 @@
 #include "umps/const.h"
 #include "umps/cp0.h"
 
-/* hardware constants */
+/** Hardware constant: the command for printing a character. */
 #define PRINTCHR 2
+/** Hardware constant (terminal status): the character was correctly
+ * received/transmitted. */
 #define RECVD 5
 
-// string length constraints
+/** String length constraints: minimum. */
 #define MINLEN 0
+/** String length constraints: maximum. */
 #define MAXLEN 128
 
+/** Command to receive a character. */
 #define RECEIVE_CHAR 2
+
+/**
+ * \brief Isolates the receiving status.
+ * \param[in] v The complete status.
+ * \return The receiving status.
+ */
 #define RECEIVE_STATUS(v) ((v)&0xF)
+
+/**
+ * \brief Isolates the receiving value.
+ * \param[in] v Both values.
+ * \return The received value.
+ */
 #define RECEIVE_VALUE(v) (((v) >> 8) & 0xFF)
 
-static int sys3_semaphores[UPROCMAX], sys4_semaphores[UPROCMAX],
-    sys5_semaphores[UPROCMAX], master_semaphore = 0;
+static int sys3_semaphores[UPROCMAX], /**< Printer semaphores for SYS3. */
+    sys4_semaphores[UPROCMAX], /**< Terminal writing semaphores for SYS4. */
+    sys5_semaphores[UPROCMAX], /**< Terminal reading semaphore for SYS5. */
+    master_semaphore = 0; /**< The master semaphores help keep track of U-Proc
+                             terminations. */
 
 inline void init_sys_semaphores()
 {
@@ -33,6 +63,10 @@ inline void init_sys_semaphores()
         sys3_semaphores[i] = sys4_semaphores[i] = sys5_semaphores[i] = 1;
 }
 
+/**
+ * \brief Perform a VERHOGEN operation on the master semaphore, i.e. signal a
+ * U-Proc is terminating.
+ */
 static inline void master_semaphore_v()
 {
     SYSCALL(VERHOGEN, (int)&master_semaphore, 0, 0);
@@ -43,6 +77,10 @@ inline void master_semaphore_p()
     SYSCALL(PASSEREN, (int)&master_semaphore, 0, 0);
 }
 
+/**
+ * \brief Get_TOD (SYS1) implementation.
+ * \return The number of milliseconds since the machine started.
+ */
 static inline size_t sys_get_tod()
 {
     cpu_t time;
@@ -50,6 +88,9 @@ static inline size_t sys_get_tod()
     return time;
 }
 
+/**
+ * \brief Terminate (SYS2) implementation.
+ */
 static inline void sys_terminate()
 {
     support_t *const s = ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0));
@@ -59,6 +100,11 @@ static inline void sys_terminate()
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
+/**
+ * \brief A generic writer for Support Level writing syscalls.
+ * \param[in] il_n The device class.
+ * \return The number of characters actually written on the device.
+ */
 static inline size_t syscall_writer(size_t il_n)
 {
     support_t *const current_support =
@@ -72,7 +118,7 @@ static inline size_t syscall_writer(size_t il_n)
         SYSCALL(TERMINATE, 0, 0, 0);
     void *device = (void *)DEV_REG_ADDR(il_n, id);
     int *semaphores;
-    bool terminal = false;
+    bool terminal = false; // whether we are writing on a terminal or not
     switch (il_n) {
         case IL_PRINTER:
             semaphores = sys3_semaphores;
@@ -109,13 +155,25 @@ static inline size_t syscall_writer(size_t il_n)
     return len;
 }
 
+/**
+ * \brief Write_To_Printer (SYS3) implementation.
+ * \return The number of characters actually written on the printer.
+ */
 static inline size_t sys_write_printer() { return syscall_writer(IL_PRINTER); }
 
+/**
+ * \brief Write_To_Terminal (SYS4) implementation.
+ * \return The number of characters actually written on the terminal.
+ */
 static inline size_t sys_write_terminal()
 {
     return syscall_writer(IL_TERMINAL);
 }
 
+/**
+ * \brief Read_From_Terminal (SYS5) implementation.
+ * \return The number of characters actually read from the terminal.
+ */
 static inline size_t sys_read_terminal()
 {
     size_t read = 0;
@@ -130,6 +188,7 @@ static inline size_t sys_read_terminal()
     if ((memaddr)buf < KUSEG)
         SYSCALL(TERMINATE, 0, 0, 0);
     SYSCALL(PASSEREN, (int)semaphore, 0, 0);
+    // No fixed string length: we terminate reading a newline character.
     for (char r = EOS; r != '\n';) {
         const size_t status =
             SYSCALL(DOIO, (int)&base->recv_command, (int)RECEIVE_CHAR, 0);
@@ -141,10 +200,15 @@ static inline size_t sys_read_terminal()
         *(buf + read++) = r;
     }
     SYSCALL(VERHOGEN, (int)semaphore, 0, 0);
+    // We add a EOS terminating character after the newline character: "*\n\0"
     *(buf + read) = EOS;
     return read;
 }
 
+/**
+ * \brief The Support Level syscall exceptions handler.
+ * \param[in,out] current_support The current Support Structure.
+ */
 static inline void support_syscall(support_t *current_support)
 {
     active_process->p_s.pc_epc = active_process->p_s.reg_t9 += WORD_SIZE;
