@@ -73,6 +73,9 @@ cmake ..
 make
 ```
 
+If you have any issues with `machines/phase3`, please try using
+`machines/phase3-bin` instead.
+
 ### Compiling on the host machine for testing
 
 The cmake build system allows us to easily swap C compilers and we can use that
