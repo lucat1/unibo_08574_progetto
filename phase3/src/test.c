@@ -55,19 +55,6 @@ static inline void init_supports()
         deallocate(support_table + i);
 }
 
-static inline void protect_page_table_entries(int asid,
-                                              support_t *support_structure)
-{
-    int data[1024], read_status = read_flash(asid, 0, (void *)data);
-    if (read_status != DEV_STATUS_READY) {
-        pandos_kfprintf(&kstderr, "ERR: ppte %d, %d\n", asid, read_status);
-        support_trap();
-    }
-    int text_file_size = data[5] / 1024;
-    for (int i = 0; i < text_file_size; ++i)
-        support_structure->sup_private_page_table[0].pte_entry_lo ^= DIRTYON;
-}
-
 void test()
 {
     // NON TOCCARE GUAI A TE
@@ -91,10 +78,8 @@ void test()
     state_t pstate;
     size_t support_status;
     memaddr ramtop;
-    for (size_t i = 0; i < POOLSIZE; ++i)
-        swap_pool_table[i].sw_asid = -1;
     init_sys_semaphores();
-    allocate_swap_pool();
+    init_pager();
     init_supports();
 
     // store_state(&pstate);
@@ -136,7 +121,6 @@ void test()
 
         SYSCALL(CREATEPROCESS, (int)&pstate, PROCESS_PRIO_LOW,
                 (int)support_structure);
-        protect_page_table_entries(asid, support_structure);
     }
     for (size_t i = 0; i < UPROCMAX; ++i)
         master_semaphore_p();

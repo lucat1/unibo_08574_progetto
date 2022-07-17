@@ -11,15 +11,55 @@
 #include "umps/cp0.h"
 #include "umps/libumps.h"
 
-#define SWAP_POOL_ADDR (KSEG1 + (32 * PAGESIZE))
 #define PAGE_TABLE_ENTRY_LOW 5
 #define CAUSE_TLB_MOD 1
+#define SWAP_POOL_ADDR                                                         \
+    (*(memaddr *)(KERNELSTACK + 0x0018) + *(memaddr *)(KERNELSTACK + 0x0024))
+
+typedef swap_t swap_table_t[POOLSIZE];
 
 static memaddr swap_pool_addr;
 int sem_swap_pool_table = 1;
 static bool swap_pool_batons[UPROCMAX];
-swap_t swap_pool_table[POOLSIZE];
+swap_table_t swap_pool_table;
 static bool swap_pool_batons[UPROCMAX];
+
+void init_swap_pool_table()
+{
+    for (size_t i = 0; i < POOLSIZE; ++i)
+        swap_pool_table[i].sw_asid = -1;
+}
+
+static inline bool is_valid_asid(int asid)
+{
+    return 0 < asid && asid <= UPROCMAX;
+}
+
+static inline void set_swap_pool_baton(int asid, bool value)
+{
+    if (!is_valid_asid(asid)) {
+        pandos_kfprintf(&kstderr,
+                        "memory.c: set_swap_pool_baton: invalid asid\n");
+        PANIC();
+    }
+    swap_pool_batons[asid - 1] = value;
+}
+
+static inline bool get_swap_pool_baton(int asid)
+{
+    if (!is_valid_asid(asid)) {
+        pandos_kfprintf(&kstderr,
+                        "memory.c: get_swap_pool_baton: invalid asid\n");
+        PANIC();
+    }
+    return swap_pool_batons[asid - 1];
+}
+
+inline void init_pager()
+{
+    init_swap_pool_table();
+    swap_pool_addr = SWAP_POOL_ADDR;
+}
 
 inline bool init_page_table(pte_entry_table page_table, int asid)
 {
@@ -27,11 +67,18 @@ inline bool init_page_table(pte_entry_table page_table, int asid)
         return false;
 
     const size_t last_page_index = MAXPAGES - 1;
+    memaddr data[PAGESIZE / sizeof(memaddr)],
+        read_status = read_flash(asid, 0, (void *)data);
+    if (read_status != DEV_STATUS_READY) {
+        pandos_kfprintf(&kstderr, "ERR: ppte %d, %d\n", asid, read_status);
+        support_trap();
+    }
+    size_t text_file_size = data[5] / 1024;
 
     for (size_t i = 0; i < last_page_index; ++i) {
         page_table[i].pte_entry_hi =
             KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-        page_table[i].pte_entry_lo = DIRTYON;
+        page_table[i].pte_entry_lo = i < text_file_size ? 0 : DIRTYON;
     }
     page_table[last_page_index].pte_entry_hi =
         KUSEG + GETPAGENO + (asid << ASIDSHIFT);
@@ -42,42 +89,23 @@ inline bool init_page_table(pte_entry_table page_table, int asid)
     return true;
 }
 
-void allocate_swap_pool()
+static void release_sem_swap_pool_table(int asid)
 {
-    swap_pool_addr = (*(memaddr *)(KERNELSTACK + 0x0018) +
-                      *(memaddr *)(KERNELSTACK + 0x0024));
+    if (get_swap_pool_baton(asid))
+        SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
 }
 
-void mark_frames_as_unoccupied(int asid)
+static void mark_frames_as_unoccupied(int asid)
 {
     for (size_t i = 0; i < POOLSIZE; ++i)
         if (swap_pool_table[i].sw_asid == asid)
             swap_pool_table[i].sw_asid = -1;
 }
 
-inline static bool is_valid_asid(int asid)
+void clean_after_uproc(int asid)
 {
-    return 0 < asid && asid <= UPROCMAX;
-}
-
-inline void set_swap_pool_baton(int asid, bool value)
-{
-    if (!is_valid_asid(asid)) {
-        pandos_kfprintf(&kstderr,
-                        "memory.c: set_swap_pool_baton: invalid asid\n");
-        PANIC();
-    }
-    swap_pool_batons[asid - 1] = value;
-}
-
-inline bool get_swap_pool_baton(int asid)
-{
-    if (!is_valid_asid(asid)) {
-        pandos_kfprintf(&kstderr,
-                        "memory.c: get_swap_pool_baton: invalid asid\n");
-        PANIC();
-    }
-    return swap_pool_batons[asid - 1];
+    release_sem_swap_pool_table(asid);
+    mark_frames_as_unoccupied(asid);
 }
 
 // TODO: use another algorithm
@@ -93,7 +121,7 @@ inline size_t index_to_vpn(size_t index)
     return index == MAXPAGES - 1 ? GETPAGENO >> VPNSHIFT : index;
 }
 
-inline size_t vpn_to_index(size_t vpn)
+size_t vpn_to_index(size_t vpn)
 {
     if (vpn < KUSEG >> VPNSHIFT) {
         pandos_kprintf(
@@ -110,7 +138,7 @@ inline size_t vpn_to_index(size_t vpn)
     return vpn - (KUSEG >> VPNSHIFT);
 }
 
-inline size_t entryhi_to_vpn(memaddr entryhi)
+size_t entryhi_to_vpn(memaddr entryhi)
 {
     // reverse operation done in memory.c
     if (entryhi < KUSEG) {
@@ -126,12 +154,19 @@ inline size_t entryhi_to_vpn(memaddr entryhi)
     return entryhi >> VPNSHIFT;
 }
 
-inline size_t entryhi_to_index(memaddr entryhi)
+size_t entryhi_to_index(memaddr entryhi)
 {
     return vpn_to_index(entryhi_to_vpn(entryhi));
 }
 
-inline void update_tlb(size_t index, pte_entry_t pte)
+bool check_in_tlb(pte_entry_t pte)
+{
+    setENTRYHI(pte.pte_entry_hi);
+    TLBP();
+    return !(getINDEX() & PRESENTFLAG);
+}
+
+void update_tlb(size_t index, pte_entry_t pte)
 {
     // TODO : reactive this one
     if (check_in_tlb(pte)) {
@@ -162,23 +197,16 @@ inline void update_tlb(size_t index, pte_entry_t pte)
     // TLBCLR();
 }
 
-inline bool check_in_tlb(pte_entry_t pte)
-{
-    setENTRYHI(pte.pte_entry_hi);
-    TLBP();
-    return !(getINDEX() & PRESENTFLAG);
-}
-
-inline void add_random_in_tlb(pte_entry_t pte)
+void add_random_in_tlb(pte_entry_t pte)
 {
     setENTRYHI(pte.pte_entry_hi);
     setENTRYLO(pte.pte_entry_lo);
     TLBWR();
 }
 
-inline bool check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
+int check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
 
-inline size_t pick_page()
+size_t pick_page()
 {
     for (int index = 0; index < POOLSIZE; ++index)
         if (!check_frame_occupied(swap_pool_table[index]))
@@ -186,21 +214,21 @@ inline size_t pick_page()
     return i = (i + 1) % POOLSIZE;
 }
 
-inline memaddr page_addr(size_t i)
+static inline memaddr page_addr(size_t i)
 {
     if (i < 0 || i >= POOLSIZE)
         return (memaddr)NULL;
     return (memaddr)(swap_pool_addr + i * PAGESIZE);
 }
 
-inline void mark_page_not_valid(pte_entry_t page_table[], size_t index)
+void mark_page_not_valid(pte_entry_t page_table[], size_t index)
 {
     page_table[index].pte_entry_lo |= VALIDON;
     page_table[index].pte_entry_lo ^= VALIDON;
 }
 
-inline void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
-                                      pte_entry_t page_table[])
+void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
+                               pte_entry_t page_table[])
 {
     const size_t index = vpn_to_index(vpn);
     swap_pool_table[frame_no].sw_asid = asid;
@@ -208,8 +236,8 @@ inline void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
     swap_pool_table[frame_no].sw_pte = &page_table[index];
 }
 
-inline void update_page_table(pte_entry_t page_table[], size_t index,
-                              memaddr frame_addr)
+void update_page_table(pte_entry_t page_table[], size_t index,
+                       memaddr frame_addr)
 {
     page_table[index].pte_entry_lo = (frame_addr) | VALIDON | DIRTYON;
 }
@@ -226,13 +254,6 @@ inline void active_interrupts()
     size_t state = get_status();
     status_interrupts_on_nucleus(&state);
     set_status(state);
-}
-
-inline void release_sem_swap_pool_table()
-{
-    if (get_swap_pool_baton(
-            ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0))->sup_asid))
-        SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
 }
 
 inline void tlb_refill_handler()
@@ -263,7 +284,7 @@ inline void support_tlb()
         set_swap_pool_baton(support->sup_asid, true);
         state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
         int victim_frame = pick_page();
-        size_t victim_frame_addr = SWAP_POOL_ADDR + (victim_frame * PAGESIZE);
+        size_t victim_frame_addr = swap_pool_addr + (victim_frame * PAGESIZE);
         // pandos_kprintf("ADDR %p\n", victim_frame_addr);
         const size_t p_vpn = entryhi_to_vpn(saved_state->entry_hi),
                      p_index = vpn_to_index(p_vpn);

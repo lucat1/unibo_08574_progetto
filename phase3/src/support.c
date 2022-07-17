@@ -29,7 +29,6 @@ void init_sys_semaphores()
 inline void support_trap()
 {
     pandos_kprintf("!!!!!support_trap\n");
-    release_sem_swap_pool_table();
     SYSCALL(TERMINATE, 0, 0, 0);
 }
 
@@ -160,7 +159,7 @@ static inline size_t sys_write_terminal()
 static inline void sys_terminate()
 {
     support_t *s = ((support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0));
-    mark_frames_as_unoccupied(s->sup_asid);
+    clean_after_uproc(s->sup_asid);
     deallocate_support(s);
     master_semaphore_v();
     SYSCALL(TERMPROCESS, 0, 0, 0);
