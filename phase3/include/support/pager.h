@@ -15,7 +15,7 @@
 #include "os/const.h"
 
 /** Type describing a Page Table as an array of Page Table Entries. */
-typedef pte_entry_t pte_entry_table[MAXPAGES];
+typedef pte_entry_t page_table_t[MAXPAGES];
 
 /**
  * \brief Allocate the Swap Pool and initialize the Swap Pool Table.
@@ -28,7 +28,7 @@ extern void init_pager();
  * \param[in] asid The ASID of the U-Proc.
  * \return True on success, false otherwise.
  */
-extern bool init_page_table(pte_entry_table page_table, int asid);
+extern bool init_page_table(page_table_t page_table, int asid);
 
 /**
  * \brief Mark a U-Proc's frames in the Swap Pool Table as initialized, and

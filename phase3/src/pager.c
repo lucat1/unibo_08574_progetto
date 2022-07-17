@@ -1,17 +1,10 @@
 #include "support/pager.h"
-#include "arch/processor.h"
 #include "os/const.h"
-#include "os/ctypes.h"
 #include "os/scheduler.h"
 #include "os/util.h"
 #include "support/storage.h"
 #include "support/support.h"
-#include "umps/arch.h"
-#include "umps/const.h"
-#include "umps/cp0.h"
-#include "umps/libumps.h"
 
-#define PAGE_TABLE_ENTRY_LOW 5
 #define CAUSE_TLB_MOD 1
 #define SWAP_POOL_ADDR                                                         \
     (*(memaddr *)(KERNELSTACK + 0x0018) + *(memaddr *)(KERNELSTACK + 0x0024))
@@ -19,20 +12,57 @@
 typedef swap_t swap_table_t[POOLSIZE];
 
 static memaddr swap_pool_addr;
-int sem_swap_pool_table = 1;
 static bool swap_pool_batons[UPROCMAX];
-swap_table_t swap_pool_table;
 static bool swap_pool_batons[UPROCMAX];
 
-void init_swap_pool_table()
+static swap_table_t swap_pool_table;
+static int sem_swap_pool_table = 1;
+
+static inline void init_swap_pool_table()
 {
     for (size_t i = 0; i < POOLSIZE; ++i)
         swap_pool_table[i].sw_asid = -1;
 }
 
+inline void init_pager()
+{
+    init_swap_pool_table();
+    swap_pool_addr = SWAP_POOL_ADDR;
+}
+
+inline bool init_page_table(page_table_t page_table, int asid)
+{
+    if (page_table == NULL || asid <= 0 || asid > UPROCMAX)
+        return false;
+
+    const size_t last_page_index = MAXPAGES - 1;
+    const memaddr data[PAGESIZE / sizeof(memaddr)];
+    const int read_status = read_flash(asid, 0, (void *)data);
+    if (read_status != DEV_STATUS_READY) {
+        pandos_kfprintf(&kstderr,
+                        "Failed header read (AISD = %d, status = %d)\n", asid,
+                        read_status);
+        support_trap();
+    }
+    const size_t text_file_size = data[5] / PAGESIZE;
+
+    for (size_t i = 0; i < last_page_index; ++i) {
+        page_table[i].pte_entry_hi =
+            KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
+        page_table[i].pte_entry_lo = i < text_file_size ? 0 : DIRTYON;
+    }
+    page_table[last_page_index].pte_entry_hi =
+        KUSEG + GETPAGENO + (asid << ASIDSHIFT);
+    page_table[last_page_index].pte_entry_lo = DIRTYON;
+
+    swap_pool_batons[asid - 1] = false;
+
+    return true;
+}
+
 static inline bool is_valid_asid(int asid)
 {
-    return 0 < asid && asid <= UPROCMAX;
+    return 1 <= asid && asid <= UPROCMAX;
 }
 
 static inline void set_swap_pool_baton(int asid, bool value)
@@ -55,76 +85,30 @@ static inline bool get_swap_pool_baton(int asid)
     return swap_pool_batons[asid - 1];
 }
 
-inline void init_pager()
-{
-    init_swap_pool_table();
-    swap_pool_addr = SWAP_POOL_ADDR;
-}
-
-inline bool init_page_table(pte_entry_table page_table, int asid)
-{
-    if (page_table == NULL || asid <= 0 || asid > UPROCMAX)
-        return false;
-
-    const size_t last_page_index = MAXPAGES - 1;
-    memaddr data[PAGESIZE / sizeof(memaddr)],
-        read_status = read_flash(asid, 0, (void *)data);
-    if (read_status != DEV_STATUS_READY) {
-        pandos_kfprintf(&kstderr, "ERR: ppte %d, %d\n", asid, read_status);
-        support_trap();
-    }
-    size_t text_file_size = data[5] / 1024;
-
-    for (size_t i = 0; i < last_page_index; ++i) {
-        page_table[i].pte_entry_hi =
-            KUSEG + (i << VPNSHIFT) + (asid << ASIDSHIFT);
-        page_table[i].pte_entry_lo = i < text_file_size ? 0 : DIRTYON;
-    }
-    page_table[last_page_index].pte_entry_hi =
-        KUSEG + GETPAGENO + (asid << ASIDSHIFT);
-    page_table[last_page_index].pte_entry_lo = DIRTYON;
-
-    swap_pool_batons[asid - 1] = false;
-
-    return true;
-}
-
-static void release_sem_swap_pool_table(int asid)
+static inline void release_sem_swap_pool_table(int asid)
 {
     if (get_swap_pool_baton(asid))
         SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
 }
 
-static void mark_frames_as_unoccupied(int asid)
+static inline void mark_frames_as_unoccupied(int asid)
 {
     for (size_t i = 0; i < POOLSIZE; ++i)
         if (swap_pool_table[i].sw_asid == asid)
             swap_pool_table[i].sw_asid = -1;
 }
 
-void clean_after_uproc(int asid)
+inline void clean_after_uproc(int asid)
 {
     release_sem_swap_pool_table(asid);
     mark_frames_as_unoccupied(asid);
 }
 
-// TODO: use another algorithm
-size_t i = -1;
-
-inline size_t index_to_vpn(size_t index)
-{
-    if (index >= MAXPAGES) {
-        pandos_kprintf("pager: index_to_vpn: index = %d >= %d = MAXPAGES\n",
-                       index, MAXPAGES);
-        panic();
-    }
-    return index == MAXPAGES - 1 ? GETPAGENO >> VPNSHIFT : index;
-}
-
-size_t vpn_to_index(size_t vpn)
+static inline size_t vpn_to_index(size_t vpn)
 {
     if (vpn < KUSEG >> VPNSHIFT) {
-        pandos_kprintf(
+        pandos_kfprintf(
+            &kstderr,
             "pager: vpn_to_index: vpn = %p < %p = KUSEG >> VPNSHIFT\n", vpn,
             KUSEG >> VPNSHIFT);
         panic();
@@ -132,85 +116,77 @@ size_t vpn_to_index(size_t vpn)
     if (vpn == (KUSEG + GETPAGENO) >> VPNSHIFT)
         return MAXPAGES - 1;
     if (vpn >= (KUSEG >> VPNSHIFT) + MAXPAGES) {
-        pandos_kprintf("pager: vpn_to_index: invalid vpn %p\n", vpn);
+        pandos_kfprintf(&kstderr, "pager: vpn_to_index: invalid vpn %p\n", vpn);
         panic();
     }
     return vpn - (KUSEG >> VPNSHIFT);
 }
 
-size_t entryhi_to_vpn(memaddr entryhi)
+static inline size_t entryhi_to_vpn(memaddr entryhi)
 {
-    // reverse operation done in memory.c
     if (entryhi < KUSEG) {
-        pandos_kprintf("pager: entryhi_to_vpn: entryhi = %p < %p = KUSEG\n",
-                       entryhi, KUSEG);
+        pandos_kfprintf(&kstderr,
+                        "pager: entryhi_to_vpn: entryhi = %p < %p = KUSEG\n",
+                        entryhi, KUSEG);
         panic();
     }
     if (entryhi >= KUSEG + (MAXPAGES - 1) * PAGESIZE &&
         (entryhi >> VPNSHIFT) != (KUSEG + GETPAGENO) >> VPNSHIFT) {
-        pandos_kprintf("pager: entryhi_to_vpn: %p?\n", entryhi, KUSEG);
+        pandos_kfprintf(&kstderr, "pager: entryhi_to_vpn: %p?\n", entryhi,
+                        KUSEG);
         panic();
     }
     return entryhi >> VPNSHIFT;
 }
 
-size_t entryhi_to_index(memaddr entryhi)
-{
-    return vpn_to_index(entryhi_to_vpn(entryhi));
-}
+#define entryhi_to_index(entryhi) (vpn_to_index(entryhi_to_vpn(entryhi)))
 
-bool check_in_tlb(pte_entry_t pte)
-{
-    setENTRYHI(pte.pte_entry_hi);
-    TLBP();
-    return !(getINDEX() & PRESENTFLAG);
-}
-
-void update_tlb(size_t index, pte_entry_t pte)
-{
-    // TODO : reactive this one
-    if (check_in_tlb(pte)) {
-        // TODO : to remove prob
-        // setINDEX((getINDEX() >> 14) << 14 | (index << 8));
-        setENTRYHI(pte.pte_entry_hi);
-        setENTRYLO(pte.pte_entry_lo);
-        TLBWI();
-    }
-
-    // setENTRYHI(pte.pte_entry_hi);
-    // TLBP(); // examine the TLB to search if the TLB entry is in the TLB.
-    //         // TLBP() searches for a TLB entry that matches the current
-    //         values of the entryHI register in the CPU.
-    //         // The return value of the probing is then place into the Index
-    //         register of the CPU.
-
-    // if((getINDEX() & PRESENTFLAG) == 0) // If TLB entry is present, returns 0
-    // into the P value of the Index reg.
-    // {
-    //     setENTRYLO(pte.pte_entry_lo); // If it's present, we update the
-    //     entry. TLBWI(); // EntryHI is already set, so we can write the whole
-    //     pte into the TLB.
-    //     // TLBWI writes using the information in the Index register.
-    // }
-
-    // TODO : remove this one
-    // TLBCLR();
-}
-
-void add_random_in_tlb(pte_entry_t pte)
+static inline void add_random_in_tlb(pte_entry_t pte)
 {
     setENTRYHI(pte.pte_entry_hi);
     setENTRYLO(pte.pte_entry_lo);
     TLBWR();
 }
 
-int check_frame_occupied(swap_t frame) { return frame.sw_asid != -1; }
+inline void tlb_refill_handler()
+{
+    state_t *const saved_state = (state_t *)BIOSDATAPAGE;
+    const size_t index = entryhi_to_index(saved_state->entry_hi);
+    const pte_entry_t pte =
+        active_process->p_support->sup_private_page_table[index];
 
-size_t pick_page()
+    pandos_kfprintf(&kdebug, "TLB-Refill on %p\n", saved_state->entry_hi);
+    add_random_in_tlb(pte);
+    load_state(saved_state);
+}
+
+static inline bool check_in_tlb(pte_entry_t pte)
+{
+    setENTRYHI(pte.pte_entry_hi);
+    TLBP();
+    return !(getINDEX() & PRESENTFLAG);
+}
+
+static inline void update_tlb(size_t index, pte_entry_t pte)
+{
+    if (check_in_tlb(pte)) {
+        setENTRYHI(pte.pte_entry_hi);
+        setENTRYLO(pte.pte_entry_lo);
+        TLBWI();
+    }
+}
+
+static inline int check_frame_occupied(swap_t frame)
+{
+    return frame.sw_asid != -1;
+}
+
+static inline size_t pick_page()
 {
     for (int index = 0; index < POOLSIZE; ++index)
         if (!check_frame_occupied(swap_pool_table[index]))
             return index;
+    static size_t i = -1;
     return i = (i + 1) % POOLSIZE;
 }
 
@@ -218,28 +194,27 @@ static inline memaddr page_addr(size_t i)
 {
     if (i < 0 || i >= POOLSIZE)
         return (memaddr)NULL;
-    return (memaddr)(swap_pool_addr + i * PAGESIZE);
+    return swap_pool_addr + i * PAGESIZE;
 }
 
-void mark_page_not_valid(pte_entry_t page_table[], size_t index)
+static inline void mark_page_not_valid(page_table_t page_table, size_t index)
 {
-    page_table[index].pte_entry_lo |= VALIDON;
-    page_table[index].pte_entry_lo ^= VALIDON;
+    page_table[index].pte_entry_lo &= !VALIDON;
 }
 
-void add_entry_swap_pool_table(size_t frame_no, size_t asid, size_t vpn,
-                               pte_entry_t page_table[])
+static inline void add_entry_swap_pool_table(size_t frame_no, size_t asid,
+                                             size_t vpn,
+                                             page_table_t page_table)
 {
-    const size_t index = vpn_to_index(vpn);
     swap_pool_table[frame_no].sw_asid = asid;
     swap_pool_table[frame_no].sw_page_no = vpn;
-    swap_pool_table[frame_no].sw_pte = &page_table[index];
+    swap_pool_table[frame_no].sw_pte = page_table + vpn_to_index(vpn);
 }
 
-void update_page_table(pte_entry_t page_table[], size_t index,
-                       memaddr frame_addr)
+static inline void update_page_table(page_table_t page_table, size_t index,
+                                     memaddr frame_addr)
 {
-    page_table[index].pte_entry_lo = (frame_addr) | VALIDON | DIRTYON;
+    page_table[index].pte_entry_lo = frame_addr | VALIDON | DIRTYON;
 }
 
 inline void deactive_interrupts()
@@ -256,97 +231,65 @@ inline void active_interrupts()
     set_status(state);
 }
 
-inline void tlb_refill_handler()
-{
-    state_t *saved_state = (state_t *)BIOSDATAPAGE;
-    pandos_kprintf("tlb_refill_handler %p\n", saved_state->entry_hi);
-    size_t index = entryhi_to_index(saved_state->entry_hi);
-    // pandos_kprintf("tlb_refill of #%d -> %p done\n", index, saved_state);
-    pte_entry_t pte = active_process->p_support->sup_private_page_table[index];
-
-    add_random_in_tlb(pte);
-    // saved_state->pc_epc = saved_state->reg_t9 = 0x800000b0;
-    // saved_state->reg_sp = 0x800000b0;
-    load_state(saved_state);
-}
-
 inline void support_tlb()
 {
-    support_t *support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    size_t cause = support->sup_except_state[PGFAULTEXCEPT].cause;
-    if (cause == CAUSE_TLB_MOD)
+    support_t *const support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    if (support->sup_except_state[PGFAULTEXCEPT].cause == CAUSE_TLB_MOD)
         support_trap();
     else {
-        // pandos_kprintf("tlb_exceptionhandler\n");
-        // gain mutual exclusion over swap pool table
-        SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0,
-                0); /* P(sem_swap_pool_table) */
+        SYSCALL(PASSEREN, (int)&sem_swap_pool_table, 0, 0);
         set_swap_pool_baton(support->sup_asid, true);
-        state_t *saved_state = &support->sup_except_state[PGFAULTEXCEPT];
-        int victim_frame = pick_page();
-        size_t victim_frame_addr = swap_pool_addr + (victim_frame * PAGESIZE);
-        // pandos_kprintf("ADDR %p\n", victim_frame_addr);
+        state_t *const saved_state = &support->sup_except_state[PGFAULTEXCEPT];
+        const int victim_frame = pick_page();
+        const size_t victim_frame_addr =
+            swap_pool_addr + victim_frame * PAGESIZE;
+        pandos_kfprintf(&kdebug, "Victim: %p\n", victim_frame_addr);
         const size_t p_vpn = entryhi_to_vpn(saved_state->entry_hi),
                      p_index = vpn_to_index(p_vpn);
-        // pandos_kprintf("p_vpn %p\n", p_vpn);
-        // checks if frame victim_frame is occupied
-        swap_t swap = swap_pool_table[victim_frame];
+
+        const swap_t swap = swap_pool_table[victim_frame];
         if (check_frame_occupied(swap)) {
-            size_t k_vpn = entryhi_to_vpn(swap.sw_pte->pte_entry_hi),
-                   k_index = vpn_to_index(k_vpn);
+            const size_t k_vpn = entryhi_to_vpn(swap.sw_pte->pte_entry_hi),
+                         k_index = vpn_to_index(k_vpn);
 
-            // ATOMICALLY
-            // interrupts need to be disabled ???
-            // is there a function ?
+            // Atomically
             deactive_interrupts();
-
             mark_page_not_valid(support->sup_private_page_table, k_index);
-            // TODO : update TLB if needed
             update_tlb(k_index, *swap.sw_pte);
-
             active_interrupts();
-            // END ATOMICALLY
 
-            // Write the contents of frame victim_frame
-            // to the correct location on process x’s backing store/flash device
             const int write_status = write_flash(
                 swap.sw_asid, k_index, (void *)page_addr(victim_frame));
             if (write_status != DEV_STATUS_READY) {
-                pandos_kprintf("ERR: WRITE_FLASH (k_index=%d, status=%d)\n",
-                               k_index, write_status);
+                pandos_kfprintf(
+                    &kstderr,
+                    "Error on flash write (k_index = %d, status = %d)\n",
+                    k_index, write_status);
                 support_trap();
             }
         }
 
-        //  Read the contents of the Current Process’s backing store/flash
-        //  device logical page p into frame victim_frame.
         const int read_status =
             read_flash(support->sup_asid, p_index, (void *)victim_frame_addr);
         if (read_status != DEV_STATUS_READY) {
-            pandos_kprintf("ERR: READ_FLASH (p_index=%d, status=%d)\n", p_index,
-                           read_status);
+            pandos_kfprintf(&kstderr,
+                            "Error on flash read (p_index = %d, status = %d)\n",
+                            p_index, read_status);
             support_trap();
         }
 
-        // pandos_kprintf("frame addr %p\n", victim_frame_addr & 0xFFFFF000);
-
-        // ATOMICALLY
+        // Atomically
         deactive_interrupts();
-
         add_entry_swap_pool_table(victim_frame, support->sup_asid, p_vpn,
                                   support->sup_private_page_table);
         update_page_table(support->sup_private_page_table, p_index,
                           victim_frame_addr);
         update_tlb(p_index, support->sup_private_page_table[p_index]);
-
         active_interrupts();
-        // END ATOMICALLY
 
-        SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0,
-                0); /* V(sem_swap_pool_table) */
+        SYSCALL(VERHOGEN, (int)&sem_swap_pool_table, 0, 0);
         set_swap_pool_baton(support->sup_asid, false);
 
-        // pandos_kprintf("fine tlb_handler %p\n", saved_state->pc_epc);
         load_state(saved_state);
     }
 }
