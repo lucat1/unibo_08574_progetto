@@ -17,7 +17,7 @@
 int main()
 {
     state_t p_s;
-    pcb_t *new_process;
+    // pcb_t *new_process;
 
     srand(time(NULL));
     mock_init();
@@ -45,6 +45,7 @@ int main()
     }
     active_process = NULL;
 
+    /*
     it("creates and kills a new high/low priority process")
     {
         for (bool i = 0; i < 2; ++i) {
@@ -79,8 +80,8 @@ int main()
     it("correctly runs out of memory and returns NULL_PID")
     {
         active_process = spawn_process(false);
-        /* There is already one process allocated to call the NSYS, so we need
-         * MAX_PROC-1 more processes to run out of memory. */
+        // There is already one process allocated to call the NSYS, so we need
+        // MAX_PROC-1 more processes to run out of memory.
         for (size_t i = 0; i < MAX_PROC - 1; ++i) {
             SYSCALL(CREATEPROCESS, (size_t)&p_s, false, 0);
             assert(active_process->p_s.reg_v0 != NULL_PID);
@@ -105,5 +106,6 @@ int main()
         assert(softblock_count == 0);
         assert(process_count == 0);
     }
+    */
     return 0;
 }
