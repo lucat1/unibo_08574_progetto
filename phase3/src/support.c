@@ -59,73 +59,66 @@ static inline void sys_terminate()
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
-static inline size_t syscall_writer(void *termid, const char *msg, size_t len)
-{
-    termreg_t *const device =
-        (termreg_t *)DEV_REG_ADDR(IL_TERMINAL, (int)termid);
-    const char *s = msg;
-    int *const semaphore = &sys4_semaphores[(int)termid];
-
-    SYSCALL(PASSEREN, (int)semaphore, 0, 0);
-    for (size_t i = 0; i < len; ++i) {
-        const unsigned int value = PRINTCHR | (((unsigned int)*s) << 8);
-        const unsigned int status =
-            SYSCALL(DOIO, (int)&device->transm_command, (int)value, 0);
-        if ((status & TERMSTATMASK) != RECVD) {
-            SYSCALL(VERHOGEN, (int)semaphore, 0, 0);
-            return -(status & TERMSTATMASK);
-        }
-        ++s;
-    }
-    SYSCALL(VERHOGEN, (int)semaphore, 0, 0);
-    return len;
-}
-
-static inline size_t sys_write_printer()
+static inline size_t syscall_writer(size_t il_n)
 {
     support_t *const current_support =
         (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    const size_t printerid = current_support->sup_asid - 1;
+    const int id = current_support->sup_asid - 1;
     const char *s =
-        (const char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
+        (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
     const size_t len =
         (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
-    dtpreg_t *const device =
-        (dtpreg_t *)DEV_REG_ADDR(IL_PRINTER, (int)printerid);
-    int *const semaphore = &sys3_semaphores[printerid];
-
     if (len < 0 || len > MAXLEN || (memaddr)s < KUSEG)
         SYSCALL(TERMINATE, 0, 0, 0);
+    void *device = (void *)DEV_REG_ADDR(il_n, id);
+    int *semaphores;
+    bool terminal = false;
+    switch (il_n) {
+        case IL_PRINTER:
+            semaphores = sys3_semaphores;
+            break;
+        case IL_TERMINAL:
+            semaphores = sys4_semaphores;
+            terminal = true;
+            break;
+        default:
+            pandos_kfprintf(&kstderr, "Unimplemented write for class #%d\n",
+                            il_n);
+            PANIC();
+    }
+    int *const semaphore = &semaphores[id];
+
     SYSCALL(PASSEREN, (int)semaphore, 0, 0);
     for (size_t i = 0; i < len; ++i) {
-        device->data0 = s[i];
-        const unsigned int status =
-            SYSCALL(DOIO, (int)&device->command, (int)PRINTCHR, 0);
-        if (device->status != DEV_STATUS_READY) {
+        if (!terminal)
+            ((dtpreg_t *)device)->data0 = s[i];
+        const unsigned int
+            value = PRINTCHR | (terminal ? ((unsigned int)s[i] << 8) : 0),
+            status =
+                SYSCALL(DOIO,
+                        (int)(terminal ? &((termreg_t *)device)->transm_command
+                                       : &((dtpreg_t *)device)->command),
+                        (int)value, 0);
+        if ((status & (terminal ? TERMSTATMASK : -1)) !=
+            (terminal ? RECVD : DEV_STATUS_READY)) {
             SYSCALL(VERHOGEN, (int)semaphore, 0, 0);
-            return -(status & TERMSTATMASK);
+            return -(status & (terminal ? TERMSTATMASK : -1));
         }
     }
     SYSCALL(VERHOGEN, (int)semaphore, 0, 0);
     return len;
 }
 
+static inline size_t sys_write_printer() { return syscall_writer(IL_PRINTER); }
+
 static inline size_t sys_write_terminal()
 {
-    support_t *current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    size_t asid = current_support->sup_asid - 1;
-    char *s = (char *)current_support->sup_except_state[GENERALEXCEPT].reg_a1;
-    size_t len =
-        (size_t)current_support->sup_except_state[GENERALEXCEPT].reg_a2;
-    if (len < 0 || len > MAXLEN || (memaddr)s < KUSEG)
-        SYSCALL(TERMINATE, 0, 0, 0);
-    return syscall_writer((void *)(asid), s, len);
+    return syscall_writer(IL_TERMINAL);
 }
 
 static inline size_t sys_read_terminal()
 {
     size_t read = 0;
-    char r = EOS;
     support_t *const current_support =
         (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     const int termid = (int)current_support->sup_asid - 1;
@@ -137,7 +130,7 @@ static inline size_t sys_read_terminal()
     if ((memaddr)buf < KUSEG)
         SYSCALL(TERMINATE, 0, 0, 0);
     SYSCALL(PASSEREN, (int)semaphore, 0, 0);
-    while (r != '\n') {
+    for (char r = EOS; r != '\n';) {
         const size_t status =
             SYSCALL(DOIO, (int)&base->recv_command, (int)RECEIVE_CHAR, 0);
         if (RECEIVE_STATUS(status) != DEV_STATUS_TERMINAL_OK) {
